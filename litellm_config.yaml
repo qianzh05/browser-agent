@@ -1,0 +1,20 @@
+model_list:
+  - model_name: "anthropic.claude-sonnet-4-6"
+    litellm_params:
+      # Use the Global profile for 4.6 - this is the most stable ID in 2026
+      model: bedrock/global.anthropic.claude-sonnet-4-6
+      custom_llm_provider: bedrock
+      aws_region_name: us-east-1
+      drop_params: true
+      # This kills the temperature/top_p conflict
+      top_p: null
+  - model_name: "gpt-4-1106-preview"
+    litellm_params:
+      model: bedrock/global.anthropic.claude-sonnet-4-6
+      custom_llm_provider: bedrock
+      aws_region_name: us-east-1
+      drop_params: true
+      top_p: null
+
+litellm_settings:
+  drop_params: true
