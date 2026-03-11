@@ -1,0 +1,574 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. your user name is byteblaze
+2. To add new members to the project, you can visit project information > members tab and click blue "invite members" button on top right
+3. To set your status, click profile button on top right corner of the page (it's next to the question mark button) and click edit status
+4. To edit your profile, click profile button on top right corner of the page (it's next to the question mark button) and click edit profile
+5. You can also access to your information e.g. access token, notifications, ssh keys and more from "edit profile" page
+6. Projects that you have contributed to are listed under Project / Yours / All tab of gitlab.site. You can sort repos using dropdown button on top right
+7. Projects's repository tab has menus like Commits, Branches, Contributors, and more. Contributors tab shows contributors and their number of commits
+8. If you want to see all the issues for you, you can either click button on the right of + icon on top right menu bar
+9. When the task mentions branch main, it often means master
+10. `dotfiles` is my one of repository
+11. Click the GitLab icon in the top-left corner to view all projects (Yours / Starred / Explore / Topics). In the Explore tab, you can browse All Explore, Most Stars, and Trending repository.
+12. When asked to make changes to a repository, commit changes to the main branch UNLESS the task specifically asks you to create a branch, make a merge request, or follow a different workflow.
+13. Do not use the global search bar(Search GitLab), it is currently not working. To search for a repository, go to the search URL instead: http://localhost:8023/search?search=<repository-name>&nav_source=navbar. Replace <repository-name> with the project name only (e.g., openapi-generator), without the group or namespace prefix (e.g., do not use OpenAPITools/openapi-generator). Example: goto('http://localhost:8023/search?search=openapi-generator&nav_source=navbar')
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Open an issue to request adding support for MT theme editor in a11y-syntax-highlighting.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: New Issue · Byte Blaze / a11y-syntax-highlighting · GitLab
+  URL: http://localhost:8023/byteblaze/a11y-syntax-highlighting/-/issues/new
+
+# Current page Accessibility Tree
+
+RootWebArea 'New Issue · Byte Blaze / a11y-syntax-highlighting · GitLab', focused
+	[71] banner ''
+		[72] link 'Skip to content'
+		StaticText 'GitLab'
+		[78] link 'Dashboard'
+			[79] image ''
+		[82] list ''
+			[83] listitem ''
+				[84] button '', hasPopup='menu', expanded=False
+		[144] list ''
+			[145] listitem ''
+				[147] Section ''
+					[149] image ''
+					[150] textbox 'Search GitLab'
+		[162] list ''
+			[163] listitem ''
+				[164] link 'Create new...'
+					[165] image ''
+					[166] image ''
+			[186] listitem ''
+				[187] link 'Issues'
+					[188] image ''
+			[190] listitem ''
+				[191] link 'Merge requests'
+					[192] image ''
+					[194] image ''
+			[204] listitem ''
+				[205] link 'To-Do List'
+					[206] image ''
+					StaticText '5'
+			[208] listitem ''
+				[209] link 'Help'
+					StaticText 'Help'
+					[211] image ''
+					[213] image ''
+			[234] listitem ''
+				[235] link 'Byte Blaze'
+					[236] image 'Byte Blaze'
+					[237] image ''
+	[273] complementary 'Project navigation'
+		[275] list ''
+			[276] listitem 'a11y-syntax-highlighting'
+				[277] link 'a11y-syntax-highlighting'
+					StaticText 'A'
+					StaticText 'a11y-syntax-highlighting'
+			[281] listitem ''
+				[282] link 'Project information'
+					[284] image ''
+					StaticText 'Project information'
+			[300] listitem ''
+				[301] link 'Repository'
+					[303] image ''
+					StaticText 'Repository'
+			[331] listitem ''
+				[332] link 'Issues'
+					[334] image ''
+					StaticText 'Issues'
+					StaticText '2'
+				[337] list ''
+					[343] listitem ''
+						[344] link 'Issues'
+							StaticText 'List'
+					[346] listitem ''
+						[347] link 'Boards'
+							StaticText 'Boards'
+					[349] listitem ''
+						[350] link 'Service Desk'
+							StaticText 'Service Desk'
+					[352] listitem ''
+						[353] link 'Milestones'
+							StaticText 'Milestones'
+			[355] listitem ''
+				[356] link 'Merge requests'
+					[358] image ''
+					StaticText 'Merge requests'
+					StaticText '0'
+			[366] listitem ''
+				[367] link 'CI/CD'
+					[369] image ''
+					StaticText 'CI/CD'
+			[388] listitem ''
+				[389] link 'Security & Compliance'
+					[391] image ''
+					StaticText 'Security & Compliance'
+			[401] listitem ''
+				[402] link 'Deployments'
+					[404] image ''
+					StaticText 'Deployments'
+			[420] listitem ''
+				[421] link 'Packages and registries'
+					[423] image ''
+					StaticText 'Packages and registries'
+			[436] listitem ''
+				[437] link 'Infrastructure'
+					[439] image ''
+					StaticText 'Infrastructure'
+			[455] listitem ''
+				[456] link 'Monitor'
+					[458] image ''
+					StaticText 'Monitor'
+			[477] listitem ''
+				[478] link 'Analytics'
+					[480] image ''
+					StaticText 'Analytics'
+			[496] listitem ''
+				[497] link 'Wiki'
+					[499] image ''
+					StaticText 'Wiki'
+			[505] listitem ''
+				[506] link 'Snippets'
+					[508] image ''
+					StaticText 'Snippets'
+			[514] listitem ''
+				[515] link 'Settings'
+					[517] image ''
+					StaticText 'Settings'
+		[566] button 'Collapse sidebar'
+			[567] image ''
+			StaticText 'Collapse sidebar'
+	[575] navigation 'Breadcrumbs'
+		[581] list ''
+			[582] listitem ''
+				[583] link 'Byte Blaze'
+				[584] image ''
+			[585] listitem ''
+				[586] link 'a11y-syntax-highlighting'
+					StaticText 'a11y-syntax-highlighting'
+				[588] image ''
+			[589] listitem ''
+				[590] link 'Issues'
+				[591] image ''
+			[592] listitem ''
+				[593] link 'New'
+	[596] main ''
+		[599] heading 'New Issue'
+		[600] Section ''
+			[603] LabelText ''
+				StaticText 'Title (required)'
+			[605] textbox 'Title (required)', focused, required
+			[607] paragraph ''
+				StaticText 'Add'
+				[608] link 'description templates'
+				StaticText 'to help your contributors to communicate effectively!'
+			[614] LabelText ''
+				StaticText 'Type'
+				[616] image '', hidden=True
+			[619] button 'Issue'
+				StaticText 'Issue'
+				[621] image ''
+			[636] LabelText ''
+				StaticText 'Description'
+			[648] list ''
+				[649] listitem ''
+					[650] button 'Write'
+				[651] listitem ''
+					[652] button 'Preview'
+				[653] listitem ''
+					[655] button 'Add bold text (Ctrl+B)'
+						[656] image ''
+					[657] button 'Add italic text (Ctrl+I)'
+						[658] image ''
+					[659] button 'Add strikethrough text (Ctrl+⇧X)'
+						[660] image ''
+					[661] button 'Insert a quote'
+						[662] image ''
+					[663] button 'Insert code'
+						[664] image ''
+					[665] button 'Add a link (Ctrl+K)'
+						[666] image ''
+					[667] button 'Add a bullet list'
+						[668] image ''
+					[669] button 'Add a numbered list'
+						[670] image ''
+					[671] button 'Add a checklist'
+						[672] image ''
+					[677] button 'Add a collapsible section'
+						[678] image ''
+					[679] button 'Add a table'
+						[680] image ''
+					[681] button 'Attach a file or image'
+						[682] image ''
+					[683] button 'Go full screen'
+						[684] image ''
+			[688] textbox 'Description'
+			[690] image ''
+			StaticText 'Supports'
+			[696] link 'Markdown'
+			StaticText '. For'
+			[697] link 'quick actions'
+			StaticText ', type'
+			StaticText '/'
+			StaticText '.'
+			[728] checkbox 'This issue is confidential and should only be visible to team members with at least Reporter access.', checked='false'
+			[729] LabelText ''
+				StaticText 'This issue is confidential and should only be visible to team members with at least Reporter access.'
+			[734] LabelText ''
+				StaticText 'Assignee'
+			[739] button 'Unassigned'
+				StaticText 'Unassigned'
+				[741] image ''
+			[755] link 'Assign to me'
+			[757] LabelText ''
+				StaticText 'Milestone'
+			[763] button 'Select milestone', hasPopup='menu', expanded=False
+				StaticText 'Select milestone'
+			[768] LabelText ''
+				StaticText 'Labels'
+			[773] button 'Labels'
+				StaticText 'Labels'
+				[775] image ''
+			[846] LabelText ''
+				StaticText 'Due date'
+			[849] textbox 'Select due date'
+			[853] button 'Create issue'
+				StaticText 'Create issue'
+			[855] link 'Cancel'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```click('320')```
+</action>
+
+
+
+<action>
+```click('328')```
+</action>
+
+
+
+<action>
+```click('638')```
+</action>
+
+# Error message from last action
+
+TimeoutError: Locator.click: Timeout 500ms exceeded.
+Call log:
+waiting for get_by_test_id("638")
+  -   locator resolved to <a bid="638" browsergym_set_of_marks="1" browsergym…>…</a>
+  - attempting click action
+  -   waiting for element to be visible, enabled and stable
+  -   element is visible, enabled and stable
+  -   scrolling into view if needed
+  -   done scrolling
+  -   performing click action
+
+
+# Progress Summary
+✅ Current Progress: Successfully navigated to the New Issue creation form for the a11y-syntax-highlighting repository. The form is now open and ready for input.
+
+🔍 Current State Analysis: The current page is "New Issue · Byte Blaze / a11y-syntax-highlighting · GitLab" — this is directly on the critical path toward the goal. Key interactive elements visible:
+- **Title field** (`[605]` textbox labeled "Title (required)") — currently empty and focused, ready for input
+- **Description field** (`[636]` LabelText "Description") with a Write/Preview toolbar — currently empty
+- The form also has a "Type" field (`[619]` button "Issue") and other metadata fields
+
+The next step is to fill in the title field with a meaningful request for MT theme editor support, then add a description, and submit the issue.

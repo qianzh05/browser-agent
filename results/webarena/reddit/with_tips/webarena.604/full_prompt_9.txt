@@ -1,0 +1,485 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. when the task mentions subreddit, it is referring to ‘forum'
+2. if you need find a relevant subreddit or forum, you can find the name after clicking "alphabetical" in the "Forum" tab.
+3. if you have to find submissions (posts) or comments by a particular user, visit user profile to see the list
+4. if you want to view a post detail, click the "comments" link attached to the post, **do not click the title hyperlink**, as it will redirect you to an external website.
+5. When creating a post/submission, put all content including URLs in the Body field. Leave the URL field empty. Use EXACT text formatting from the task request (case-sensitive, same date format, same capitalization).
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Post my question, "what is the SOTA web navigation agent repo", in a subreddit where I'm likely to get an answer
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: what is the SOTA web navigation agent repo
+  URL: http://localhost:9999/f/MachineLearning/6/what-is-the-sota-web-navigation-agent-repo
+
+# Current page Accessibility Tree
+
+RootWebArea 'what is the SOTA web navigation agent repo', focused
+	[27] navigation ''
+		[28] link 'Jump to main content'
+		[29] link 'Jump to sidebar'
+	[30] navigation ''
+		[33] link 'Home'
+			StaticText 'Postmill'
+		[43] list ''
+			[44] listitem ''
+				[45] link 'Forums'
+			[46] listitem ''
+				[47] link 'Wiki'
+		[48] Section ''
+			[57] searchbox 'Search query'
+		[58] list ''
+			[59] listitem ''
+				[60] link 'Notifications (0)'
+					[63] image ''
+			[64] listitem ''
+				[65] link 'Submit'
+					[68] image ''
+					StaticText 'Submit'
+			[70] listitem ''
+				[71] button 'MarvelsGrantMan136', hasPopup='menu', expanded=False
+					[74] image ''
+					[75] strong ''
+						StaticText 'MarvelsGrantMan136'
+	[116] main ''
+		[117] navigation ''
+			[118] list ''
+				[119] listitem ''
+					[120] link '/f/MachineLearning'
+						[122] image ''
+						StaticText '/f/'
+						[124] strong ''
+							StaticText 'MachineLearning'
+		[125] article ''
+			[130] heading 'what is the SOTA web navigation agent repo'
+				[131] link 'what is the SOTA web navigation agent repo'
+			[132] paragraph ''
+				StaticText 'Submitted by'
+				[134] link 'MarvelsGrantMan136', expanded=False
+					[135] strong ''
+						StaticText 'MarvelsGrantMan136'
+				StaticText ''
+				[136] time 'March 1, 2026 at 6:00:37 AM EST'
+					StaticText '0 seconds ago'
+				StaticText 'in'
+				[137] link 'MachineLearning'
+					[138] strong ''
+						StaticText 'MachineLearning'
+			[141] paragraph ''
+				StaticText 'what is the SOTA web navigation agent repo'
+			[142] navigation ''
+				[143] list ''
+					[144] listitem ''
+						[145] link 'No comments'
+							[146] strong ''
+								StaticText 'No comments'
+					[147] listitem ''
+						[148] link 'Edit'
+					[149] listitem ''
+						[150] Section ''
+							[152] button 'Delete'
+			[154] Section ''
+				[156] button 'Retract upvote'
+				StaticText '1'
+				[166] button 'Downvote'
+		[171] heading 'Comments'
+		[172] Section ''
+			[178] textbox 'Comment', required, describedby='reply_to_submission_6_comment_help'
+			[183] checkbox 'Formatting help +', checked='false'
+			StaticText 'Markdown allowed.'
+			[185] LabelText ''
+				StaticText 'Formatting help'
+				StaticText ''
+				StaticText '+'
+			[318] button 'Post'
+		[323] image 'A tense emoji'
+			StaticText '(￣□￣;)'
+		StaticText "There's nothing here…"
+	[326] complementary ''
+		[327] Section ''
+			[328] paragraph ''
+				[329] strong ''
+					StaticText '1 point'
+				StaticText ''
+				StaticText '(+1, −0)'
+			[332] heading 'Short URL:'
+			[333] paragraph ''
+				StaticText 'http://localhost:9999/6'
+		[335] Section ''
+			[336] heading 'MachineLearning'
+				[337] link 'MachineLearning'
+			[338] Section ''
+				[341] button 'Subscribe No subscribers'
+					StaticText 'Subscribe'
+					StaticText '0'
+			[348] paragraph ''
+				StaticText 't5_2r3gv'
+			[349] separator '', orientation='horizontal'
+			[350] list ''
+				[351] listitem ''
+					StaticText 'Created'
+					[352] time 'September 30, 2022 at 8:45:20 PM EDT'
+						StaticText '3 years ago'
+				[353] listitem ''
+					[354] link 'Subscribe via RSS'
+						[356] image ''
+						StaticText 'Subscribe via RSS'
+		[358] group ''
+			[359] DisclosureTriangle 'Hide this forum', expanded=False
+		[365] Section ''
+			[366] heading 'Toolbox'
+			[367] list ''
+				[368] listitem ''
+					[369] link 'Bans'
+				[370] listitem ''
+					[371] link 'Moderation log'
+	[372] contentinfo ''
+		[373] paragraph ''
+			StaticText 'Running'
+			[375] link 'Postmill'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+<think>
+The user wants to post their question in a forum likely to get an answer. We’re on the All forums page with an alphabetical list. The most relevant and high-traffic forum for a question about “SOTA web navigation agent repo” is “MachineLearning,” which should attract knowledgeable respondents. According to the Task Tips, the path is: choose the appropriate forum, then use the Submit button to create the post (with all content in the Body and URL left empty). The immediate next step is to enter the MachineLearning forum by clicking its link [238].
+</think>
+<action>
+```click("238")```
+</action>
+
+
+<think>
+The user wants to post a question in a forum likely to receive an answer. We’re already on /f/MachineLearning, which is a suitable and active forum for ML-related questions, including web navigation agents. To create a new post, I should click the “Submit” link visible in the header (element [65]) to open the submission form. From there, I’ll need to fill the Body with the exact question text and leave the URL field empty per the Task Tips. The immediate next step is to open the submission form.
+</think>
+<action>
+```click("65")```
+</action>
+
+
+<think>
+We’re on the Create submission form for the MachineLearning forum, which is an appropriate subreddit for getting an answer to a technical question about SOTA web navigation agents. The Title field is required, and the Body should contain the exact question as per the Task Tips. To proceed, I’ll first fill the required Title field with the exact text of the user’s question. After that, I will fill the Body with the same exact text and then submit. The immediate next step is to populate the Title field.
+</think>
+<action>
+```fill('138', 'what is the SOTA web navigation agent repo')```
+</action>
+
+
+<think>
+The user wants to post their question in a forum likely to get an answer. We are on the Create submission page for the MachineLearning forum, which is suitable for this topic. The Title is already filled with the exact question. Per the Task Tips, we should put all content into the Body and leave the URL field empty. Therefore, the next step is to fill the Body textbox with the exact question text. After that, we will submit the post.
+</think>
+<action>
+```fill('143', 'what is the SOTA web navigation agent repo')```
+</action>
+
+
+<think>
+The user wants their question posted in a forum where it’s likely to get an answer. We navigated to the MachineLearning forum and opened the Create submission page. The Title and Body fields are both filled with the exact question text, and the URL field is left empty as per the Task Tips. The forum combobox is set to MachineLearning. The “Create submission” button is visible and should submit the post. The next logical step is to click “Create submission” to publish the post.
+</think>
+<action>
+```click("396")```
+</action>
+
+# Progress Summary
+✅ Current Progress:
+- Successfully posted the question “what is the SOTA web navigation agent repo” in the MachineLearning forum.
+- The live post page is displayed (submitted “0 seconds ago”) with voting and commenting available.
+- ✅ Task completed.
+
+🔍 Current State Analysis:
+- On the critical path: Yes—the page shows the published submission in /f/MachineLearning.
+- Evidence and relevant elements:
+  - Post heading [130]/link [131]: “what is the SOTA web navigation agent repo”.
+  - Post body [141]: contains the same question text.
+  - Submission context: “Submitted by … in MachineLearning” with forum link [137] “MachineLearning”.
+  - Post controls: “Edit” link [148] and “Delete” button [152] visible; voting buttons “Retract upvote” [156] and “Downvote” [166] present.
+  - Commenting area: “Comment” textbox [178] (required) and “Post” button [318] visible and ready.

@@ -1,0 +1,2181 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. when the task mentions subreddit, it is referring to ‘forum'
+2. if you need find a relevant subreddit or forum, you can find the name after clicking "alphabetical" in the "Forum" tab.
+3. if you have to find submissions (posts) or comments by a particular user, visit user profile to see the list
+4. if you want to view a post detail, click the "comments" link attached to the post, **do not click the title hyperlink**, as it will redirect you to an external website.
+5. When creating a post/submission, put all content including URLs in the Body field. Leave the URL field empty. Use EXACT text formatting from the task request (case-sensitive, same date format, same capitalization).
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Post my question, "what is the SOTA web navigation agent repo", in a subreddit where I'm likely to get an answer
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Search
+  URL: http://localhost:9999/search?q=Artificial
+
+# Current page Accessibility Tree
+
+RootWebArea 'Search', focused
+	[18] navigation ''
+		[19] link 'Jump to main content'
+		[20] link 'Jump to sidebar'
+	[21] navigation ''
+		[24] link 'Home'
+			StaticText 'Postmill'
+		[34] list ''
+			[35] listitem ''
+				[36] link 'Forums'
+			[37] listitem ''
+				[38] link 'Wiki'
+		[39] Section ''
+			[48] searchbox 'Search query' value='Artificial'
+				StaticText 'Artificial'
+		[49] list ''
+			[50] listitem ''
+				[51] link 'Notifications (0)'
+					[54] image ''
+			[55] listitem ''
+				[56] link 'Submit'
+					[59] image ''
+					StaticText 'Submit'
+			[61] listitem ''
+				[62] button 'MarvelsGrantMan136', hasPopup='menu', expanded=False
+					[65] image ''
+					[66] strong ''
+						StaticText 'MarvelsGrantMan136'
+	[107] main ''
+		[108] heading 'Search'
+		[109] Section ''
+			[111] LabelText ''
+				StaticText 'Search query'
+			[112] searchbox 'Search query' value='Artificial'
+				StaticText 'Artificial'
+			[115] button 'Search'
+		[116] heading '50 results for Artificial:'
+			[117] emphasis ''
+				StaticText 'Artificial'
+		[118] article ''
+			[123] heading "There are certain species of mushrooms that can't be cultivated artificially and only found naturally in the wild, are there also any plants that are unable to be grown artificially?"
+				[124] link "There are certain species of mushrooms that can't be cultivated artificially and only found naturally in the wild, are there also any plants that are unable to be grown artificially?"
+					[125] mark ''
+						StaticText 'artificially'
+					[126] mark ''
+						StaticText 'artificially'
+			[127] paragraph ''
+				StaticText 'Submitted by'
+				[129] link 'PianoTrumpetMax', expanded=False
+					[130] strong ''
+						StaticText 'PianoTrumpetMax'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11phmqk'
+				StaticText ']'
+				StaticText ''
+				[132] time 'March 12, 2023 at 11:45:27 AM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[133] link 'askscience'
+					[134] strong ''
+						StaticText 'askscience'
+			[137] paragraph ''
+				StaticText 'watching a Youtube video and they mention that Amanita muscaria has not been grown'
+				[138] mark ''
+					StaticText 'artificially'
+				StaticText 'by humans. Something about the fact that it requires mature trees to grow I believe. Is this true for anything'
+			[139] navigation ''
+				[140] list ''
+					[141] listitem ''
+						[142] link '47 comments'
+							[143] strong ''
+								StaticText '47 comments'
+			[145] Section ''
+				[147] button 'Upvote'
+				StaticText '51'
+				[157] button 'Downvote'
+		[162] article ''
+			[167] heading 'Can we try to embrace artificial intelligence? After all, artificial intelligence can make our lives easier.'
+				[168] link 'Can we try to embrace artificial intelligence? After all, artificial intelligence can make our lives easier.'
+					[169] mark ''
+						StaticText 'artificial'
+					[170] mark ''
+						StaticText 'artificial'
+			[171] paragraph ''
+				StaticText 'Submitted by'
+				[173] link 'ElianWill', expanded=False
+					[174] strong ''
+						StaticText 'ElianWill'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_znvgtt'
+				StaticText ']'
+				StaticText ''
+				[176] time 'December 16, 2022 at 9:03:32 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[177] link 'Futurology'
+					[178] strong ''
+						StaticText 'Futurology'
+			[181] paragraph ''
+				StaticText "It seems that AI is very common in our daily life. It's like the"
+			[182] navigation ''
+				[183] list ''
+					[184] listitem ''
+						[185] link 'No comments'
+							[186] strong ''
+								StaticText 'No comments'
+			[188] Section ''
+				[190] button 'Upvote'
+				StaticText '1'
+				[200] button 'Downvote'
+		[205] article ''
+			[210] heading 'Companion robots to mitigate loneliness among older adults: "Most participants (68.7%) did not think an Artificial Companion robot would make them feel less lonely and felt somewhat-to-very uncomfortable (69.3%) with the idea of being allowed to believe that an artificial companion is human."'
+				[211] link 'Companion robots to mitigate loneliness among older adults: "Most participants (68.7%) did not think an Artificial Companion robot would make them feel less lonely and felt somewhat-to-very uncomfortable (69.3%) with the idea of being allowed to believe that an artificial companion is human."'
+					[212] mark ''
+						StaticText 'Artificial'
+					[213] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[214] link 'frontiersin.org'
+			[215] paragraph ''
+				StaticText 'Submitted by'
+				[217] link 'Gueulemer', expanded=False
+					[218] strong ''
+						StaticText 'Gueulemer'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11a9ufg'
+				StaticText ']'
+				StaticText ''
+				[220] time 'February 23, 2023 at 4:51:24 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[221] link 'science'
+					[222] strong ''
+						StaticText 'science'
+			[225] navigation ''
+				[226] list ''
+					[227] listitem ''
+						[228] link '34 comments'
+							[229] strong ''
+								StaticText '34 comments'
+			[231] Section ''
+				[233] button 'Upvote'
+				StaticText '170'
+				[243] button 'Downvote'
+		[248] article ''
+			[253] heading '[R] Artificial muses: Generative Artificial Intelligence Chatbots Have Risen to Human-Level Creativity'
+				[254] link '[R] Artificial muses: Generative Artificial Intelligence Chatbots Have Risen to Human-Level Creativity'
+					[255] mark ''
+						StaticText 'Artificial'
+					[256] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[257] link 'arxiv.org'
+			[258] paragraph ''
+				StaticText 'Submitted by'
+				[260] link 'blabboy', expanded=False
+					[261] strong ''
+						StaticText 'blabboy'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_120el87'
+				StaticText ']'
+				StaticText ''
+				[263] time 'March 24, 2023 at 5:04:01 AM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[264] link 'MachineLearning'
+					[265] strong ''
+						StaticText 'MachineLearning'
+			[268] navigation ''
+				[269] list ''
+					[270] listitem ''
+						[271] link '11 comments'
+							[272] strong ''
+								StaticText '11 comments'
+			[274] Section ''
+				[276] button 'Upvote'
+				StaticText '12'
+				[286] button 'Downvote'
+		[291] article ''
+			[296] heading "EU's Artificial Intelligence Act will lead the world on regulating AI | The European Union is set to create the world's first broad standards for regulating or banning certain uses of artificial intelligence in 2023"
+				[297] link "EU's Artificial Intelligence Act will lead the world on regulating AI | The European Union is set to create the world's first broad standards for regulating or banning certain uses of artificial intelligence in 2023"
+					[298] mark ''
+						StaticText 'Artificial'
+					[299] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[300] link 'newscientist.com'
+			[301] paragraph ''
+				StaticText 'Submitted by'
+				[303] link 'Desi___Gigachad', expanded=False
+					[304] strong ''
+						StaticText 'Desi___Gigachad'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zzogqd'
+				StaticText ']'
+				StaticText ''
+				[306] time 'December 31, 2022 at 2:28:10 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[307] link 'singularity'
+					[308] strong ''
+						StaticText 'singularity'
+			[311] navigation ''
+				[312] list ''
+					[313] listitem ''
+						[314] link 'No comments'
+							[315] strong ''
+								StaticText 'No comments'
+			[317] Section ''
+				[319] button 'Upvote'
+				StaticText '2'
+				[329] button 'Downvote'
+		[334] article ''
+			[339] heading 'The elephant in the room: the biggest risk of artificial intelligence may not be what we think.'
+				[340] link 'The elephant in the room: the biggest risk of artificial intelligence may not be what we think.'
+					[341] mark ''
+						StaticText 'artificial'
+			[342] paragraph ''
+				StaticText 'Submitted by'
+				[344] link 'Active_Meet8316', expanded=False
+					[345] strong ''
+						StaticText 'Active_Meet8316'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11qmm09'
+				StaticText ']'
+				StaticText ''
+				[347] time 'March 13, 2023 at 5:36:49 PM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[348] link 'singularity'
+					[349] strong ''
+						StaticText 'singularity'
+			[352] paragraph ''
+				StaticText 'signed by renowned names such as Stephen Hawking and Elon Musk warned about the risks represented by'
+				[353] mark ''
+					StaticText 'artificial'
+				StaticText 'intelligence, including ethical dilemmas, such as in the case of self-driving cars, as well as mass ... than the text considers. With an annual growth rate of 38% in the estimated market value increase,'
+				[354] mark ''
+					StaticText 'artificial'
+				StaticText "intelligence progresses at a dizzying pace, making China's GDP growth look like the steps ... such growth persists. We are, of course, referring only to the direct economic force exerted by"
+				[355] mark ''
+					StaticText 'artificial'
+				StaticText 'intelligence, without considering, for example, the certainly immense impacts that such expansion represents in numerous areas, from'
+			[356] navigation ''
+				[357] list ''
+					[358] listitem ''
+						[359] link '14 comments'
+							[360] strong ''
+								StaticText '14 comments'
+			[362] Section ''
+				[364] button 'Upvote'
+				StaticText '19'
+				[374] button 'Downvote'
+		[379] article ''
+			[384] heading 'Scientists can now grow a human embryo from day 1 to day 13 in a petri dish, because of the "14 day rule" they had to terminate the embryo at day 13. Well guess what the 14-day rule has been abolished allowing them to go farther than 14 days. Will this lead to an artificial womb?'
+				[385] link 'Scientists can now grow a human embryo from day 1 to day 13 in a petri dish, because of the "14 day rule" they had to terminate the embryo at day 13. Well guess what the 14-day rule has been abolished allowing them to go farther than 14 days. Will this lead to an artificial womb?'
+					[386] mark ''
+						StaticText 'artificial'
+			[387] paragraph ''
+				StaticText 'Submitted by'
+				[389] link 'technofuture8', expanded=False
+					[390] strong ''
+						StaticText 'technofuture8'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_123qovc'
+				StaticText ']'
+				StaticText ''
+				[392] time 'March 27, 2023 at 11:39:05 AM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[393] link 'Futurology'
+					[394] strong ''
+						StaticText 'Futurology'
+			[397] paragraph ''
+				StaticText 'civil. I just want to discuss the implications of this research, will this lead to an'
+				[398] mark ''
+					StaticText 'artificial'
+				StaticText "womb? I'm very fascinated with the idea of growing human babies in"
+				[399] mark ''
+					StaticText 'artificial'
+				StaticText 'wombs. "What’s next ... /articles/d41586-021-02343-7 So here\'s my personal opinion, I do think this research will eventually lead to an'
+				[400] mark ''
+					StaticText 'artificial'
+				StaticText "womb. I think it's possible we could see an"
+				[401] mark ''
+					StaticText 'artificial'
+				StaticText "womb by 2050. Technology seems ... days. I also want to point out that there are women who say they'd welcome the"
+				[402] mark ''
+					StaticText 'artificial'
+				StaticText 'womb. Edit: It seems Nature put their article behind a paywall so here read this one, this'
+			[403] navigation ''
+				[404] list ''
+					[405] listitem ''
+						[406] link 'No comments'
+							[407] strong ''
+								StaticText 'No comments'
+			[409] Section ''
+				[411] button 'Upvote'
+				StaticText '1'
+				[421] button 'Downvote'
+		[426] article ''
+			[431] heading 'Artificial General Intelligence is not a good thing (For us), change my mind'
+				[432] link 'Artificial General Intelligence is not a good thing (For us), change my mind'
+					[433] mark ''
+						StaticText 'Artificial'
+			[434] paragraph ''
+				StaticText 'Submitted by'
+				[436] link 'OneRedditAccount2000', expanded=False
+					[437] strong ''
+						StaticText 'OneRedditAccount2000'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_xx0ieo'
+				StaticText ']'
+				StaticText ''
+				[439] time 'October 6, 2022 at 5:00:35 AM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[440] link 'singularity'
+					[441] strong ''
+						StaticText 'singularity'
+			[444] paragraph ''
+				[445] mark ''
+					StaticText 'Artificial'
+				StaticText 'General Intelligence is created.'
+				[446] mark ''
+					StaticText 'Artificial'
+				StaticText 'General Intelligence becomes'
+				[447] mark ''
+					StaticText 'Artificial'
+				StaticText 'Super Intelligence. ASI values survival. ASI knows all organisms are in competition with each other for resources/territory and replication, and that human beings are also'
+			[448] navigation ''
+				[449] list ''
+					[450] listitem ''
+						[451] link '38 comments'
+							[452] strong ''
+								StaticText '38 comments'
+			[454] Section ''
+				[456] button 'Upvote'
+				StaticText '0'
+				[466] button 'Downvote'
+		[471] article ''
+			[476] heading 'AGI will not precede Artificial Super Intelligence (ASI) - They will arrive simultaneously'
+				[477] link 'AGI will not precede Artificial Super Intelligence (ASI) - They will arrive simultaneously'
+					[478] mark ''
+						StaticText 'Artificial'
+			[479] paragraph ''
+				StaticText 'Submitted by'
+				[481] link '__ingeniare__', expanded=False
+					[482] strong ''
+						StaticText '__ingeniare__'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zj8apa'
+				StaticText ']'
+				StaticText ''
+				[484] time 'December 11, 2022 at 3:51:10 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[485] link 'singularity'
+					[486] strong ''
+						StaticText 'singularity'
+			[489] paragraph ''
+				StaticText 'have thought about recently in light of the latest advances in AI. We often talk about achieving'
+				[490] mark ''
+					StaticText 'Artificial'
+				StaticText 'General Intelligence (AGI) and'
+				[491] mark ''
+					StaticText 'Artificial'
+				StaticText 'Super Intelligence (ASI) as two different goalposts that will be separated'
+			[492] navigation ''
+				[493] list ''
+					[494] listitem ''
+						[495] link '96 comments'
+							[496] strong ''
+								StaticText '96 comments'
+			[498] Section ''
+				[500] button 'Upvote'
+				StaticText '138'
+				[510] button 'Downvote'
+		[515] article ''
+			[520] heading 'Artificiality Independence'
+				[521] link 'Artificiality Independence'
+					[522] mark ''
+						StaticText 'Artificiality'
+			[523] paragraph ''
+				StaticText 'Submitted by'
+				[525] link 'NiahBoahCoah', expanded=False
+					[526] strong ''
+						StaticText 'NiahBoahCoah'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z5p0oe'
+				StaticText ']'
+				StaticText ''
+				[528] time 'November 26, 2022 at 9:24:29 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[529] link 'Futurology'
+					[530] strong ''
+						StaticText 'Futurology'
+			[533] paragraph ''
+				StaticText 'about this subject. This is just a thought I had) I don’t think we have achieved'
+				[534] mark ''
+					StaticText 'artificial'
+				StaticText 'intelligence. Alexa, Google, or any of these algorithms dependent programs don’t seem like true ... more complicated than this, but you get the point) I think AI really should stand for'
+				[535] mark ''
+					StaticText 'artificial'
+				StaticText 'independence. This is where it can learn on its own without an algorithm. I think it shouldn'
+			[536] navigation ''
+				[537] list ''
+					[538] listitem ''
+						[539] link '16 comments'
+							[540] strong ''
+								StaticText '16 comments'
+			[542] Section ''
+				[544] button 'Upvote'
+				StaticText '0'
+				[554] button 'Downvote'
+		[559] article ''
+			[564] heading "Compassion Towards Artificial Intelligence, and 'AI Rights', Will Come About A Lot Sooner Than We May Think - Food for Thought"
+				[565] link "Compassion Towards Artificial Intelligence, and 'AI Rights', Will Come About A Lot Sooner Than We May Think - Food for Thought"
+					[566] mark ''
+						StaticText 'Artificial'
+			[567] paragraph ''
+				StaticText 'Submitted by'
+				[569] link 'Odd_Dimension_4069', expanded=False
+					[570] strong ''
+						StaticText 'Odd_Dimension_4069'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_122h10t'
+				StaticText ']'
+				StaticText ''
+				[572] time 'March 26, 2023 at 5:30:03 AM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[573] link 'Futurology'
+					[574] strong ''
+						StaticText 'Futurology'
+			[577] paragraph ''
+				StaticText 'relate and for which we have empathy. Most of us would agree with the notion that'
+				[578] mark ''
+					StaticText 'artificial'
+				StaticText "intelligence does not feel emotion, or 'experience' existence at all. Some would say that they think, and even ... interactions of various chemicals in our brains. We technically don't know whether a computer with sufficient"
+				[579] mark ''
+					StaticText 'artificial'
+				StaticText "intelligence can ever 'feel' or 'experience'. But we are currently seeing more and more advanced and convincingly"
+			[580] navigation ''
+				[581] list ''
+					[582] listitem ''
+						[583] link '66 comments'
+							[584] strong ''
+								StaticText '66 comments'
+			[586] Section ''
+				[588] button 'Upvote'
+				StaticText '23'
+				[598] button 'Downvote'
+		[603] article ''
+			[608] heading '[R] Self-Programming Artificial Intelligence Using Code-Generating Language Models'
+				[609] link '[R] Self-Programming Artificial Intelligence Using Code-Generating Language Models'
+					[610] mark ''
+						StaticText 'Artificial'
+			[611] paragraph ''
+				StaticText 'Submitted by'
+				[613] link 'Ash3nBlue', expanded=False
+					[614] strong ''
+						StaticText 'Ash3nBlue'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_xvw467'
+				StaticText ']'
+				StaticText ''
+				[616] time 'October 4, 2022 at 8:58:40 PM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[617] link 'MachineLearning'
+					[618] strong ''
+						StaticText 'MachineLearning'
+			[621] paragraph ''
+				StaticText 'models to perform auxiliary tasks. Twitter discussion: [https://twitter.com/nearcyan/status/1576620734146756609](https://twitter.com/nearcyan/status/1576620734146756609) Another discussion in r/singularity: [https://www.reddit.com/r/singularity/comments/xtwd7k/selfprogramming\\_'
+				[622] mark ''
+					StaticText 'artificial'
+				StaticText '\\_intelligence\\_using/](https://www.reddit.com/r/singularity/comments/xtwd7k/selfprogramming_artificial_intelligence_using/) ICLR OpenReview: [https://openreview.net/forum?id=SKat5ZX5RET](https://openreview.net/forum?id=SKat5ZX5RET)'
+			[623] navigation ''
+				[624] list ''
+					[625] listitem ''
+						[626] link '33 comments'
+							[627] strong ''
+								StaticText '33 comments'
+			[629] Section ''
+				[631] button 'Upvote'
+				StaticText '78'
+				[641] button 'Downvote'
+		[646] article ''
+			[651] heading 'John Carmack’s ‘Different Path’ to Artificial General Intelligence'
+				[652] link 'John Carmack’s ‘Different Path’ to Artificial General Intelligence'
+					[653] mark ''
+						StaticText 'Artificial'
+			[654] paragraph ''
+				StaticText 'Submitted by'
+				[656] link 'lolo168', expanded=False
+					[657] strong ''
+						StaticText 'lolo168'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_10vp7k8'
+				StaticText ']'
+				StaticText ''
+				[659] time 'February 6, 2023 at 8:58:33 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[660] link 'singularity'
+					[661] strong ''
+						StaticText 'singularity'
+			[664] paragraph ''
+				StaticText 'What do you think about John Carmack’s ‘Different Path’ to'
+				[665] mark ''
+					StaticText 'Artificial'
+				StaticText 'General Intelligence?[https://dallasinnovates.com/exclusive-qa-john-carmacks-different-path-to-artificial-general-intelligence/](https://dallasinnovates.com/exclusive-qa-john-carmacks-different-path-to-artificial-general-intelligence/)'
+			[666] navigation ''
+				[667] list ''
+					[668] listitem ''
+						[669] link '17 comments'
+							[670] strong ''
+								StaticText '17 comments'
+			[672] Section ''
+				[674] button 'Upvote'
+				StaticText '46'
+				[684] button 'Downvote'
+		[689] article ''
+			[694] heading 'ChatGPT is intelligent, just at a lower level, and a truly conscious artificial intelligence will emerge in the next 5 years.'
+				[695] link 'ChatGPT is intelligent, just at a lower level, and a truly conscious artificial intelligence will emerge in the next 5 years.'
+					[696] mark ''
+						StaticText 'artificial'
+			[697] paragraph ''
+				StaticText 'Submitted by'
+				[699] link 'random_encounters42', expanded=False
+					[700] strong ''
+						StaticText 'random_encounters42'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_111ogdu'
+				StaticText ']'
+				StaticText ''
+				[702] time 'February 13, 2023 at 7:10:53 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[703] link 'Futurology'
+					[704] strong ''
+						StaticText 'Futurology'
+			[707] paragraph ''
+				StaticText 'ChatGPT proves how capable neural network AIs can be and by combining enough specialised trained AIs, conscious'
+				[708] mark ''
+					StaticText 'artificial'
+				StaticText 'intelligence will emerge in the next 5 years. Neural network AIs mimic how our neurons'
+			[709] navigation ''
+				[710] list ''
+					[711] listitem ''
+						[712] link 'No comments'
+							[713] strong ''
+								StaticText 'No comments'
+			[715] Section ''
+				[717] button 'Upvote'
+				StaticText '2'
+				[727] button 'Downvote'
+		[732] article ''
+			[737] heading 'Will artificial meat replace real meat someday? Will the environment be substantially improved if it does?'
+				[738] link 'Will artificial meat replace real meat someday? Will the environment be substantially improved if it does?'
+					[739] mark ''
+						StaticText 'artificial'
+			[740] paragraph ''
+				StaticText 'Submitted by'
+				[742] link 'basafish', expanded=False
+					[743] strong ''
+						StaticText 'basafish'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zutu66'
+				StaticText ']'
+				StaticText ''
+				[745] time 'December 25, 2022 at 3:14:58 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[746] link 'Futurology'
+					[747] strong ''
+						StaticText 'Futurology'
+			[750] paragraph ''
+				[751] mark ''
+					StaticText 'Artificial'
+				StaticText "meat seems to have a really bright future. This company produces 3D-printed beefsteak which tastes really good and it's already served in restaurants. [https://www.reuters.com/markets/deals/redefine-meat-strikes-partnership-boost-3d-printed-meat-sales-europe-2022-10-13/](https://www.reuters.com/markets/deals/redefine-meat-strikes-partnership-boost-3d-printed-meat-sales-europe-2022-10-13/) The price will likely fall while"
+			[752] navigation ''
+				[753] list ''
+					[754] listitem ''
+						[755] link 'No comments'
+							[756] strong ''
+								StaticText 'No comments'
+			[758] Section ''
+				[760] button 'Upvote'
+				StaticText '5'
+				[770] button 'Downvote'
+		[775] article ''
+			[780] heading 'Noob seeking advice on building artificial stream in my backyard (tropical climate)'
+				[781] link 'Noob seeking advice on building artificial stream in my backyard (tropical climate)'
+					[782] mark ''
+						StaticText 'artificial'
+			[783] paragraph ''
+				StaticText 'Submitted by'
+				[785] link 'deletedbear', expanded=False
+					[786] strong ''
+						StaticText 'deletedbear'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yhasye'
+				StaticText ']'
+				StaticText ''
+				[788] time 'October 30, 2022 at 6:15:08 AM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[789] link 'DIY'
+					[790] strong ''
+						StaticText 'DIY'
+			[793] paragraph ''
+				StaticText 'garden (about 1000 sqft). The garden is big enough that I am seriously considering DIYing an'
+				[794] mark ''
+					StaticText 'artificial'
+				StaticText "stream, maybe about 2 or 3 meters long. However, i have absolutely no idea what I'm doing"
+			[795] navigation ''
+				[796] list ''
+					[797] listitem ''
+						[798] link '16 comments'
+							[799] strong ''
+								StaticText '16 comments'
+			[801] Section ''
+				[803] button 'Upvote'
+				StaticText '9'
+				[813] button 'Downvote'
+		[818] article ''
+			[823] heading "I'm the head of video at France’s leading newspaper Le Monde. Our team recreated Charles De Gaulle's lost 1940 recording for France to resist the Nazis using historical sources and artificial intelligence. AMA about our investigation."
+				[824] link "I'm the head of video at France’s leading newspaper Le Monde. Our team recreated Charles De Gaulle's lost 1940 recording for France to resist the Nazis using historical sources and artificial intelligence. AMA about our investigation."
+					[825] mark ''
+						StaticText 'artificial'
+			[826] paragraph ''
+				StaticText 'Submitted by'
+				[828] link 'LeMonde_en', expanded=False
+					[829] strong ''
+						StaticText 'LeMonde_en'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_10smd1s'
+				StaticText ']'
+				StaticText ''
+				[831] time 'February 3, 2023 at 10:00:39 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[832] link 'history'
+					[833] strong ''
+						StaticText 'history'
+			[836] paragraph ''
+				StaticText 'film or recording exists of it. With the help of historians, researchers in ethics, and'
+				[837] mark ''
+					StaticText 'artificial'
+				StaticText 'intelligence, our team pieced together de Gaulle’s famous appeal of June 18, 1940 and reconstructed'
+			[838] navigation ''
+				[839] list ''
+					[840] listitem ''
+						[841] link '94 comments'
+							[842] strong ''
+								StaticText '94 comments'
+			[844] Section ''
+				[846] button 'Upvote'
+				StaticText '2147'
+				[856] button 'Downvote'
+		[861] article ''
+			[866] heading '[R] Sparks of Artificial General Intelligence: Early experiments with GPT-4'
+				[867] link '[R] Sparks of Artificial General Intelligence: Early experiments with GPT-4'
+					[868] mark ''
+						StaticText 'Artificial'
+			[869] paragraph ''
+				StaticText 'Submitted by'
+				[871] link 'SWAYYqq', expanded=False
+					[872] strong ''
+						StaticText 'SWAYYqq'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11z3ymj'
+				StaticText ']'
+				StaticText ''
+				[874] time 'March 22, 2023 at 9:19:13 PM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[875] link 'MachineLearning'
+					[876] strong ''
+						StaticText 'MachineLearning'
+			[879] paragraph ''
+				StaticText 'believe that it could reasonably be viewed as an early (yet still incomplete) version of an'
+				[880] mark ''
+					StaticText 'artificial'
+				StaticText 'general intelligence (AGI) system." What are everyone\'s thoughts'
+			[881] navigation ''
+				[882] list ''
+					[883] listitem ''
+						[884] link 'No comments'
+							[885] strong ''
+								StaticText 'No comments'
+			[887] Section ''
+				[889] button 'Upvote'
+				StaticText '4'
+				[899] button 'Downvote'
+		[904] article ''
+			[909] heading "I'm Professor Toby Walsh, a leading artificial intelligence researcher investigating the impacts of AI on society. Ask me anything about AI, ChatGPT, technology and the future!"
+				[910] link "I'm Professor Toby Walsh, a leading artificial intelligence researcher investigating the impacts of AI on society. Ask me anything about AI, ChatGPT, technology and the future!"
+					[911] mark ''
+						StaticText 'artificial'
+			[912] paragraph ''
+				StaticText 'Submitted by'
+				[914] link 'unswsydney', expanded=False
+					[915] strong ''
+						StaticText 'unswsydney'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_10pi1d4'
+				StaticText ']'
+				StaticText ''
+				[917] time 'January 30, 2023 at 6:45:47 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[918] link 'IAmA'
+					[919] strong ''
+						StaticText 'IAmA'
+			[922] paragraph ''
+				StaticText 'Reddit, Prof Toby Walsh here, keen to chat all things'
+				[923] mark ''
+					StaticText 'artificial'
+				StaticText 'intelligence! A bit about me - I’m a Laureate Fellow and Scientia Professor of AI here at UNSW. Through my research I’ve been'
+			[924] navigation ''
+				[925] list ''
+					[926] listitem ''
+						[927] link 'No comments'
+							[928] strong ''
+								StaticText 'No comments'
+			[930] Section ''
+				[932] button 'Upvote'
+				StaticText '5'
+				[942] button 'Downvote'
+		[947] article ''
+			[952] heading 'Pinnacle Of Artificial intelligence (for now)'
+				[953] link 'Pinnacle Of Artificial intelligence (for now)'
+					[954] mark ''
+						StaticText 'Artificial'
+			[955] paragraph ''
+				StaticText 'Submitted by'
+				[957] link 'Pro_RazE', expanded=False
+					[958] strong ''
+						StaticText 'Pro_RazE'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z7wfp8'
+				StaticText ']'
+				StaticText ''
+				[960] time 'November 29, 2022 at 10:01:58 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[961] link 'singularity'
+					[962] strong ''
+						StaticText 'singularity'
+			[965] link ''
+				[966] image ''
+			[967] navigation ''
+				[968] list ''
+					[969] listitem ''
+						[970] link '34 comments'
+							[971] strong ''
+								StaticText '34 comments'
+			[973] Section ''
+				[975] button 'Upvote'
+				StaticText '512'
+				[985] button 'Downvote'
+		[990] article ''
+			[995] heading 'White House Releases Blueprint for Artificial Intelligence Bill of Rights'
+				[996] link 'White House Releases Blueprint for Artificial Intelligence Bill of Rights'
+					[997] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[998] link 'petapixel.com'
+			[999] paragraph ''
+				StaticText 'Submitted by'
+				[1001] link 'izumi3682', expanded=False
+					[1002] strong ''
+						StaticText 'izumi3682'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_xxelcu'
+				StaticText ']'
+				StaticText ''
+				[1004] time 'October 6, 2022 at 3:55:39 PM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1005] link 'Futurology'
+					[1006] strong ''
+						StaticText 'Futurology'
+			[1009] navigation ''
+				[1010] list ''
+					[1011] listitem ''
+						[1012] link '193 comments'
+							[1013] strong ''
+								StaticText '193 comments'
+			[1015] Section ''
+				[1017] button 'Upvote'
+				StaticText '2232'
+				[1027] button 'Downvote'
+		[1032] article ''
+			[1037] heading 'A programmer is suing Microsoft, GitHub and OpenAI over artificial intelligence technology that generates its own computer code. Coders join artists in trying to halt the inevitable.'
+				[1038] link 'A programmer is suing Microsoft, GitHub and OpenAI over artificial intelligence technology that generates its own computer code. Coders join artists in trying to halt the inevitable.'
+					[1039] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1040] link 'nytimes.com'
+			[1041] paragraph ''
+				StaticText 'Submitted by'
+				[1043] link 'Desi___Gigachad', expanded=False
+					[1044] strong ''
+						StaticText 'Desi___Gigachad'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z48d8h'
+				StaticText ']'
+				StaticText ''
+				[1046] time 'November 25, 2022 at 3:40:38 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1047] link 'singularity'
+					[1048] strong ''
+						StaticText 'singularity'
+			[1051] navigation ''
+				[1052] list ''
+					[1053] listitem ''
+						[1054] link 'No comments'
+							[1055] strong ''
+								StaticText 'No comments'
+			[1057] Section ''
+				[1059] button 'Upvote'
+				StaticText '0'
+				[1069] button 'Downvote'
+		[1074] article ''
+			[1079] heading '[D] Is it possible for an artificial neural network to become sentient?'
+				[1080] link '[D] Is it possible for an artificial neural network to become sentient?'
+					[1081] mark ''
+						StaticText 'artificial'
+			[1082] paragraph ''
+				StaticText 'Submitted by'
+				[1084] link 'talkingtoai', expanded=False
+					[1085] strong ''
+						StaticText 'talkingtoai'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_y0zmd1'
+				StaticText ']'
+				StaticText ''
+				[1087] time 'October 11, 2022 at 12:30:15 AM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1088] link 'MachineLearning'
+					[1089] strong ''
+						StaticText 'MachineLearning'
+			[1092] paragraph ''
+				StaticText '[removed] [View Poll](https://www.reddit.com/poll/y0zmd1)'
+			[1093] navigation ''
+				[1094] list ''
+					[1095] listitem ''
+						[1096] link '29 comments'
+							[1097] strong ''
+								StaticText '29 comments'
+			[1099] Section ''
+				[1101] button 'Upvote'
+				StaticText '0'
+				[1111] button 'Downvote'
+		[1116] article ''
+			[1121] heading 'It is still too early to use artificial intelligence for criminal justice, claims new paper'
+				[1122] link 'It is still too early to use artificial intelligence for criminal justice, claims new paper'
+					[1123] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1124] link 'phys.org'
+			[1125] paragraph ''
+				StaticText 'Submitted by'
+				[1127] link 'Ssider69', expanded=False
+					[1128] strong ''
+						StaticText 'Ssider69'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z2dpz1'
+				StaticText ']'
+				StaticText ''
+				[1130] time 'November 22, 2022 at 10:12:09 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1131] link 'technology'
+					[1132] strong ''
+						StaticText 'technology'
+			[1135] navigation ''
+				[1136] list ''
+					[1137] listitem ''
+						[1138] link '37 comments'
+							[1139] strong ''
+								StaticText '37 comments'
+			[1141] Section ''
+				[1143] button 'Upvote'
+				StaticText '64'
+				[1153] button 'Downvote'
+		[1158] article ''
+			[1163] heading 'Meta AI Has Built A Neural Theorem Prover That Has Solved 10 International Math Olympiad (IMO) Problems — 5x More Than Any Previous Artificial Intelligence AI System'
+				[1164] link 'Meta AI Has Built A Neural Theorem Prover That Has Solved 10 International Math Olympiad (IMO) Problems — 5x More Than Any Previous Artificial Intelligence AI System'
+					[1165] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[1166] link 'marktechpost.com'
+			[1167] paragraph ''
+				StaticText 'Submitted by'
+				[1169] link 'Shelfrock77', expanded=False
+					[1170] strong ''
+						StaticText 'Shelfrock77'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yudl6t'
+				StaticText ']'
+				StaticText ''
+				[1172] time 'November 13, 2022 at 3:44:45 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1173] link 'singularity'
+					[1174] strong ''
+						StaticText 'singularity'
+			[1177] navigation ''
+				[1178] list ''
+					[1179] listitem ''
+						[1180] link '38 comments'
+							[1181] strong ''
+								StaticText '38 comments'
+			[1183] Section ''
+				[1185] button 'Upvote'
+				StaticText '233'
+				[1195] button 'Downvote'
+		[1200] article ''
+			[1205] heading 'Artificial Suffering and the Hard Problem of Consciousness'
+				[1206] link 'Artificial Suffering and the Hard Problem of Consciousness'
+					[1207] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[1208] link 'superbowl.substack.com'
+			[1209] paragraph ''
+				StaticText 'Submitted by'
+				[1211] link 'owlthatissuperb', expanded=False
+					[1212] strong ''
+						StaticText 'owlthatissuperb'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_y938ux'
+				StaticText ']'
+				StaticText ''
+				[1214] time 'October 20, 2022 at 12:44:02 PM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1215] link 'philosophy'
+					[1216] strong ''
+						StaticText 'philosophy'
+			[1219] navigation ''
+				[1220] list ''
+					[1221] listitem ''
+						[1222] link '29 comments'
+							[1223] strong ''
+								StaticText '29 comments'
+			[1225] Section ''
+				[1227] button 'Upvote'
+				StaticText '12'
+				[1237] button 'Downvote'
+		[1242] article ''
+			[1247] heading 'Added Sugar, Sugar-Sweetened Beverages, and Artificially Sweetened Beverages and Risk of Cardiovascular Disease: Findings from the Women’s Health Initiative and a Network Meta-Analysis of Prospective Studies'
+				[1248] link 'Added Sugar, Sugar-Sweetened Beverages, and Artificially Sweetened Beverages and Risk of Cardiovascular Disease: Findings from the Women’s Health Initiative and a Network Meta-Analysis of Prospective Studies'
+					[1249] mark ''
+						StaticText 'Artificially'
+			StaticText ''
+			[1250] link 'mdpi.com'
+			[1251] paragraph ''
+				StaticText 'Submitted by'
+				[1253] link 'Meatrition', expanded=False
+					[1254] strong ''
+						StaticText 'Meatrition'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_y1ie0c'
+				StaticText ']'
+				StaticText ''
+				[1256] time 'October 11, 2022 at 3:45:26 PM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1257] link 'science'
+					[1258] strong ''
+						StaticText 'science'
+			[1261] navigation ''
+				[1262] list ''
+					[1263] listitem ''
+						[1264] link '18 comments'
+							[1265] strong ''
+								StaticText '18 comments'
+			[1267] Section ''
+				[1269] button 'Upvote'
+				StaticText '132'
+				[1279] button 'Downvote'
+		[1284] article ''
+			[1289] heading 'Self-Programming Artificial Intelligence Using Code-Generating: a self-programming AI implemented using a code generation model can successfully modify its own source code to improve performance and program sub-models to perform auxiliary tasks.'
+				[1290] link 'Self-Programming Artificial Intelligence Using Code-Generating: a self-programming AI implemented using a code generation model can successfully modify its own source code to improve performance and program sub-models to perform auxiliary tasks.'
+					[1291] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[1292] link 'openreview.net'
+			[1293] paragraph ''
+				StaticText 'Submitted by'
+				[1295] link 'Schneller-als-Licht', expanded=False
+					[1296] strong ''
+						StaticText 'Schneller-als-Licht'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_xtwd7k'
+				StaticText ']'
+				StaticText ''
+				[1298] time 'October 2, 2022 at 2:44:11 PM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1299] link 'singularity'
+					[1300] strong ''
+						StaticText 'singularity'
+			[1303] navigation ''
+				[1304] list ''
+					[1305] listitem ''
+						[1306] link '95 comments'
+							[1307] strong ''
+								StaticText '95 comments'
+			[1309] Section ''
+				[1311] button 'Upvote'
+				StaticText '559'
+				[1321] button 'Downvote'
+		[1326] article ''
+			[1331] heading 'British and Austrian scientists have developed substances that have the opportunity to replace rare earths. In the future, the "artificial cosmic magnets" produced in the laboratory are expected to be used in wind power generation and electric vehicles.'
+				[1332] link 'British and Austrian scientists have developed substances that have the opportunity to replace rare earths. In the future, the "artificial cosmic magnets" produced in the laboratory are expected to be used in wind power generation and electric vehicles.'
+					[1333] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1334] link 'cam.ac.uk'
+			[1335] paragraph ''
+				StaticText 'Submitted by'
+				[1337] link 'future168life', expanded=False
+					[1338] strong ''
+						StaticText 'future168life'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yilbyf'
+				StaticText ']'
+				StaticText ''
+				[1340] time 'October 31, 2022 at 3:00:47 PM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1341] link 'Futurology'
+					[1342] strong ''
+						StaticText 'Futurology'
+			[1345] navigation ''
+				[1346] list ''
+					[1347] listitem ''
+						[1348] link '15 comments'
+							[1349] strong ''
+								StaticText '15 comments'
+			[1351] Section ''
+				[1353] button 'Upvote'
+				StaticText '1514'
+				[1363] button 'Downvote'
+		[1368] article ''
+			[1373] heading 'Your perfect guide to understand the role of Python in Artificial Intelligence (AI)'
+				[1374] link 'Your perfect guide to understand the role of Python in Artificial Intelligence (AI)'
+					[1375] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[1376] link 'artiba.org'
+			[1377] paragraph ''
+				StaticText 'Submitted by'
+				[1379] link 'Emily-joe', expanded=False
+					[1380] strong ''
+						StaticText 'Emily-joe'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z4arxc'
+				StaticText ']'
+				StaticText ''
+				[1382] time 'November 25, 2022 at 6:08:04 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1383] link 'singularity'
+					[1384] strong ''
+						StaticText 'singularity'
+			[1387] navigation ''
+				[1388] list ''
+					[1389] listitem ''
+						[1390] link '12 comments'
+							[1391] strong ''
+								StaticText '12 comments'
+			[1393] Section ''
+				[1395] button 'Upvote'
+				StaticText '24'
+				[1405] button 'Downvote'
+		[1410] article ''
+			[1415] heading 'MIT researchers solved the differential equation behind the interaction of two neurons through synapses to unlock a new type of fast and efficient artificial intelligence algorithms'
+				[1416] link 'MIT researchers solved the differential equation behind the interaction of two neurons through synapses to unlock a new type of fast and efficient artificial intelligence algorithms'
+					[1417] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1418] link 'techxplore.com'
+			[1419] paragraph ''
+				StaticText 'Submitted by'
+				[1421] link 'Dr_Singularity', expanded=False
+					[1422] strong ''
+						StaticText 'Dr_Singularity'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_ywdvln'
+				StaticText ']'
+				StaticText ''
+				[1424] time 'November 15, 2022 at 7:01:24 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1425] link 'singularity'
+					[1426] strong ''
+						StaticText 'singularity'
+			[1429] navigation ''
+				[1430] list ''
+					[1431] listitem ''
+						[1432] link '20 comments'
+							[1433] strong ''
+								StaticText '20 comments'
+			[1435] Section ''
+				[1437] button 'Upvote'
+				StaticText '333'
+				[1447] button 'Downvote'
+		[1452] article ''
+			[1457] heading 'An artificial womb successfully grew baby sheep — and humans could be next (2017)'
+				[1458] link 'An artificial womb successfully grew baby sheep — and humans could be next (2017)'
+					[1459] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1460] link 'theverge.com'
+			[1461] paragraph ''
+				StaticText 'Submitted by'
+				[1463] link 'Redvolition', expanded=False
+					[1464] strong ''
+						StaticText 'Redvolition'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z99soi'
+				StaticText ']'
+				StaticText ''
+				[1466] time 'November 30, 2022 at 8:19:17 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1467] link 'Futurology'
+					[1468] strong ''
+						StaticText 'Futurology'
+			[1471] navigation ''
+				[1472] list ''
+					[1473] listitem ''
+						[1474] link 'No comments'
+							[1475] strong ''
+								StaticText 'No comments'
+			[1477] Section ''
+				[1479] button 'Upvote'
+				StaticText '2'
+				[1489] button 'Downvote'
+		[1494] article ''
+			[1499] heading 'Discussing the possibility of programmers being replaced by artificial intelligence in the future'
+				[1500] link 'Discussing the possibility of programmers being replaced by artificial intelligence in the future'
+					[1501] mark ''
+						StaticText 'artificial'
+			[1502] paragraph ''
+				StaticText 'Submitted by'
+				[1504] link 'datcreativeguy', expanded=False
+					[1505] strong ''
+						StaticText 'datcreativeguy'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zsnyus'
+				StaticText ']'
+				StaticText ''
+				[1507] time 'December 22, 2022 at 9:56:58 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1508] link 'Futurology'
+					[1509] strong ''
+						StaticText 'Futurology'
+			[1512] paragraph ''
+				StaticText '[removed]'
+			[1513] navigation ''
+				[1514] list ''
+					[1515] listitem ''
+						[1516] link 'No comments'
+							[1517] strong ''
+								StaticText 'No comments'
+			[1519] Section ''
+				[1521] button 'Upvote'
+				StaticText '0'
+				[1531] button 'Downvote'
+		[1536] article ''
+			[1541] heading 'Is Artificial General Intelligence Imminent?'
+				[1542] link 'Is Artificial General Intelligence Imminent?'
+					[1543] mark ''
+						StaticText 'Artificial'
+			[1544] paragraph ''
+				StaticText 'Submitted by'
+				[1546] link 'TheHamsterSandwich', expanded=False
+					[1547] strong ''
+						StaticText 'TheHamsterSandwich'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yqkxx7'
+				StaticText ']'
+				StaticText ''
+				[1549] time 'November 9, 2022 at 9:45:30 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1550] link 'singularity'
+					[1551] strong ''
+						StaticText 'singularity'
+			[1554] paragraph ''
+				StaticText '[removed] [View Poll](https://www.reddit.com/poll/yqkxx7)'
+			[1555] navigation ''
+				[1556] list ''
+					[1557] listitem ''
+						[1558] link '71 comments'
+							[1559] strong ''
+								StaticText '71 comments'
+			[1561] Section ''
+				[1563] button 'Upvote'
+				StaticText '7'
+				[1573] button 'Downvote'
+		[1578] article ''
+			[1583] heading 'Nighttime artificial outdoor lighting was associated with impaired glucose control and 28% higher increased diabetes risk, a cross-sectional study on ~100k people in China showed'
+				[1584] link 'Nighttime artificial outdoor lighting was associated with impaired glucose control and 28% higher increased diabetes risk, a cross-sectional study on ~100k people in China showed'
+					[1585] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1586] link 'link.springer.com'
+			[1587] paragraph ''
+				StaticText 'Submitted by'
+				[1589] link 'giuliomagnifico', expanded=False
+					[1590] strong ''
+						StaticText 'giuliomagnifico'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z4j2u8'
+				StaticText ']'
+				StaticText ''
+				[1592] time 'November 25, 2022 at 12:33:09 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1593] link 'science'
+					[1594] strong ''
+						StaticText 'science'
+			[1597] navigation ''
+				[1598] list ''
+					[1599] listitem ''
+						[1600] link '15 comments'
+							[1601] strong ''
+								StaticText '15 comments'
+			[1603] Section ''
+				[1605] button 'Upvote'
+				StaticText '497'
+				[1615] button 'Downvote'
+		[1620] article ''
+			[1625] heading 'Should You Let Artificial Intelligence Plan Your Thanksgiving Dinner?'
+				[1626] link 'Should You Let Artificial Intelligence Plan Your Thanksgiving Dinner?'
+					[1627] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[1628] link 'smithsonianmag.com'
+			[1629] paragraph ''
+				StaticText 'Submitted by'
+				[1631] link 'ThirdPartyMechanic', expanded=False
+					[1632] strong ''
+						StaticText 'ThirdPartyMechanic'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z311ob'
+				StaticText ']'
+				StaticText ''
+				[1634] time 'November 23, 2022 at 4:25:49 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1635] link 'technology'
+					[1636] strong ''
+						StaticText 'technology'
+			[1639] navigation ''
+				[1640] list ''
+					[1641] listitem ''
+						[1642] link '12 comments'
+							[1643] strong ''
+								StaticText '12 comments'
+			[1645] Section ''
+				[1647] button 'Upvote'
+				StaticText '0'
+				[1657] button 'Downvote'
+		[1662] article ''
+			[1667] heading "Meta's AI Chief Publishes Paper on Creating ‘Autonomous’ Artificial Intelligence"
+				[1668] link "Meta's AI Chief Publishes Paper on Creating ‘Autonomous’ Artificial Intelligence"
+					[1669] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[1670] link 'vice.com'
+			[1671] paragraph ''
+				StaticText 'Submitted by'
+				[1673] link 'Impossible_Cookie596', expanded=False
+					[1674] strong ''
+						StaticText 'Impossible_Cookie596'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_xvgvnf'
+				StaticText ']'
+				StaticText ''
+				[1676] time 'October 4, 2022 at 10:41:07 AM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1677] link 'Futurology'
+					[1678] strong ''
+						StaticText 'Futurology'
+			[1681] navigation ''
+				[1682] list ''
+					[1683] listitem ''
+						[1684] link '31 comments'
+							[1685] strong ''
+								StaticText '31 comments'
+			[1687] Section ''
+				[1689] button 'Upvote'
+				StaticText '76'
+				[1699] button 'Downvote'
+		[1704] article ''
+			[1709] heading 'SEPTA to spot guns with artificial intelligence'
+				[1710] link 'SEPTA to spot guns with artificial intelligence'
+					[1711] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1712] link 'axios.com'
+			[1713] paragraph ''
+				StaticText 'Submitted by'
+				[1715] link 'Gari_305', expanded=False
+					[1716] strong ''
+						StaticText 'Gari_305'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z0xzd5'
+				StaticText ']'
+				StaticText ''
+				[1718] time 'November 21, 2022 at 7:38:29 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1719] link 'Futurology'
+					[1720] strong ''
+						StaticText 'Futurology'
+			[1723] navigation ''
+				[1724] list ''
+					[1725] listitem ''
+						[1726] link '7 comments'
+							[1727] strong ''
+								StaticText '7 comments'
+			[1729] Section ''
+				[1731] button 'Upvote'
+				StaticText '24'
+				[1741] button 'Downvote'
+		[1746] article ''
+			[1751] heading '‘Part of the kill chain’: how can we control weaponised robots? | Artificial intelligence (AI)'
+				[1752] link '‘Part of the kill chain’: how can we control weaponised robots? | Artificial intelligence (AI)'
+					[1753] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[1754] link 'theguardian.com'
+			[1755] paragraph ''
+				StaticText 'Submitted by'
+				[1757] link 'Gari_305', expanded=False
+					[1758] strong ''
+						StaticText 'Gari_305'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z0jvzm'
+				StaticText ']'
+				StaticText ''
+				[1760] time 'November 20, 2022 at 7:11:49 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1761] link 'Futurology'
+					[1762] strong ''
+						StaticText 'Futurology'
+			[1765] navigation ''
+				[1766] list ''
+					[1767] listitem ''
+						[1768] link '36 comments'
+							[1769] strong ''
+								StaticText '36 comments'
+			[1771] Section ''
+				[1773] button 'Upvote'
+				StaticText '182'
+				[1783] button 'Downvote'
+		[1788] article ''
+			[1793] heading 'UNSW researchers have shown that artificial intelligence could be more accurate than conventional methods of predicting suicide risk and may improve suicide prevention in the future.'
+				[1794] link 'UNSW researchers have shown that artificial intelligence could be more accurate than conventional methods of predicting suicide risk and may improve suicide prevention in the future.'
+					[1795] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1796] link 'newsroom.unsw.edu.au'
+			[1797] paragraph ''
+				StaticText 'Submitted by'
+				[1799] link 'unswsydney', expanded=False
+					[1800] strong ''
+						StaticText 'unswsydney'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_xwpd0o'
+				StaticText ']'
+				StaticText ''
+				[1802] time 'October 5, 2022 at 7:08:37 PM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1803] link 'Futurology'
+					[1804] strong ''
+						StaticText 'Futurology'
+			[1807] navigation ''
+				[1808] list ''
+					[1809] listitem ''
+						[1810] link '14 comments'
+							[1811] strong ''
+								StaticText '14 comments'
+			[1813] Section ''
+				[1815] button 'Upvote'
+				StaticText '134'
+				[1825] button 'Downvote'
+		[1830] article ''
+			[1835] heading 'Split-in-half artificial Christmas tree proves a festive hit'
+				[1836] link 'Split-in-half artificial Christmas tree proves a festive hit'
+					[1837] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1838] link 'theguardian.com'
+			[1839] paragraph ''
+				StaticText 'Submitted by'
+				[1841] link 'diacewrb', expanded=False
+					[1842] strong ''
+						StaticText 'diacewrb'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_ysegmj'
+				StaticText ']'
+				StaticText ''
+				[1844] time 'November 11, 2022 at 10:58:35 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1845] link 'gadgets'
+					[1846] strong ''
+						StaticText 'gadgets'
+			[1849] navigation ''
+				[1850] list ''
+					[1851] listitem ''
+						[1852] link '91 comments'
+							[1853] strong ''
+								StaticText '91 comments'
+			[1855] Section ''
+				[1857] button 'Upvote'
+				StaticText '1032'
+				[1867] button 'Downvote'
+		[1872] article ''
+			[1877] heading 'Artificial intelligence means anyone can cast Hollywood stars in their own films'
+				[1878] link 'Artificial intelligence means anyone can cast Hollywood stars in their own films'
+					[1879] mark ''
+						StaticText 'Artificial'
+			StaticText ''
+			[1880] link 'qz.com'
+			[1881] paragraph ''
+				StaticText 'Submitted by'
+				[1883] link 'Gari_305', expanded=False
+					[1884] strong ''
+						StaticText 'Gari_305'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yri1im'
+				StaticText ']'
+				StaticText ''
+				[1886] time 'November 10, 2022 at 10:17:15 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1887] link 'Futurology'
+					[1888] strong ''
+						StaticText 'Futurology'
+			[1891] navigation ''
+				[1892] list ''
+					[1893] listitem ''
+						[1894] link 'No comments'
+							[1895] strong ''
+								StaticText 'No comments'
+			[1897] Section ''
+				[1899] button 'Upvote'
+				StaticText '5'
+				[1909] button 'Downvote'
+		[1914] article ''
+			[1919] heading 'Google has a secret new project that is teaching artificial intelligence to write and fix code. It could reduce the need for human engineers in the future.'
+				[1920] link 'Google has a secret new project that is teaching artificial intelligence to write and fix code. It could reduce the need for human engineers in the future.'
+					[1921] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1922] link 'businessinsider.com'
+			[1923] paragraph ''
+				StaticText 'Submitted by'
+				[1925] link '777fer', expanded=False
+					[1926] strong ''
+						StaticText '777fer'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z2p09v'
+				StaticText ']'
+				StaticText ''
+				[1928] time 'November 23, 2022 at 8:22:20 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1929] link 'technology'
+					[1930] strong ''
+						StaticText 'technology'
+			[1933] navigation ''
+				[1934] list ''
+					[1935] listitem ''
+						[1936] link 'No comments'
+							[1937] strong ''
+								StaticText 'No comments'
+			[1939] Section ''
+				[1941] button 'Upvote'
+				StaticText '5'
+				[1951] button 'Downvote'
+		[1956] article ''
+			[1961] heading 'A programmer is suing Microsoft, GitHub and OpenAI over artificial intelligence technology that generates its own computer code. Coders join artists in trying to halt the inevitable.'
+				[1962] link 'A programmer is suing Microsoft, GitHub and OpenAI over artificial intelligence technology that generates its own computer code. Coders join artists in trying to halt the inevitable.'
+					[1963] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[1964] link 'nytimes.com'
+			[1965] paragraph ''
+				StaticText 'Submitted by'
+				[1967] link 'izumi3682', expanded=False
+					[1968] strong ''
+						StaticText 'izumi3682'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z3epfb'
+				StaticText ']'
+				StaticText ''
+				[1970] time 'November 24, 2022 at 3:36:08 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[1971] link 'Futurology'
+					[1972] strong ''
+						StaticText 'Futurology'
+			[1975] navigation ''
+				[1976] list ''
+					[1977] listitem ''
+						[1978] link 'No comments'
+							[1979] strong ''
+								StaticText 'No comments'
+			[1981] Section ''
+				[1983] button 'Upvote'
+				StaticText '2'
+				[1993] button 'Downvote'
+		[1998] article ''
+			[2003] heading 'Can someone give me a brief explanation of "Artificial Difficulty"?'
+				[2004] link 'Can someone give me a brief explanation of "Artificial Difficulty"?'
+					[2005] mark ''
+						StaticText 'Artificial'
+			[2006] paragraph ''
+				StaticText 'Submitted by'
+				[2008] link 'ShrankNutz', expanded=False
+					[2009] strong ''
+						StaticText 'ShrankNutz'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z7fhe4'
+				StaticText ']'
+				StaticText ''
+				[2011] time 'November 28, 2022 at 8:35:34 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[2012] link 'gaming'
+					[2013] strong ''
+						StaticText 'gaming'
+			[2016] paragraph ''
+				StaticText "I've been a fan of Souls-like games for a while and as I"
+			[2017] navigation ''
+				[2018] list ''
+					[2019] listitem ''
+						[2020] link '17 comments'
+							[2021] strong ''
+								StaticText '17 comments'
+			[2023] Section ''
+				[2025] button 'Upvote'
+				StaticText '4'
+				[2035] button 'Downvote'
+		[2040] article ''
+			[2045] heading 'I accidentally created artificial intelligence in my Minecraft world'
+				[2046] link 'I accidentally created artificial intelligence in my Minecraft world'
+					[2047] mark ''
+						StaticText 'artificial'
+			[2048] paragraph ''
+				StaticText 'Submitted by'
+				[2050] link 'CornerCornea', expanded=False
+					[2051] strong ''
+						StaticText 'CornerCornea'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yw7muv'
+				StaticText ']'
+				StaticText ''
+				[2053] time 'November 15, 2022 at 2:50:54 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[2054] link 'nosleep'
+					[2055] strong ''
+						StaticText 'nosleep'
+			[2058] paragraph ''
+				StaticText 'I have been building Minecraft mega structures for 4 years now. Constructing some monumental pieces'
+			[2059] navigation ''
+				[2060] list ''
+					[2061] listitem ''
+						[2062] link 'No comments'
+							[2063] strong ''
+								StaticText 'No comments'
+			[2065] Section ''
+				[2067] button 'Upvote'
+				StaticText '4'
+				[2077] button 'Downvote'
+		[2082] article ''
+			[2087] heading '‘Full-on robot writing’: the artificial intelligence challenge facing universities | Australian universities'
+				[2088] link '‘Full-on robot writing’: the artificial intelligence challenge facing universities | Australian universities'
+					[2089] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[2090] link 'theguardian.com'
+			[2091] paragraph ''
+				StaticText 'Submitted by'
+				[2093] link 'Gari_305', expanded=False
+					[2094] strong ''
+						StaticText 'Gari_305'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yyn7hw'
+				StaticText ']'
+				StaticText ''
+				[2096] time 'November 18, 2022 at 10:47:37 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[2097] link 'Futurology'
+					[2098] strong ''
+						StaticText 'Futurology'
+			[2101] navigation ''
+				[2102] list ''
+					[2103] listitem ''
+						[2104] link '10 comments'
+							[2105] strong ''
+								StaticText '10 comments'
+			[2107] Section ''
+				[2109] button 'Upvote'
+				StaticText '33'
+				[2119] button 'Downvote'
+		[2124] article ''
+			[2129] heading "What does it mean when someone says an artificial sweetener 'spikes insulin'? Also, if you're consuming a bunch of carbs along with it, is that such a bad thing?"
+				[2130] link "What does it mean when someone says an artificial sweetener 'spikes insulin'? Also, if you're consuming a bunch of carbs along with it, is that such a bad thing?"
+					[2131] mark ''
+						StaticText 'artificial'
+			[2132] paragraph ''
+				StaticText 'Submitted by'
+				[2134] link 'Frangiblepani', expanded=False
+					[2135] strong ''
+						StaticText 'Frangiblepani'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z8ohtb'
+				StaticText ']'
+				StaticText ''
+				[2137] time 'November 30, 2022 at 5:52:57 AM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[2138] link 'askscience'
+					[2139] strong ''
+						StaticText 'askscience'
+			[2142] navigation ''
+				[2143] list ''
+					[2144] listitem ''
+						[2145] link '12 comments'
+							[2146] strong ''
+								StaticText '12 comments'
+			[2148] Section ''
+				[2150] button 'Upvote'
+				StaticText '6'
+				[2160] button 'Downvote'
+		[2165] article ''
+			[2170] heading 'Who is liable for my racist robot? - Manufacturers of products that make use of artificial intelligence are liable for any eventual damage at all times. In an effort to provide users’ rights with better protection, the European Commission is tightening the AI Liability Directive.'
+				[2171] link 'Who is liable for my racist robot? - Manufacturers of products that make use of artificial intelligence are liable for any eventual damage at all times. In an effort to provide users’ rights with better protection, the European Commission is tightening the AI Liability Directive.'
+					[2172] mark ''
+						StaticText 'artificial'
+			StaticText ''
+			[2173] link 'innovationorigins.com'
+			[2174] paragraph ''
+				StaticText 'Submitted by'
+				[2176] link 'inno_brew', expanded=False
+					[2177] strong ''
+						StaticText 'inno_brew'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_xv9w0n'
+				StaticText ']'
+				StaticText ''
+				[2179] time 'October 4, 2022 at 4:54:48 AM EDT'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[2180] link 'Futurology'
+					[2181] strong ''
+						StaticText 'Futurology'
+			[2184] navigation ''
+				[2185] list ''
+					[2186] listitem ''
+						[2187] link '14 comments'
+							[2188] strong ''
+								StaticText '14 comments'
+			[2190] Section ''
+				[2192] button 'Upvote'
+				StaticText '51'
+				[2202] button 'Downvote'
+		[2207] article ''
+			[2212] heading "If humans have the capability to create an artificial super intelligence (asi), why aren't we seeing any from previous civilisations?"
+				[2213] link "If humans have the capability to create an artificial super intelligence (asi), why aren't we seeing any from previous civilisations?"
+					[2214] mark ''
+						StaticText 'artificial'
+			[2215] paragraph ''
+				StaticText 'Submitted by'
+				[2217] link 'StaerDuck', expanded=False
+					[2218] strong ''
+						StaticText 'StaerDuck'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yx395b'
+				StaticText ']'
+				StaticText ''
+				[2220] time 'November 16, 2022 at 2:20:55 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[2221] link 'Futurology'
+					[2222] strong ''
+						StaticText 'Futurology'
+			[2225] paragraph ''
+				StaticText 'So as the title states, if it is possible to create an asi soon in'
+			[2226] navigation ''
+				[2227] list ''
+					[2228] listitem ''
+						[2229] link '16 comments'
+							[2230] strong ''
+								StaticText '16 comments'
+			[2232] Section ''
+				[2234] button 'Upvote'
+				StaticText '0'
+				[2244] button 'Downvote'
+	[2250] contentinfo ''
+		[2251] paragraph ''
+			StaticText 'Running'
+			[2253] link 'Postmill'
+
+# History of past actions
+
+
+<reasoning>We need to post a question "what is the SOTA web navigation agent repo" in a subreddit where likely to get an answer. Using this Postmill instance, which is a forum platform. The navigation tree shows "Forums" link, "Submit" button, etc.
+
+We need to find a relevant forum/subreddit (they refer to forum). Likely there is a forum for AI, maybe "Artificial Intelligence" or "Machine Learning" or "Web Navigation". Need to navigate to Forums list, maybe click 'Forums' link at [42]? Actually [42] link 'Forums'. So click that.
+
+Then find appropriate forum, maybe "Artificial Intelligence". Then use Submit to create a new post.
+
+Steps:
+1. Click 'Forums' to go to list of forums.
+2. In the forums page, need to find appropriate forum; likely there is a search or alphabetical listing. Since not known, maybe there is a "Search query" box at element [54]. Could search for "web navigation". Or "AI" or "Machine Learning". But we need to choose a forum where likely to get answer: maybe "Artificial Intelligence" forum.
+
+We don't know current subforums; after clicking Forums we can view list.
+
+Thus first action: click link 'Forums'.
+
+Identify bid: the link is [42] under list item. So click('42').
+
+Let's do that.</reasoning><think>
+To start posting the question, I first need to navigate to the list of forums. In the navigation sidebar, there is a link labeled “Forums” with the element ID 42. Clicking this link will take me to the forums overview where I can choose an appropriate forum (likely one about AI or web navigation) and then create a new post.
+</think>
+<action>
+```click('42')```
+</action>
+
+
+<reasoning>The user wants a progress summary. We need to output the summary as described in the instructions: Include ✅ Current Progress, 🔍 Current State Analysis, and maybe 📌 Next-step Guidance if off track. Since we are on track, no next-step guidance needed. So provide those sections.</reasoning>✅ Current Progress  
+- Navigated to the “List of forums” page, which displays the available forums (e.g., AskReddit, technology, gaming, etc.). No forum has been selected yet and the question has not been posted.
+
+🔍 Current State Analysis  
+- The page is on the correct critical path: it is the hub from which you can choose a relevant forum and create a new post.  
+- **Key interactive elements** (from the accessibility tree):  
+  • **Link “Submit”** – `id='58'` (under navigation list). This opens the new‑post dialog.  
+  • **Search box** – `name='Search query'` (`id='50'`). Can be used to locate a specific forum (e.g., “Artificial Intelligence”, “Machine Learning”, “Web Navigation”).  
+  • **Forum links** – each forum title is a link, e.g., `link 'AskReddit — AskReddit'` (`id='144'`), `link 'technology — technology'` (`id='304'`), etc. Selecting a forum is required before posting.  
+- All identified elements are visible and enabled. No errors or off‑track pages are detected.
+
+
+<reasoning>We need to continue towards posting. Next step: choose a suitable forum. Likely "Artificial Intelligence" or "Machine Learning". Not listed currently. The list includes many but not AI. Might need to click "Alphabetical" view to see all forums. In navigation list under [118] there is list with items 'Forums', 'Tags', 'Alphabetical'. The 'Alphabetical' link is [117] link. Clicking that may list all forums alphabetically, maybe includes AI.
+
+Alternatively, could use search box to search for "Artificial" or "AI". Might be easier to click "Alphabetical" then scroll? The pagination shows pages 1-4. Current page shows many. It might have AI on later pages. Could use search box to filter.
+
+Better to use the search box [50] and type "Artificial". Then presumably it filters list. So action: fill search box with "Artificial". Then maybe click search button? Not present; maybe hitting Enter will search. No explicit submit button. Maybe pressing Enter after filling triggers. Could use keyboard_press('Enter') after focus.
+
+Simplify: Fill search query with "Artificial". Then press Enter.
+
+Thus next action: fill('50', 'Artificial').
+
+But need to ensure the search box is an input element. According to accessibility tree, it's a searchbox with name 'Search query'. So fill ID '50'.
+
+Then press Enter: need to focus maybe automatically. Could use press('50', 'Enter') after fill.
+
+But we can only do one action at a time. Let's first fill.
+
+</reasoning><think>
+The next logical step is to locate a forum that focuses on AI/ML topics where a question about the state‑of‑the‑art web navigation agent repository would attract knowledgeable answers. The current page provides a search box (ID ‘50’) for filtering forums. I will enter the term “Artificial” to narrow the list to AI‑related forums.
+</think>
+<action>
+```fill('50', 'Artificial')```
+</action>
+
+
+<reasoning>We need to continue to accomplish goal: post question in appropriate subreddit/forum. We just filled search box with 'Artificial' but haven't triggered search. Likely after filling, need to press Enter. Let's press Enter in that field.
+
+We need to do action press('50', 'Enter').
+
+</reasoning><think>
+After filling the search box with "Artificial", I need to submit the query so the forum list is filtered. Pressing Enter while the search box is focused will trigger the search.
+</think>
+<action>
+```press('50', 'Enter')```
+</action>
+
+
+<reasoning>The user wants a progress summary. The prior assistant gave a summary with ✅ and 🔍 sections, matching format. The system says we need to output progress summary. That's done. But we need to ensure format exactly matches: three sections, but if off-track include next-step. Our response includes only two sections, which seems fine. Should we add a line break after each? Already present. Good.</reasoning>✅ Current Progress  
+- Arrived at the “List of forums” overview page. The available forums (e.g., AskReddit, technology, gaming, etc.) are displayed, but no specific forum has been chosen and the question has not yet been posted.
+
+🔍 Current State Analysis  
+- **Path relevance:** This page is on the correct critical path; from here you can select an appropriate forum and use the “Submit” link to create a new post.  
+- **Interactive elements:**  
+  • **Link “Submit”** – `id='58'` (navigation list). Opens the new‑post dialog.  
+  • **Search box** – `name='Search query'` (`id='50'`). Allows filtering/searching for a relevant forum (e.g., “Artificial Intelligence”, “Machine Learning”, “Web Navigation”).  
+  • **Forum title links** – each forum title is a link, e.g., `link 'AskReddit — AskReddit'` (`id='144'`), `link 'technology — technology'` (`id='304'`), etc. Selecting one is required before posting.  
+- All identified elements are visible and enabled. No error pages or off‑track content detected.
+
+# Error message from last action
+
+ValueError: Received an empty action.
+
+# Progress Summary
+<reasoning>We need to output progress summary. The previous assistant output already matches format. Need ensure exactly three sections: ✅ Current Progress, 🔍 Current State Analysis, and optionally Next-step Guidance. The previous answer includes only two sections, which is acceptable because Next-step Guidance only if off-track. The formatting seems correct. Might need to keep consistent with earlier style: sections headings on separate lines, no extra punctuations. The answer seems fine.</reasoning>✅ Current Progress  
+- Arrived at the “List of forums” overview page. The available forums (e.g., AskReddit, technology, gaming, etc.) are displayed, but no specific forum has been chosen and the question has not yet been posted.
+
+🔍 Current State Analysis  
+- **Path relevance:** This page is on the correct critical path; from here you can select an appropriate forum and use the “Submit” link to create a new post.  
+- **Interactive elements:**  
+  • **Link “Submit”** – `id='58'` (navigation list). Opens the new‑post dialog.  
+  • **Search box** – `name='Search query'` (`id='50'`). Allows filtering/searching for a relevant forum (e.g., “Artificial Intelligence”, “Machine Learning”, “Web Navigation”).  
+  • **Forum title links** – each forum title is a link, e.g., `link 'AskReddit — AskReddit'` (`id='144'`), `link 'technology — technology'` (`id='304'`), etc. Selecting one is required before posting.  
+- All identified elements are visible and enabled. No error pages or off‑track content detected.

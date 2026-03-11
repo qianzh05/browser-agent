@@ -1,0 +1,738 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. This website provides very detailed category of products. You can hover categories on the top menu to see subcategories.
+2. If you need to find information about your previous purchases, you can go My Account > My Orders, and find order by date, order number, or any other available information
+3. An order is considered out of delivery if it is marked as "processing" in the order status
+4. When the task asks you to draft and email. DO NOT send the email. Just draft it and provide the content in the last message
+5. For questions ONLY about **Nintendo Switch game cards** please navigate back to the url of the product you end up choosing. This is because the benchmark evalautes using the page you are on for the Nintendo task. If you are own the wrong product page it will assume you selected that product.
+6. When asked to "show me products under a price" the benchmark evaluates based on the url. so just ensure the price is under the price asked for in the url.
+7. When asked about product type don't return the acutal product name but rather the type of product it is. Ex: If the most common products are "harry potter" and "twilight" the product type is "books".
+8. **For SHOPPING/BROWSING tasks**: When asked to browse products in a particular category, navigate using the dropdown menus (not search) when possible. This may require hovering over nested dropdowns (e.g., hover over "Electronics" → hover over "Computers" → click "Laptops"). Use the hover tool to reveal these nested menus before clicking.
+9. Task wording can contain typos or singular/plural mismatches. Treat singular terms like "order" or "transaction" as potentially plural. If multiple entries match the described criteria, summarize all of them, list each matching item with its key details, make the quantity explicit, and when the question asks for an amount/total, include the combined sum alongside the itemized numbers. Never assume "the most recent one" unless the instructions explicitly say so.
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+List out reviewers, if exist, who mention about average print quality
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Epson WorkForce WF-3620 WiFi Direct All-in-One Color Inkjet Printer, Copier, Scanner, Amazon Dash Replenishment Ready
+  URL: http://localhost:7770/epson-workforce-wf-3620-wifi-direct-all-in-one-color-inkjet-printer-copier-scanner-amazon-dash-replenishment-ready.html
+
+# Current page Accessibility Tree
+
+RootWebArea 'Epson WorkForce WF-3620 WiFi Direct All-in-One Color Inkjet Printer, Copier, Scanner, Amazon Dash Replenishment Ready', focused
+	[255] banner ''
+		[258] list ''
+			[259] listitem ''
+				[260] link 'My Account'
+			[261] listitem ''
+				[262] link 'My Wish List 1 item'
+					StaticText '1 item'
+			[264] listitem ''
+				[265] link 'Sign Out'
+			[266] listitem ''
+			[269] listitem ''
+				StaticText 'Welcome, Emma Lopez!'
+		[271] link 'Skip to Content'
+			StaticText 'Skip to Content'
+		[276] link 'store logo'
+			[277] image 'one_stop_market_logo'
+		[279] link '\ue611 My Cart 3 3items'
+			StaticText '\ue611'
+			StaticText 'My Cart'
+			StaticText '3'
+			StaticText '3'
+			StaticText 'items'
+		[415] Section ''
+			[417] LabelText ''
+				StaticText '\ue615'
+				StaticText 'Search'
+			[420] combobox '\ue615 Search', autocomplete='both', hasPopup='listbox', expanded=False
+			[423] link 'Advanced Search'
+			[425] button 'Search', disabled=True
+				StaticText '\ue615'
+				StaticText 'Search'
+	[428] tablist '', multiselectable=False, orientation='horizontal'
+		[431] tabpanel ''
+			[432] navigation ''
+				[433] menu '', orientation='vertical'
+					[435] menuitem '\ue622 Beauty & Personal Care', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Beauty & Personal Care'
+					[652] menuitem '\ue622 Sports & Outdoors', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Sports & Outdoors'
+					[690] menuitem '\ue622 Clothing, Shoes & Jewelry', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Clothing, Shoes & Jewelry'
+					[742] menuitem '\ue622 Home & Kitchen', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Home & Kitchen'
+					[869] menuitem '\ue622 Office Products', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Office Products'
+					[901] menuitem '\ue622 Tools & Home Improvement', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Tools & Home Improvement'
+					[920] menuitem '\ue622 Health & Household', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Health & Household'
+					[944] menuitem '\ue622 Patio, Lawn & Garden', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Patio, Lawn & Garden'
+					[963] menuitem '\ue622 Electronics', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Electronics'
+					[1172] menuitem '\ue622 Cell Phones & Accessories', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Cell Phones & Accessories'
+					[1223] menuitem '\ue622 Video Games', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Video Games'
+					[1272] menuitem '\ue622 Grocery & Gourmet Food', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Grocery & Gourmet Food'
+	[1502] list ''
+		[1503] listitem ''
+			[1504] link 'Home'
+			StaticText '\ue608'
+		[1505] listitem ''
+			[1506] strong ''
+				StaticText 'Epson WorkForce WF-3620 WiFi Direct All-in-One Color Inkjet Printer, Copier, Scanner, Amazon Dash Replenishment Ready'
+	[1507] main ''
+		[1510] heading 'Epson WorkForce WF-3620 WiFi Direct All-in-One Color Inkjet Printer, Copier, Scanner, Amazon Dash Replenishment Ready'
+			StaticText 'Epson WorkForce WF-3620 WiFi Direct All-in-One Color Inkjet Printer, Copier, Scanner, Amazon Dash Replenishment Ready'
+		StaticText 'IN STOCK'
+		[1523] strong ''
+			StaticText 'SKU'
+		StaticText 'B00JXLGF06'
+		[1525] LayoutTable ''
+			StaticText 'Rating:'
+			StaticText '\ue605\ue605\ue605\ue605\ue605'
+			StaticText '\ue605\ue605\ue605\ue605\ue605'
+			StaticText '35'
+			StaticText '% of'
+			StaticText '100'
+			[1536] link '12\xa0 Reviews'
+				StaticText '12'
+				StaticText 'Reviews'
+			[1539] link 'Add Your Review'
+		StaticText '$607.39'
+		[1547] Section ''
+			[1553] LayoutTable ''
+				[1556] LabelText ''
+					StaticText 'Qty'
+				[1559] spinbutton 'Qty' value=1, valuemin=0, valuemax=0, valuetext=''
+					StaticText '1'
+				[1561] button 'Add to Cart'
+					StaticText 'Add to Cart'
+		[1566] link 'Add to Wish List'
+			StaticText 'Add to Wish List'
+		[1568] link 'Add to Compare'
+			StaticText 'Add to Compare'
+		[1573] link 'Skip to the end of the images gallery'
+			StaticText 'Skip to the end of the images gallery'
+		[1583] button 'Previous'
+		[1587] image 'Image'
+		[1590] button 'Next'
+		[1598] button 'Previous'
+		[1602] button 'Image'
+			[1604] image 'Image'
+		[1605] button 'Image'
+			[1607] image 'Image'
+		[1608] button 'Next'
+		[1613] link 'Skip to the beginning of the images gallery'
+			StaticText 'Skip to the beginning of the images gallery'
+		[1617] tablist '', multiselectable=False, orientation='horizontal'
+			[1618] tab 'Details', expanded=True, selected=False, controls='description'
+				[1619] link 'Details'
+			[1620] tabpanel 'Details'
+				[1628] separator '', orientation='horizontal'
+				[1629] heading 'From the manufacturer'
+				[1640] image 'PrecisionCore Technology'
+				[1643] paragraph ''
+				[1646] image 'Print direct from phone'
+				[1648] heading 'Additional Features'
+				[1651] list ''
+					[1652] listitem ''
+						ListMarker '•'
+						StaticText 'Wireless and Wi-Fi Direct — print from iPad, iPhone, tablets and smartphones'
+					[1655] listitem ''
+						ListMarker '•'
+						StaticText 'Auto 2-sided print, copy, scan and fax — includes 35-page 2-sided Automatic Document Feeder'
+					[1658] listitem ''
+						ListMarker '•'
+						StaticText 'Easy navigation and control — intuitive 2.7" color touchscreen'
+				[1662] heading 'Performance Beyond Laser'
+				[1663] heading 'WorkForce WF-3620 All-in-One'
+				[1664] paragraph ''
+					StaticText 'WIRELESS | PRINT | COPY | SCAN | FAX | ETHERNET'
+				[1668] list ''
+					[1669] listitem ''
+						ListMarker '•'
+						StaticText 'Print-shop quality — print documents and graphics in high resolution with precise color placement'
+					[1672] listitem ''
+						ListMarker '•'
+						StaticText 'Save on ink — up to 40 percent lower printing cost vs. color laser'
+					[1675] listitem ''
+						ListMarker '•'
+						StaticText 'Fast printing — professional-quality prints at speeds of 19 ISO ppm (black) and 10 ISO ppm (color)'
+					[1678] listitem ''
+						ListMarker '•'
+						StaticText 'Extremely durable prints — smudge, fade and water resistant prints'
+					[1681] listitem ''
+						ListMarker '•'
+						StaticText 'Laser-sharp black and color text — crisp fonts and precise lines on plain paper'
+				[1696] heading 'KEY FEATURES'
+				[1698] table ''
+					[1699] rowgroup ''
+						[1700] row ''
+							[1701] columnheader 'Fast speeds'
+								[1703] paragraph ''
+									[1704] image 'Fast speeds'
+							[1706] columnheader '250-sheet capacity'
+								[1708] paragraph ''
+									[1709] image '250-sheet capacity'
+							[1711] columnheader '2.7" touchscreen'
+								[1713] paragraph ''
+									[1714] image '2.7" touchscreen'
+							[1716] columnheader 'Auto 2-sided print, copy, scan & fax'
+								[1718] paragraph ''
+									[1719] image 'Auto 2-sided print, copy, scan & fax'
+						[1721] row ''
+							[1722] gridcell 'Fast speeds for high-volume printing'
+								[1724] heading 'Fast speeds for high-volume printing'
+							[1725] gridcell 'Large, 250-sheet paper capacity plus rear tray'
+								[1727] heading 'Large, 250-sheet paper capacity plus rear tray'
+							[1728] gridcell '2.7" touchscreen for easy navigation'
+								[1730] heading '2.7" touchscreen for easy navigation'
+							[1731] gridcell 'Auto 2-sided print, copy, scan & fax'
+								[1733] heading 'Auto 2-sided print, copy, scan & fax'
+				[1747] image 'Auto 2-sided print, copy, scan & fax'
+				[1749] heading 'Efficient'
+				[1752] paragraph ''
+					StaticText 'Auto 2-sided print, copy, scan & fax'
+				[1755] image 'Epson Connect'
+				[1757] heading 'Epson Connect'
+				[1760] paragraph ''
+					StaticText 'Print from iPad, iPhone, tablets & smartphones'
+				[1764] image 'Various connectivity options'
+				[1766] heading 'Connectivity'
+				[1769] paragraph ''
+					StaticText 'Built-in wireless & Ethernet networking; includes Wi-Fi Direct'
+				[1772] image 'Front and rear trays'
+				[1774] heading 'Versatile'
+				[1777] paragraph ''
+					StaticText 'Front tray plus rear tray for envelopes & specialty media'
+				[1791] image 'Designed to be jam free'
+				[1793] heading 'Reliable'
+				[1796] paragraph ''
+					StaticText 'Designed to be jam free'
+				[1799] image 'Replacement Inks'
+				[1801] heading 'Replacement Ink Cartridges'
+				[1804] paragraph ''
+					StaticText '252 Standard-capacity Black, Cyan, Magenta, Yellow'
+				[1808] image 'Weight & Dimensions'
+				[1810] heading 'Weight and Dimensions (W x D x H)'
+				[1813] paragraph ''
+					StaticText 'Printing: 17.7" x 22" x 9.6"'
+				[1814] paragraph ''
+					StaticText 'Storage: 17.7" x 16.4" x 9.6"'
+				[1815] paragraph ''
+					StaticText 'Weight: 21.4 lb'
+				[1818] image 'In the box'
+				[1820] heading 'What’s In The Box'
+				[1823] paragraph ''
+					StaticText 'Epson WorkForce WF-3620 All-in-One, instruction manual, CD-ROM for product setup, power cord, DURABrite Ultra Ink cartridges – Four 252-series ink cartridges: Black, Cyan, Magenta, Yellow'
+				[1833] LayoutTable ''
+					[1834] table ''
+						[1835] rowgroup ''
+							[1836] row ''
+								[1837] columnheader ''
+								[1838] columnheader 'WorkForce WF-3620'
+									[1839] image 'WorkForce WF-3620'
+								[1840] columnheader 'WorkForce WF-3640'
+									[1841] image 'WorkForce WF-3640'
+								[1842] columnheader 'WorkForce Pro WF-4630'
+									[1843] image 'WorkForce Pro WF-4630'
+								[1844] columnheader 'WorkForce Pro WF-4640'
+									[1845] image 'WorkForce Pro WF-4640'
+							[1846] row ''
+								[1847] columnheader ''
+								[1848] columnheader 'WorkForce WF-3620'
+								[1849] columnheader 'WorkForce WF-3640'
+								[1850] columnheader 'WorkForce Pro WF-4630'
+								[1851] columnheader 'WorkForce Pro WF-4640'
+							[1852] row ''
+								[1853] rowheader 'Technology'
+									StaticText 'Technology'
+								[1855] gridcell 'Powered by PrecisionCore'
+									StaticText 'Powered by PrecisionCore'
+								[1857] gridcell 'Powered by PrecisionCore'
+									StaticText 'Powered by PrecisionCore'
+								[1859] gridcell 'Powered by PrecisionCore'
+									StaticText 'Powered by PrecisionCore'
+								[1861] gridcell 'Powered by PrecisionCore'
+									StaticText 'Powered by PrecisionCore'
+							[1863] row ''
+								[1864] rowheader 'Cost Savings vs. Laser'
+									StaticText 'Cost Savings vs. Laser'
+								[1866] gridcell 'up to 40%'
+									StaticText 'up to 40%'
+								[1868] gridcell 'up to 40%'
+									StaticText 'up to 40%'
+								[1870] gridcell 'up to 50%'
+									StaticText 'up to 50%'
+								[1872] gridcell 'up to 50%'
+									StaticText 'up to 50%'
+							[1874] row ''
+								[1875] rowheader 'ISO Print Speed'
+									StaticText 'ISO Print Speed'
+								[1877] gridcell '19 / 10'
+									StaticText '19 / 10'
+								[1879] gridcell '19 / 10'
+									StaticText '19 / 10'
+								[1881] gridcell '20 / 20'
+									StaticText '20 / 20'
+								[1883] gridcell '20 / 20'
+									StaticText '20 / 20'
+							[1885] row ''
+								[1886] rowheader 'Screen'
+									StaticText 'Screen'
+								[1888] gridcell '2.7" Color Touch'
+									StaticText '2.7" Color Touch'
+								[1890] gridcell '3.5" Color Touch'
+									StaticText '3.5" Color Touch'
+								[1892] gridcell '3.5" Color Touch'
+									StaticText '3.5" Color Touch'
+								[1894] gridcell '4.3" Color Touch'
+									StaticText '4.3" Color Touch'
+							[1896] row ''
+								[1897] rowheader 'Total Paper Capacity'
+									StaticText 'Total Paper Capacity'
+								[1899] gridcell '250'
+									StaticText '250'
+								[1901] gridcell '500'
+									StaticText '500'
+								[1903] gridcell '330'
+									StaticText '330'
+								[1905] gridcell '580'
+									StaticText '580'
+							[1907] row ''
+								[1908] rowheader 'Special Media (rear feed)'
+									StaticText 'Special Media (rear feed)'
+								[1910] gridcell '1'
+									StaticText '1'
+								[1912] gridcell '1'
+									StaticText '1'
+								[1914] gridcell '80'
+									StaticText '80'
+								[1916] gridcell '80'
+									StaticText '80'
+							[1918] row ''
+								[1919] rowheader 'ADF Capacity'
+									StaticText 'ADF Capacity'
+								[1921] gridcell '35'
+									StaticText '35'
+								[1923] gridcell '35'
+									StaticText '35'
+								[1925] gridcell '35'
+									StaticText '35'
+								[1927] gridcell '35'
+									StaticText '35'
+							[1929] row ''
+								[1930] rowheader 'Auto 2-sided'
+									StaticText 'Auto 2-sided'
+								[1932] gridcell 'Print, Copy, Scan, Fax'
+									StaticText 'Print, Copy, Scan, Fax'
+								[1934] gridcell 'Print, Copy, Scan, Fax'
+									StaticText 'Print, Copy, Scan, Fax'
+								[1936] gridcell 'Print, Copy, Scan, Fax'
+									StaticText 'Print, Copy, Scan, Fax'
+								[1938] gridcell 'Print, Copy, Scan, Fax'
+									StaticText 'Print, Copy, Scan, Fax'
+							[1940] row ''
+								[1941] rowheader 'Ethernet / Wi-Fi / Wi-Fi Direct Tablet / Smartphone'
+									StaticText 'Ethernet / Wi-Fi / Wi-Fi Direct Tablet / Smartphone'
+								[1943] gridcell '✓'
+									StaticText '✓'
+								[1945] gridcell '✓'
+									StaticText '✓'
+								[1947] gridcell '✓'
+									StaticText '✓'
+								[1949] gridcell '✓'
+									StaticText '✓'
+							[1951] row ''
+								[1952] rowheader 'Media Card Slot'
+									StaticText 'Media Card Slot'
+								[1954] gridcell '✓'
+									StaticText '✓'
+								[1956] gridcell '✓'
+									StaticText '✓'
+								[1958] gridcell ''
+								[1960] gridcell ''
+				[1965] heading 'Product Quick Look'
+				[1968] list ''
+					[1969] listitem ''
+						ListMarker '•'
+						StaticText 'WIRELESS | PRINT | COPY | SCAN | FAX | ETHERNETAuto 2-sided print, copy, scan & faxPrint from iPad, iPhone, tablets & smartphonesBuilt-in wireless & Ethernet networking; includes Wi-Fi DirectFront tray plus rear tray for envelopes & specialty mediaDesigned to be jam free252 Standard-capacity Black, Cyan, Magenta, YellowPrinting: 17.7" x 22" x 9.6"Storage: 17.7" x 16.4" x 9.6"Weight: 21.4 lbEpson WorkForce WF-3620 All-in-One, instruction manual, CD-ROM for product setup, power cord, DURABrite Ultra Ink cartridges – Four 252-series ink cartridges: Black, Cyan, Magenta, Yellow'
+					[1971] listitem ''
+						ListMarker '•'
+						StaticText 'Epson strongly recommends the use of Genuine Epson inks for a quality printing experience. Non Epson inks and inks not formulated for your specific printer may cause damage that is not covered by the Epson warranty.'
+					[1973] listitem ''
+						ListMarker '•'
+						StaticText 'Get Performance Beyond Laser with the WorkForce WF-3620, powered by Precision Core'
+					[1975] listitem ''
+						ListMarker '•'
+						StaticText 'Save time - Professional-quality prints with speeds of 19 ISO ppm (black) and 10 ISO ppm (color)'
+					[1977] listitem ''
+						ListMarker '•'
+						StaticText 'Save up to 40 percent lower printing cost vs. color laser'
+					[1979] listitem ''
+						ListMarker '•'
+						StaticText 'Print anywhere, anytime - from iPad, iPhone, tablets and smartphones; includes wireless and Wi-Fi Direct'
+					[1981] listitem ''
+						ListMarker '•'
+						StaticText 'Do more - auto 2-sided print, copy, scan and fax; plus 35-page Auto Document Feeder'
+					[1983] listitem ''
+						ListMarker '•'
+						StaticText 'Never run out of ink again - Printer features Amazon Dash Replenishment which, after activation, keeps track of your ink usage and orders more from Amazon when you are running low.'
+				[1986] table ''
+					[1987] rowgroup ''
+						[1988] row ''
+							[1989] rowheader 'Product Dimensions'
+							[1990] gridcell '19.2 x 21.1 x 12.9 inches'
+						[1991] row ''
+							[1992] rowheader 'Item Weight'
+							[1993] gridcell '24.7 pounds'
+						[1994] row ''
+							[1995] rowheader 'Item model number'
+							[1996] gridcell 'C11CD19201'
+						[1997] row ''
+							[1998] rowheader 'Batteries'
+							[1999] gridcell '1 Lithium ion batteries required.'
+						[2000] row ''
+							[2001] rowheader 'Is Discontinued By Manufacturer'
+							[2002] gridcell 'No'
+						[2003] row ''
+							[2004] rowheader 'Date First Available'
+							[2005] gridcell 'June 2, 2014'
+						[2006] row ''
+							[2007] rowheader 'Manufacturer'
+							[2008] gridcell 'Epson'
+			[2009] tab 'Reviews (12)', expanded=False, selected=False, controls='reviews'
+				[2010] link 'Reviews (12)'
+					StaticText '('
+					StaticText '12'
+					StaticText ')'
+	[2075] contentinfo ''
+		[2081] Section ''
+			StaticText '\ue61d'
+			[2084] LabelText ''
+				StaticText 'Sign Up for Our Newsletter:'
+				[2086] textbox 'Sign Up for Our Newsletter:'
+			[2088] button 'Subscribe'
+				StaticText 'Subscribe'
+		[2090] list ''
+			[2091] listitem ''
+				[2092] link 'Privacy and Cookie Policy'
+			[2093] listitem ''
+				[2094] link 'Search Terms'
+			[2095] listitem ''
+				[2096] link 'Advanced Search'
+			[2097] listitem ''
+				[2098] link 'Contact Us'
+		StaticText 'Copyright © 2013-present Magento, Inc. All rights reserved.'
+		StaticText 'Help Us Keep Magento Healthy'
+		StaticText ''
+		[2103] link 'Report All Bugs'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# Progress Summary
+No progress made yet.

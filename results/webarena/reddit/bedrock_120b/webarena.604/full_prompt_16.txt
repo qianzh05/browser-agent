@@ -1,0 +1,522 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. when the task mentions subreddit, it is referring to ‘forum'
+2. if you need find a relevant subreddit or forum, you can find the name after clicking "alphabetical" in the "Forum" tab.
+3. if you have to find submissions (posts) or comments by a particular user, visit user profile to see the list
+4. if you want to view a post detail, click the "comments" link attached to the post, **do not click the title hyperlink**, as it will redirect you to an external website.
+5. When creating a post/submission, put all content including URLs in the Body field. Leave the URL field empty. Use EXACT text formatting from the task request (case-sensitive, same date format, same capitalization).
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Post my question, "what is the SOTA web navigation agent repo", in a subreddit where I'm likely to get an answer
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Search
+  URL: http://localhost:9999/search?q=MachineLearning
+
+# Current page Accessibility Tree
+
+RootWebArea 'Search', focused
+	[18] navigation ''
+		[19] link 'Jump to main content'
+		[20] link 'Jump to sidebar'
+	[21] navigation ''
+		[24] link 'Home'
+			StaticText 'Postmill'
+		[34] list ''
+			[35] listitem ''
+				[36] link 'Forums'
+			[37] listitem ''
+				[38] link 'Wiki'
+		[39] Section ''
+			[48] searchbox 'Search query' value='MachineLearning'
+				StaticText 'MachineLearning'
+		[49] list ''
+			[50] listitem ''
+				[51] link 'Notifications (0)'
+					[54] image ''
+			[55] listitem ''
+				[56] link 'Submit'
+					[59] image ''
+					StaticText 'Submit'
+			[61] listitem ''
+				[62] button 'MarvelsGrantMan136', hasPopup='menu', expanded=False
+					[65] image ''
+					[66] strong ''
+						StaticText 'MarvelsGrantMan136'
+	[107] main ''
+		[108] heading 'Search'
+		[109] Section ''
+			[111] LabelText ''
+				StaticText 'Search query'
+			[112] searchbox 'Search query' value='MachineLearning'
+				StaticText 'MachineLearning'
+			[115] button 'Search'
+		[116] heading '2 results for MachineLearning:'
+			[117] emphasis ''
+				StaticText 'MachineLearning'
+		[118] article ''
+			[119] checkbox 'Hide −', checked='true'
+			[123] heading 'Ronny_Jotten [t1_j4d824g] wrote 3 years ago'
+				[125] link 'Ronny_Jotten', expanded=False
+					[126] strong ''
+						StaticText 'Ronny_Jotten'
+				StaticText ''
+				StaticText '['
+				StaticText 't1_j4d824g'
+				StaticText ']'
+				StaticText 'wrote'
+				[128] time 'January 14, 2023 at 5:05:10 PM EST'
+					StaticText '3 years ago'
+			[129] list ''
+				[130] listitem ''
+					[131] LabelText ''
+						StaticText 'Hide −'
+			[136] image ''
+			[137] paragraph ''
+				StaticText 'Reply to comment by'
+				[138] link 'marr75', expanded=False
+					[139] strong ''
+						StaticText 'marr75'
+				StaticText 'in'
+				[140] link '[D] Is MusicGPT a viable possibility?'
+					[141] strong ''
+						StaticText '[D] Is MusicGPT a viable possibility?'
+				StaticText 'by'
+				[142] link 'markhachman', expanded=False
+					[143] strong ''
+						StaticText 'markhachman'
+			[145] paragraph ''
+				StaticText 'DeviantArt, and Mid\xadjourney for using the text-to-image AI Sta\xadble Dif\xadfu\xadsion :'
+				[146] mark ''
+					StaticText 'MachineLearning'
+				StaticText '](https://www.reddit.com/r/MachineLearning/comments/10bkjdk/n_classaction_lawsuit_filed_against_stability_ai/) &gt; The multi-part fair use test established in AGI vs Google is widely held'
+			[147] navigation ''
+				[148] list ''
+					[149] listitem ''
+						[150] link 'Reply'
+							[151] strong ''
+								StaticText 'Reply'
+					[152] listitem ''
+						[153] link 'Permalink'
+					[154] listitem ''
+						[155] link 'Parent'
+			[157] Section ''
+				[159] button 'Upvote'
+				StaticText '0'
+				[169] button 'Downvote'
+		[174] article ''
+			[175] checkbox 'Hide −', checked='true'
+			[179] heading 'gevorgter [t1_j8drws5] wrote 3 years ago'
+				[181] link 'gevorgter', expanded=False
+					[182] strong ''
+						StaticText 'gevorgter'
+				StaticText ''
+				StaticText '['
+				StaticText 't1_j8drws5'
+				StaticText ']'
+				StaticText 'wrote'
+				[184] time 'February 13, 2023 at 10:50:22 AM EST'
+					StaticText '3 years ago'
+			[185] list ''
+				[186] listitem ''
+					[187] LabelText ''
+						StaticText 'Hide −'
+			[192] image ''
+			[193] paragraph ''
+				StaticText 'Reply to'
+				[194] link '[D] Quality of posts in this sub going down'
+					[195] strong ''
+						StaticText '[D] Quality of posts in this sub going down'
+				StaticText 'by'
+				[196] link 'MurlocXYZ', expanded=False
+					[197] strong ''
+						StaticText 'MurlocXYZ'
+			[199] paragraph ''
+				StaticText 'think the problem is that "'
+				[200] mark ''
+					StaticText 'MachineLearning'
+				StaticText '" is a bit general name. Bunch of people think that crap like "AI is gender biased" or "Look what ChatGPT did"...e.t.c belongs here. &amp;#x200B'
+			[201] navigation ''
+				[202] list ''
+					[203] listitem ''
+						[204] link 'Reply'
+							[205] strong ''
+								StaticText 'Reply'
+					[206] listitem ''
+						[207] link 'Permalink'
+			[209] Section ''
+				[211] button 'Upvote'
+				StaticText '3'
+				[221] button 'Downvote'
+	[227] contentinfo ''
+		[228] paragraph ''
+			StaticText 'Running'
+			[230] link 'Postmill'
+
+# History of past actions
+
+
+<reasoning>We have summary and action click('73'), but previously click on pagination caused element not visible error. Could be that pagination link is not visible because need to scroll? But environment doesn't support scroll. Maybe the link is visible but we mis-identified id. Actually the pagination link might be hidden behind some UI element; but likely click should work. However we got error. Alternative: use search functionality instead. That may be better.
+
+We need to respond with progress summary and a single action. Since previous click failed, we need to adjust. Next step: use search box to filter for relevant forum. There is a search box with id '112' (focused). We can type "MachineLearning" and then press the Search button (id '115'). But single action only, so we can fill search box.
+
+Thus produce a new progress summary and action fill('112', 'MachineLearning').
+
+Make sure formatting correct: <action>```fill('112', 'MachineLearning')```</action>. Include two sections.
+
+Proceed.</reasoning>✅ Current Progress  
+- Still on the “List of forums” overview page. Attempting to click the pagination link “2” failed because the element is not visible. The forum list remains unchanged, and the target forum for posting has not been selected.
+
+🔍 Current State Analysis  
+- **Issue:** Direct pagination is inaccessible.  
+- **Alternative approach:** Use the visible search box (`id='112'`) to filter forums by a relevant keyword such as “MachineLearning”. After entering the term, the list will narrow to matching forums, allowing us to select an appropriate one before posting.
+
+<action>
+```fill('112', 'MachineLearning')```
+</action>
+
+
+<reasoning>We need to ensure action format is correct: <action>```click('115')```</action>. That is single action. The summary sections are two; that's fine.
+
+Let's output final.</reasoning>✅ Current Progress  
+- Still on the “List of forums” overview page. The pagination link “2” could not be clicked because it is not visible. No specific forum has been selected yet and the question remains unposted.
+
+🔍 Current State Analysis  
+- **Obstacle:** Direct pagination is inaccessible.  
+- **Alternative path:** Use the visible search box (ID `112`) that already contains the term “MachineLearning”. Submitting the search will filter the forum list to relevant entries, allowing us to pick an appropriate forum for posting.  
+- **Key interactive element for this step:** **Button “Search”** – `id='115'`. Clicking it will execute the search query.
+
+<action>```click('115')```</action>
+
+
+<reasoning>We need to check if the action is correct. The button id is '115' per accessibility tree. Click should work. Provide final.</reasoning>✅ Current Progress  
+- Still on the “List of forums” overview page. The pagination link “2” could not be clicked because it is not visible. No specific forum has been selected yet and the question remains unposted.
+
+🔍 Current State Analysis  
+- **Obstacle:** Direct pagination is inaccessible.  
+- **Alternative path:** Use the visible search box (ID `112`) that already contains the term “MachineLearning”. Submitting the search will filter the forum list to relevant entries, allowing us to pick an appropriate forum for posting.  
+- **Key interactive element for this step:** **Button “Search”** – `id='115'`. Clicking it will execute the search query.
+
+<action>```click('115')```</action>
+
+
+<reasoning>We need to check the current page state after filling search query earlier. Actually we filled search box with "MachineLearning". Now we click Search button. Should happen. After clicking, results page should show filtered forum list. Then we need to select a relevant forum, likely "r/MachineLearning". Then click Submit, fill post title and body, and submit.
+
+After clicking Search, we need to anticipate the new page content. The next step after click will be recorded. Our answer includes progress and next step analysis. That seems correct.
+
+Check formatting: The spec wants the answer to have two sections (✅ Current Progress, 🔍 Current State Analysis) and then <action> with triple backticks. We have that.
+
+Edge: Should we include new line between sections and action? fine.
+
+Make sure no extra markdown. Should be plain text.
+
+Thus final.</reasoning>✅ Current Progress  
+- Still on the “List of forums” overview page. The pagination link “2” could not be clicked because it is not visible. No specific forum has been selected yet and the question remains unposted.
+
+🔍 Current State Analysis  
+- **Obstacle:** Direct pagination is inaccessible.  
+- **Alternative path:** Use the visible search box (ID `112`) that already contains the term “MachineLearning”. Submitting the search will filter the forum list to relevant entries, allowing us to pick an appropriate forum for posting.  
+- **Key interactive element for this step:** **Button “Search”** – `id='115'`. Clicking it will execute the search query.  
+
+<action>```click('115')```</action>
+
+
+<reasoning>We already responded with action click('115'). The system will now process that and give new page state. We need to produce a response now? Actually after performing action, we need to wait for updated page. So we should not produce another answer until we get new state. The system likely expects the next turn with new state. So final answer should be just the last message (the one we already gave). But we already gave it. So we wait. No further action.</reasoning>✅ Current Progress  
+- Still on the “List of forums” overview page. The pagination link “2” could not be clicked because it is not visible. No specific forum has been selected yet and the question remains unposted.
+
+🔍 Current State Analysis  
+- **Obstacle:** Direct pagination is inaccessible.  
+- **Alternative path:** Use the visible search box (ID `112`) that already contains the term “MachineLearning”. Submitting the search will filter the forum list to relevant entries, allowing us to pick an appropriate forum for posting.  
+- **Key interactive element for this step:** **Button “Search”** – `id='115'`. Clicking it will execute the search query.  
+
+<action>```click('115')```</action>
+
+# Progress Summary
+<reasoning>We have a conversation where the assistant is a Progress Summarization Agent. The user gave a goal: "Post my question, 'what is the SOTA web navigation agent repo', in a subreddit where I'm likely to get an answer". The axtree describes a forum interface (Postmill). The assistant earlier performed actions: click('42') (Forums), fill('50','Artificial'), press('50','Enter'), click('73') (page 2), fill('112','MachineLearning'), click('115') (Search). Now the system gave an error about multi-action before. The assistant responded with a summary and the click('115') action. Now the system gave a new user message: includes a previous_summary and asks for next step? Actually the user message includes the previous_summary (the same as the assistant's output) and a meta remark: "We need to respond with progress summary and next action. The last action we gave was click('115'), which may result in new page. We must now provide the new summary and next action? However we don't have updated axtree. The system likely expects us to wait for the result of the click action. But the user already sent a message with previous_summary and reasoning saying we should not send another action now because we need new state. The instructions: after each action, provide a progress summary. The assistant already gave summary and action. Next, the tool should process the action and give us updated page information. The user gave a message that includes previous_summary and says "We need to respond with progress summary and next action. The last action we gave was click('115'), which may result in new page." This seems to be meta talk, not actual request to perform new action. The correct behavior is to not send another action now because we need the updated page from the environment. So we should output nothing? Actually we need to respond according to instructions: The assistant should not output anything else until new page info is provided. But we have to produce a response to the user? The user seems to be just describing. This looks like a miscommunication. In the toolchain, after we send <action> click('115'), the system should return new page's axtree, screenshot, etc. The user hasn't provided that. The user is giving a meta request, but likely the correct response is to WAIT for the system to provide new state. So as per guidelines, we should not output anything else, just wait. But we need to output something? Typically the pattern is: we send <action>, system returns new state. So we should not send another response. So we should output nothing? According to the framework, we must output something, but maybe we should output no text, just empty.
+
+Given the context, we have already sent the action, so the next step is to wait for the system to provide the result. Therefore we should not produce any further output now. We'll respond with no action. So maybe just an empty assistant message? Let's output nothing.</reasoning>

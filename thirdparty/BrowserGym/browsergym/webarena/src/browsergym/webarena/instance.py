@@ -197,8 +197,10 @@ class WebArenaInstance:
                 password = self.credentials[site]["password"]
 
                 page.goto(url)
-                page.get_by_label("Username").fill(username)
-                page.get_by_label("Password").fill(password)
+                page.wait_for_load_state("networkidle")
+                page.wait_for_selector("#username", timeout=60000)
+                page.locator("#username").fill(username)
+                page.locator('input[name="login[password]"]').fill(password)
                 page.get_by_role("button", name="Sign in").click()
 
             case "wikipedia":

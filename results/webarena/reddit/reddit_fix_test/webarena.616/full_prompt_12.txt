@@ -1,0 +1,373 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Re-post the image of Thanksgiving turkey in this page to funny subreddit and note "from /f/pics"
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Create submission
+  URL: http://localhost:9999/submit
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+<think>
+Task: Re-post the Thanksgiving turkey image seen on the site to the funny subreddit (/f/funny) and include the note "from /f/pics".
+
+Progress so far: I executed a search for “Thanksgiving turkey” and clicked on a turkey image result (bid 232) to open its post. The next steps are to (a) obtain the direct image URL or the post’s link target, and (b) create a new submission in /f/funny using that URL with a note indicating it’s from /f/pics.
+
+Given uncertainty about the current page state after clicking the image (no updated screenshot provided), a reliable next move that advances the posting workflow regardless of page state is to open the site’s submission form directly. The Postmill instance typically has a global submission route at /submit (the attempt to use /f/funny/submit resulted in 404 earlier). From there, I can select the target forum “funny” and prepare the post fields. I will still need the image URL, but opening the submission page is a safe step forward that sets up the form while I subsequently retrieve the image URL (if necessary, I can navigate back after setting the forum and title or open another tab later).
+
+Therefore, I will navigate directly to the submission form at /submit.
+</think>
+<action>
+```goto("http://localhost:9999/submit")```
+</action>
+
+
+<think>
+The user wants me to repost a Thanksgiving turkey image to the funny subreddit with the note “from /f/pics.” I’m currently on the global Create submission form at /submit, which requires a URL, title, body, and forum selection. I still need the turkey image’s URL. Previously, I navigated through search results and clicked the turkey post, then went to /submit. The most direct way to obtain the image URL is to go back to the turkey post page where I can copy the link (often with a copy button) and then return here to fill the form. Therefore, the next best action is to go back one page to the turkey post detail.
+</think>
+<action>
+```go_back()```
+</action>
+
+
+<think>
+Goal: Cross-post the Thanksgiving turkey image from the current search results page to /f/funny with a note "from /f/pics".
+
+Current state: I’m on the Search results page for "Thanksgiving turkey". I can see a result item displaying a clear photo of a cooked turkey next to a pot on a tray—this looks like the relevant image to repost. To cross-post it, I should first open that specific post to access its direct link (or image URL), then use the global submission form to submit to /f/funny and include the note in the body.
+
+Best next step: Click the turkey image in the search results to open the post detail page where I can find the link to the image or source, which is necessary for creating the new submission.
+</think>
+<action>
+```click("206")```</action>
+
+
+<think>
+The goal is to repost the Thanksgiving turkey image to /f/funny with the note "from /f/pics". I'm currently on the Search results page for "Thanksgiving turkey." I previously attempted to click an element with bid 206, which timed out because it was a hidden "down" arrow image, not the actual post or image. I need to open the post that clearly shows the turkey image to get the link or access a repost/share action. In the screenshot, the turkey image near the top portion has a visible clickable area with bid 232 (this was successfully targeted earlier before navigating away). Therefore, the best next step is to click the visible turkey image thumbnail (bid 232) to open the post details page where I can obtain the URL for reposting.
+</think>
+<action>
+```click("232")```</action>
+
+
+<think>
+Objective: Re-post the Thanksgiving turkey image found on this site to the "funny" subreddit, adding the note "from /f/pics".
+
+State: I just clicked the thumbnail of the turkey image in the search results (bid 232) to open the post detail page. The next step in a typical workflow is to prepare the submission form where I will submit the link to /f/funny. I still need the image URL, but I can open the submission form first (it’s accessible globally via the top navigation "Submit" link) and then come back to copy the image URL (ideally via a copy button on the post page) and paste it into the form. This keeps momentum and positions me to fill the forum and body note while I retrieve the URL in a subsequent step.
+
+Given the header’s "Submit" link is consistent across pages (previously identified as bid 56), clicking it will bring up the create submission form where I can specify forum "funny" and include the note. I will then return to grab the image URL and paste it into the URL field.
+
+Plan:
+1) Click "Submit" in the header to open the submission form.
+2) Set forum to funny and add note "from /f/pics" in body.
+3) Return to the turkey post to copy the image URL (using any copy button if available).
+4) Paste URL into the submission form and submit.
+
+Proceeding with step 1.
+</think>
+<action>
+```click("56")```
+</action>
+
+# Progress Summary
+✅ Current Progress:
+- Navigated to the global Create submission form (/submit).
+- “URL” post type is selected. No fields have been filled yet.
+- Previously located a turkey image in search results but did not capture its URL.
+
+🔍 Current State Analysis:
+- This page is on the critical path: it’s the correct form to create a post to the “funny” forum.
+- Relevant interactive elements and states:
+  - radio “URL” [119] — selected (true).
+  - radio “Image” [121] — not selected.
+  - textbox (URL field) [127] — empty, visible, enabled.
+  - textbox “Title” (required) [137] — empty, visible, enabled.
+  - textbox “Body” [142] — empty, visible, enabled (should include note: “from /f/pics”).
+  - combobox “Forum” [378] — value “Choose one…”, visible, enabled (must select “funny”).
+  - button “Create submission” [395] — visible, enabled but will fail until required fields are filled.
+- To complete the goal: paste the turkey image’s URL into [127], provide a title in [137], set Body [142] to “from /f/pics”, choose “funny” in Forum [378], then click “Create submission” [395]. If the image URL isn’t known, navigate back to the turkey post to copy it.

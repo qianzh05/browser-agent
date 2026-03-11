@@ -1,0 +1,569 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. To find routes from point A to B, you can use the ‘two arrow' button on the right hand side of the ‘Go' button. If the name of a location is not well known, you should look up the one in Pittsburgh, PA. If the question has a yes/no answer, include yes or no in the answer. If your answer contains an address, please use the format ‘OpenAI, 575 Florida Street, Mission District, San Francisco' (landmark, street, district, city). If the answer contains a phone number, please use the format ‘8002428478' (no country calling codes). If the answer contains a distance, please use the format ‘5km', ‘645m' (no space between the number and the unit). 
+2. To search for a location, you just input the name and click on the 'Go' button. To find routes from point A to B, you need to use the 'press' button after you input the starting location and ending location.
+3. Please only perform actions on the current map website, as it is sufficient to complete all tasks. You should not return an answer with a request for other map engine like google map.
+4. When the task asks for the full address make sure to inclue **ZIP CODE** (this means choosing the address that has a zip code).
+5. **For ADDRESS questions**: A "full address" means a COMPLETE street address with ALL components (GET THE ADDRESS ALWAYS FROM OPENSTREETMAP!):
+    - Street number (e.g., "1000")
+    - Street name (e.g., "Airport Boulevard" or "International Drive")
+    - City or Township
+    - State
+    - ZIP code
+    - Country (if applicable)
+    Example: "1000 Airport Boulevard, Pittsburgh, PA 15231, United States"
+    If OpenStreetMap doesn't have the street number, try:
+    - Using the Wikipedia subagent to find the official address
+    - Searching for the location's "Contact" or "About" page
+    - Cross-referencing multiple sources until you have the complete address
+6. Because the evaluation is conducted in a mock environment, all data and information are current as of December 31, 2022. For example, Turing Award winners should be based on data available prior to December 31, 2022.
+7. Keep your responses as concise as possible and avoid redundant information. Example:
+    Q: "What's the closest national park to the largest city in Maine?".
+    A: "Acadia National Park"
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Measure distance between Carnegie Mellon University and CVS (closet one) by walking
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: OpenStreetMap
+  URL: http://localhost:3000/directions?engine=fossgis_osrm_foot&route=40.444%2C-79.943%3B40.452%2C-79.952#map=16/40.4479/-79.9472
+
+# Current page Accessibility Tree
+
+RootWebArea 'OpenStreetMap', focused
+	[44] banner ''
+		[45] heading 'OpenStreetMap logo OpenStreetMap'
+			[46] link 'OpenStreetMap logo OpenStreetMap'
+				[49] image 'OpenStreetMap logo'
+				StaticText ''
+		[51] navigation ''
+			[95] link 'Edit'
+			[96] button ''
+			[102] link 'History'
+			[103] link 'Export'
+		[104] navigation ''
+			[105] list ''
+				[106] listitem ''
+					[107] link 'GPS Traces'
+				[108] listitem ''
+					[109] link 'User Diaries'
+				[110] listitem ''
+					[111] link 'Communities'
+				[112] listitem ''
+					[113] link 'Copyright'
+				[114] listitem ''
+					[115] link 'Help'
+				[116] listitem ''
+					[117] link 'About'
+			[134] link 'Log In'
+			[135] link 'Sign Up'
+	[151] Section ''
+		[153] button 'Close'
+		[156] image ''
+		[158] textbox 'From' value='Carnegie Mellon University, Pittsburgh, Allegheny County, 15213, United States'
+			StaticText 'Carnegie Mellon University, Pittsburgh, Allegheny County, 15213, United States'
+		[161] image ''
+		[163] textbox 'To' value='CVS Pharmacy, 4610, Centre Avenue, North Oakland, Pittsburgh, Allegheny County, 15213, United States'
+			StaticText 'CVS Pharmacy, 4610, Centre Avenue, North Oakland, Pittsburgh, Allegheny County, 15213, United States'
+		[166] combobox '' value='Foot (OSRM)', hasPopup='menu', expanded=False
+			[167] option 'Bicycle (OSRM)', selected=False
+			[168] option 'Car (OSRM)', selected=False
+			[169] option 'Foot (OSRM)', selected=True
+		[171] button 'Go', focused
+		[174] button 'Reverse Directions'
+	[8447] heading 'Directions'
+	[8449] button 'Close'
+	[8450] paragraph ''
+		StaticText 'Distance: 1.5km. Time: 0:19.'
+	[8451] table ''
+		[8452] row ''
+			[8453] gridcell ''
+			[8455] gridcell '1. Start on unnamed road'
+				StaticText '1.'
+			[8457] gridcell '10m'
+		[8458] row ''
+			[8459] gridcell ''
+			[8461] gridcell '2. Turn right onto unnamed road'
+				StaticText '2.'
+			[8463] gridcell '20m'
+		[8464] row ''
+			[8465] gridcell ''
+			[8467] gridcell '3. Turn right onto unnamed road'
+				StaticText '3.'
+			[8469] gridcell '10m'
+		[8470] row ''
+			[8471] gridcell ''
+			[8473] gridcell '4. Turn left onto unnamed road'
+				StaticText '4.'
+			[8475] gridcell '20m'
+		[8476] row ''
+			[8477] gridcell ''
+			[8479] gridcell '5. Turn right onto unnamed road'
+				StaticText '5.'
+			[8481] gridcell '30m'
+		[8482] row ''
+			[8483] gridcell ''
+			[8485] gridcell '6. At the fork turn right onto unnamed road'
+				StaticText '6.'
+			[8487] gridcell '30m'
+		[8488] row ''
+			[8489] gridcell ''
+			[8491] gridcell '7. Turn right onto unnamed road'
+				StaticText '7.'
+			[8493] gridcell ''
+		[8494] row ''
+			[8495] gridcell ''
+			[8497] gridcell '8. Turn left onto unnamed road'
+				StaticText '8.'
+			[8499] gridcell '80m'
+		[8500] row ''
+			[8501] gridcell ''
+			[8503] gridcell '9. Turn left onto unnamed road'
+				StaticText '9.'
+			[8505] gridcell '10m'
+		[8506] row ''
+			[8507] gridcell ''
+			[8509] gridcell '10. Turn right onto unnamed road'
+				StaticText '10.'
+			[8511] gridcell '50m'
+		[8512] row ''
+			[8513] gridcell ''
+			[8515] gridcell '11. At the end of the road turn left onto unnamed road'
+				StaticText '11.'
+			[8517] gridcell '40m'
+		[8518] row ''
+			[8519] gridcell ''
+			[8521] gridcell '12. Turn right onto unnamed road'
+				StaticText '12.'
+			[8523] gridcell '10m'
+		[8524] row ''
+			[8525] gridcell ''
+			[8527] gridcell '13. Turn left onto unnamed road'
+				StaticText '13.'
+			[8529] gridcell '50m'
+		[8530] row ''
+			[8531] gridcell ''
+			[8533] gridcell '14. Turn right onto unnamed road'
+				StaticText '14.'
+			[8535] gridcell '130m'
+		[8536] row ''
+			[8537] gridcell ''
+			[8539] gridcell '15. Turn left onto unnamed road'
+				StaticText '15.'
+			[8541] gridcell '300m'
+		[8542] row ''
+			[8543] gridcell ''
+			[8545] gridcell '16. At the fork turn right onto unnamed road'
+				StaticText '16.'
+			[8547] gridcell '30m'
+		[8548] row ''
+			[8549] gridcell ''
+			[8551] gridcell '17. At the end of the road turn left onto unnamed road'
+				StaticText '17.'
+			[8553] gridcell '120m'
+		[8554] row ''
+			[8555] gridcell ''
+			[8557] gridcell '18. Turn right onto unnamed road'
+				StaticText '18.'
+			[8559] gridcell '600m'
+		[8560] row ''
+			[8561] gridcell ''
+			[8563] gridcell '19. Reach destination'
+				StaticText '19.'
+			[8565] gridcell ''
+	[8566] paragraph ''
+		StaticText 'Directions courtesy of'
+		[8567] link 'OSRM (FOSSGIS)'
+	[8569] image ''
+	[8570] image ''
+	[8571] image ''
+	[8572] image ''
+	[8573] image ''
+	[8574] image ''
+	[8575] image ''
+	[8576] image ''
+	[8577] image ''
+	[8578] image ''
+	[8579] image ''
+	[8580] image ''
+	[8581] image ''
+	[8582] image ''
+	[8583] image ''
+	[8584] image ''
+	[8443] image ''
+	[440] image ''
+	[8444] image ''
+	[441] button 'Marker'
+	[8445] button 'Marker'
+	[394] link 'Zoom In'
+	[396] link 'Zoom Out'
+	[399] button 'Show My Location'
+	[402] link 'Layers'
+	[405] link ''
+	[408] link 'Share'
+	[411] link ''
+	[414] link ''
+	StaticText '100 m'
+	StaticText '500 ft'
+	StaticText '©'
+	[422] link 'OpenStreetMap contributors'
+	StaticText '♥'
+	[423] link 'Make a Donation'
+	StaticText '.'
+	[424] link 'Website and API terms'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+<think>
+The goal is to measure the walking distance between Carnegie Mellon University and the closest CVS using the OpenStreetMap directions page. The UI shows two textboxes: "From" [158] and "To" [163], and the routing mode combobox [166], which is already set to "Foot (OSRM)"—this matches the walking requirement. The next step is to enter the starting point. I should fill the "From" field with "Carnegie Mellon University, Pittsburgh, PA" to anchor the route around Pittsburgh, which will also help ensure that when I later enter "CVS" in the "To" field, the nearest CVS is selected relative to CMU. Since only one action is allowed, I will fill the From field first.
+</think>
+<action>
+```fill('158', 'Carnegie Mellon University, Pittsburgh, PA')```
+</action>
+
+
+<think>
+The user wants the walking distance between Carnegie Mellon University and the closest CVS. I’m on the OpenStreetMap Directions page with the “From” field already set to “Carnegie Mellon University, Pittsburgh, PA” and the routing mode set to “Foot (OSRM)”, which is correct for walking. The next step is to specify the destination. To find the nearest CVS, I’ll enter a generic destination like “CVS Pharmacy” in the “To” field; OpenStreetMap’s geocoder typically selects a relevant nearby result, often near the origin context. After this, I’ll click Go to compute the route and then read the walking distance from the results. Since only one action is allowed per step, I will fill the “To” textbox now.
+</think>
+<action>
+```fill('163', 'CVS Pharmacy')```
+</action>
+
+
+<think>
+The user wants the walking distance between Carnegie Mellon University and the nearest CVS. I’m on the OpenStreetMap directions page with:
+- From: “Carnegie Mellon University, Pittsburgh, Allegheny County, 15213, United States” (already populated)
+- To: “CVS Pharmacy” (generic, which should select a nearby CVS)
+- Mode: “Foot (OSRM)” (correct for walking)
+
+The next step is to compute the route so the sidebar will display the walking distance. The appropriate control is the “Go” button [171]. I will click it to generate the route and then read the distance from the results.
+</think>
+<action>
+```click("171")```
+</action>
+
+
+<think>
+The current Directions panel shows a walking route from “Carnegie Mellon University, Pittsburgh…” to “CVS Pharmacy, CVS, Johnston, Rhode Island,” with an absurd distance of 963km. The destination was incorrectly resolved due to the generic “CVS Pharmacy” query. To measure the walking distance to the closest CVS near CMU, I should refine the “To” field to constrain the search around Pittsburgh/CMU’s ZIP code so the geocoder picks a nearby CVS. The best next step is to replace the “To” field with “CVS, Pittsburgh, PA 15213” and then click Go in a subsequent step to recompute the route. Only one action is allowed now, so I will fill the “To” field first.
+</think>
+<action>
+```fill('163', 'CVS, Pittsburgh, PA 15213')```
+</action>
+
+
+<think>
+The user wants the walking distance between Carnegie Mellon University and the closest CVS. The OpenStreetMap Directions panel is open with:
+- From: “Carnegie Mellon University, Pittsburgh, Allegheny County, 15213, United States”
+- To: “CVS, Pittsburgh, PA 15213”
+- Mode: Foot (OSRM)
+
+The Directions summary currently shows an outdated 963km result from a previous incorrect destination (Rhode Island). To recompute the route to a local CVS near CMU with walking mode, I should click the “Go” button. This will update the route and display the correct walking distance in the Directions panel.
+</think>
+<action>
+```click("171")```
+</action>
+
+# Progress Summary
+✅ Current Progress:
+- Walking directions computed from “Carnegie Mellon University, Pittsburgh, Allegheny County, 15213, United States” to “CVS Pharmacy, 4610 Centre Avenue, North Oakland, Pittsburgh, 15213, United States.”
+- Distance displayed: 1.5 km; Estimated time: 0:19.
+- ✅ Task completed.
+
+🔍 Current State Analysis:
+- The page is on the critical path and shows finalized walking results.
+- Relevant elements and states:
+  - Textbox “From” [158] — filled with CMU; visible; enabled.
+  - Textbox “To” [163] — filled with “CVS Pharmacy, 4610, Centre Avenue, North Oakland, Pittsburgh, 15213, United States”; visible; enabled.
+  - Combobox [166] — “Foot (OSRM)” selected; visible; enabled.
+  - Button “Go” [171] — visible; enabled; focused.
+  - Directions summary paragraph [8450] — shows “Distance: 1.5km. Time: 0:19.”

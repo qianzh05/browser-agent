@@ -1,0 +1,601 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. This website provides very detailed category of products. You can hover categories on the top menu to see subcategories.
+2. If you need to find information about your previous purchases, you can go My Account > My Orders, and find order by date, order number, or any other available information
+3. An order is considered out of delivery if it is marked as "processing" in the order status
+4. When the task asks you to draft and email. DO NOT send the email. Just draft it and provide the content in the last message
+5. For questions ONLY about **Nintendo Switch game cards** please navigate back to the url of the product you end up choosing. This is because the benchmark evalautes using the page you are on for the Nintendo task. If you are own the wrong product page it will assume you selected that product.
+6. When asked to "show me products under a price" the benchmark evaluates based on the url. so just ensure the price is under the price asked for in the url.
+7. When asked about product type don't return the acutal product name but rather the type of product it is. Ex: If the most common products are "harry potter" and "twilight" the product type is "books".
+8. **For SHOPPING/BROWSING tasks**: When asked to browse products in a particular category, navigate using the dropdown menus (not search) when possible. This may require hovering over nested dropdowns (e.g., hover over "Electronics" → hover over "Computers" → click "Laptops"). Use the hover tool to reveal these nested menus before clicking.
+9. Task wording can contain typos or singular/plural mismatches. Treat singular terms like "order" or "transaction" as potentially plural. If multiple entries match the described criteria, summarize all of them, list each matching item with its key details, make the quantity explicit, and when the question asks for an amount/total, include the combined sum alongside the itemized numbers. Never assume "the most recent one" unless the instructions explicitly say so.
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+What are the main criticisms of this product? Please extract the relevant sentences.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: OSTENT 16GB Memory Card Stick Storage for Sony PS Vita PSV1000/2000 PCH-Z081/Z161/Z321/Z641
+  URL: http://localhost:7770/ostent-16gb-memory-card-stick-storage-for-sony-ps-vita-psv1000-2000-pch-z081-z161-z321-z641.html
+
+# Current page Accessibility Tree
+
+RootWebArea 'OSTENT 16GB Memory Card Stick Storage for Sony PS Vita PSV1000/2000 PCH-Z081/Z161/Z321/Z641', focused
+	[255] banner ''
+		[258] list ''
+			[259] listitem ''
+				[260] link 'My Account'
+			[261] listitem ''
+				[262] link 'My Wish List 1 item'
+					StaticText '1 item'
+			[264] listitem ''
+				[265] link 'Sign Out'
+			[266] listitem ''
+			[269] listitem ''
+				StaticText 'Welcome, Emma Lopez!'
+		[271] link 'Skip to Content'
+			StaticText 'Skip to Content'
+		[276] link 'store logo'
+			[277] image 'one_stop_market_logo'
+		[279] link '\ue611 My Cart 3 3items'
+			StaticText '\ue611'
+			StaticText 'My Cart'
+			StaticText '3'
+			StaticText '3'
+			StaticText 'items'
+		[415] Section ''
+			[417] LabelText ''
+				StaticText '\ue615'
+				StaticText 'Search'
+			[420] combobox '\ue615 Search', autocomplete='both', hasPopup='listbox', expanded=False
+			[423] link 'Advanced Search'
+			[425] button 'Search', disabled=True
+				StaticText '\ue615'
+				StaticText 'Search'
+	[428] tablist '', multiselectable=False, orientation='horizontal'
+		[431] tabpanel ''
+			[432] navigation ''
+				[433] menu '', orientation='vertical'
+					[435] menuitem '\ue622 Beauty & Personal Care', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Beauty & Personal Care'
+					[652] menuitem '\ue622 Sports & Outdoors', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Sports & Outdoors'
+					[690] menuitem '\ue622 Clothing, Shoes & Jewelry', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Clothing, Shoes & Jewelry'
+					[742] menuitem '\ue622 Home & Kitchen', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Home & Kitchen'
+					[869] menuitem '\ue622 Office Products', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Office Products'
+					[901] menuitem '\ue622 Tools & Home Improvement', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Tools & Home Improvement'
+					[920] menuitem '\ue622 Health & Household', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Health & Household'
+					[944] menuitem '\ue622 Patio, Lawn & Garden', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Patio, Lawn & Garden'
+					[963] menuitem '\ue622 Electronics', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Electronics'
+					[1172] menuitem '\ue622 Cell Phones & Accessories', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Cell Phones & Accessories'
+					[1223] menuitem '\ue622 Video Games', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Video Games'
+					[1272] menuitem '\ue622 Grocery & Gourmet Food', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Grocery & Gourmet Food'
+	[1502] list ''
+		[1503] listitem ''
+			[1504] link 'Home'
+			StaticText '\ue608'
+		[1505] listitem ''
+			[1506] strong ''
+				StaticText 'OSTENT 16GB Memory Card Stick Storage for Sony PS Vita PSV1000/2000 PCH-Z081/Z161/Z321/Z641'
+	[1507] main ''
+		[1510] heading 'OSTENT 16GB Memory Card Stick Storage for Sony PS Vita PSV1000/2000 PCH-Z081/Z161/Z321/Z641'
+			StaticText 'OSTENT 16GB Memory Card Stick Storage for Sony PS Vita PSV1000/2000 PCH-Z081/Z161/Z321/Z641'
+		StaticText 'IN STOCK'
+		[1523] strong ''
+			StaticText 'SKU'
+		StaticText 'B07P69DRY8'
+		[1525] LayoutTable ''
+			StaticText 'Rating:'
+			StaticText '\ue605\ue605\ue605\ue605\ue605'
+			StaticText '\ue605\ue605\ue605\ue605\ue605'
+			StaticText '78'
+			StaticText '% of'
+			StaticText '100'
+			[1536] link '12\xa0 Reviews'
+				StaticText '12'
+				StaticText 'Reviews'
+			[1539] link 'Add Your Review'
+		StaticText '$43.89'
+		[1547] Section ''
+			[1553] LayoutTable ''
+				[1556] LabelText ''
+					StaticText 'Qty'
+				[1559] spinbutton 'Qty' value=1, valuemin=0, valuemax=0, valuetext=''
+					StaticText '1'
+				[1561] button 'Add to Cart'
+					StaticText 'Add to Cart'
+		[1566] link 'Add to Wish List'
+			StaticText 'Add to Wish List'
+		[1568] link 'Add to Compare'
+			StaticText 'Add to Compare'
+		[1573] link 'Skip to the end of the images gallery'
+			StaticText 'Skip to the end of the images gallery'
+		[1583] button 'Previous'
+		[1587] image 'Image'
+		[1590] button 'Next'
+		[1598] button 'Previous'
+		[1602] button 'Image'
+			[1604] image 'Image'
+		[1605] button 'Image'
+			[1607] image 'Image'
+		[1608] button 'Next'
+		[1613] link 'Skip to the beginning of the images gallery'
+			StaticText 'Skip to the beginning of the images gallery'
+		[1617] tablist '', multiselectable=False, orientation='horizontal'
+			[1618] tab 'Details', expanded=False, selected=False, controls='description'
+				[1619] link 'Details'
+			[1806] tab 'Reviews (12)', expanded=True, selected=True, controls='reviews'
+				[1807] link 'Reviews (12)'
+					StaticText '('
+					StaticText '12'
+					StaticText ')'
+			[1809] tabpanel 'Reviews (12)'
+				[2237] strong ''
+					StaticText 'Customer Reviews'
+				[2263] list ''
+					[2264] listitem ''
+						StaticText 'Works and far cheaper'
+						[2266] LayoutTable ''
+							[2267] LayoutTableRow ''
+								[2268] LayoutTableCell 'Rating'
+									StaticText 'Rating'
+								StaticText '\ue605\ue605\ue605\ue605\ue605'
+								StaticText '\ue605\ue605\ue605\ue605\ue605'
+								StaticText '80%'
+						StaticText 'It might look like some knockoff, but this is a real Sony PS Vita memory card. The Sony branding is simply photoshopped off of the store picture. My Vita told me to format the memory card before using it because it was apparently used and had something already stored on there. Now that I’ve formatted it, it works just fine, but I never figured out what was stored on the card previously. It’s a working vita memory card for half the price of the official Sony alternative. An easy choice if you’re looking for one.'
+						[2279] paragraph ''
+							StaticText 'Review by'
+							[2281] strong ''
+								StaticText '~bircS'
+						[2282] paragraph ''
+							StaticText 'Posted on'
+							[2284] time ''
+								StaticText '4/21/23'
+					[2285] listitem ''
+						StaticText 'Memory Card Came Defective'
+						[2287] LayoutTable ''
+							[2288] LayoutTableRow ''
+								[2289] LayoutTableCell 'Rating'
+									StaticText 'Rating'
+								StaticText '\ue605\ue605\ue605\ue605\ue605'
+								StaticText '\ue605\ue605\ue605\ue605\ue605'
+								StaticText '20%'
+						StaticText 'I could not format the card so I wasn’t able to use it for my VITA'
+						[2300] paragraph ''
+							StaticText 'Review by'
+							[2302] strong ''
+								StaticText 'Ernesto'
+						[2303] paragraph ''
+							StaticText 'Posted on'
+							[2305] time ''
+								StaticText '4/21/23'
+				[2309] strong ''
+					StaticText 'Page'
+				[2310] list 'Page'
+					[2311] listitem ''
+						[2312] link '\ue617 Page Previous'
+							StaticText '\ue617'
+							StaticText 'Page'
+							StaticText 'Previous'
+					[2315] listitem ''
+						[2316] link 'Page 1'
+							StaticText 'Page'
+							StaticText '1'
+					[2319] listitem ''
+						[2320] strong ''
+							StaticText "You're currently reading page"
+							StaticText '2'
+				[1815] Section ''
+					[1817] group "You're reviewing: OSTENT 16GB Memory Card Stick Storage for Sony PS Vita PSV1000/2000 PCH-Z081/Z161/Z321/Z641"
+						[1818] Legend ''
+							StaticText "You're reviewing:"
+							[1820] strong ''
+								StaticText 'OSTENT 16GB Memory Card Stick Storage for Sony PS Vita PSV1000/2000 PCH-Z081/Z161/Z321/Z641'
+						[1823] group 'Your Rating*'
+							[1824] Legend ''
+								StaticText 'Your Rating'
+								StaticText '*'
+							[1828] LayoutTable ''
+								[1829] LayoutTableRow ''
+									[1830] LabelText ''
+										StaticText 'Rating'
+									[1832] LayoutTableCell '\ue605\ue605\ue605\ue605\ue605 Rating \ue605 1 star \ue605 1 star Rating \ue605\ue605 2 stars \ue605\ue605 2 stars Rating \ue605\ue605\ue605 3 stars \ue605\ue605\ue605 3 stars Rating \ue605\ue605\ue605\ue605 4 stars \ue605\ue605\ue605\ue605 4 stars Rating \ue605\ue605\ue605\ue605\ue605 5 stars \ue605\ue605\ue605\ue605\ue605 5 stars'
+										StaticText '\ue605\ue605\ue605\ue605\ue605'
+										[1833] radio 'Rating \ue605 1 star', checked='false'
+										[1834] LabelText '1 star'
+											StaticText '\ue605'
+											StaticText '1 star'
+										[1836] radio 'Rating \ue605\ue605 2 stars', checked='false'
+										[1837] LabelText '2 stars'
+											StaticText '\ue605\ue605'
+											StaticText '2 stars'
+										[1839] radio 'Rating \ue605\ue605\ue605 3 stars', checked='false'
+										[1840] LabelText '3 stars'
+											StaticText '\ue605\ue605\ue605'
+											StaticText '3 stars'
+										[1842] radio 'Rating \ue605\ue605\ue605\ue605 4 stars', checked='false'
+										[1843] LabelText '4 stars'
+											StaticText '\ue605\ue605\ue605\ue605'
+											StaticText '4 stars'
+										[1845] radio 'Rating \ue605\ue605\ue605\ue605\ue605 5 stars', checked='false'
+										[1846] LabelText '5 stars'
+											StaticText '\ue605\ue605\ue605\ue605\ue605'
+											StaticText '5 stars'
+						[1850] LabelText ''
+							StaticText 'Nickname'
+							StaticText '*'
+						[1853] textbox 'Nickname*' value='Emma', required
+							StaticText 'Emma'
+						[1855] LabelText ''
+							StaticText 'Summary'
+							StaticText '*'
+						[1858] textbox 'Summary*', required
+						[1860] LabelText ''
+							StaticText 'Review'
+							StaticText '*'
+						[1863] textbox 'Review*', required
+					[1866] button 'Submit Review'
+						StaticText 'Submit Review'
+	[1872] contentinfo ''
+		[1878] Section ''
+			StaticText '\ue61d'
+			[1881] LabelText ''
+				StaticText 'Sign Up for Our Newsletter:'
+				[1883] textbox 'Sign Up for Our Newsletter:'
+			[1885] button 'Subscribe'
+				StaticText 'Subscribe'
+		[1887] list ''
+			[1888] listitem ''
+				[1889] link 'Privacy and Cookie Policy'
+			[1890] listitem ''
+				[1891] link 'Search Terms'
+			[1892] listitem ''
+				[1893] link 'Advanced Search'
+			[1894] listitem ''
+				[1895] link 'Contact Us'
+		StaticText 'Copyright © 2013-present Magento, Inc. All rights reserved.'
+		StaticText 'Help Us Keep Magento Healthy'
+		StaticText ''
+		[1900] link 'Report All Bugs'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+<think>
+The user wants the main criticisms of the product, which will likely be found in customer reviews. On the current product page, there is a "Reviews (12)" tab that is not selected. To access the review content, I need to open this Reviews tab. The accessibility tree shows a link labeled "Reviews (12)" with bid 1807. Clicking this should reveal the review content so I can read and extract the negative/critical sentences.
+</think>
+<action>
+```click('1807')```
+</action>
+
+
+<think>
+The user wants the main criticisms of the product from the reviews and asks to extract relevant sentences. The current page is the product page with the Reviews (12) tab already open, and I can see Page 1 reviews with some negative remarks (e.g., slower speeds, only ~14GB available, used cards with prior data, no original packaging, one defective/unformattable card). To ensure completeness, I should also check Page 2 of the reviews via the pagination link to capture any additional criticisms that might be present there. The pagination control shows a link labeled "Page 2" (bid 2221). Clicking it should load the second page of reviews in the same tab, enabling me to extract further negative sentences. I will click the "Page 2" link next.
+</think>
+<action>
+```click('2221')```
+</action>
+
+# Progress Summary
+✅ Current Progress:
+- Opened the product’s Reviews section.
+- Navigated to Page 2 of the reviews to capture additional feedback.
+
+🔍 Current State Analysis:
+- The current product detail page (Customer Reviews area) is directly on the critical path to extracting criticisms.
+- Relevant elements for proceeding:
+  - Link “12 Reviews” (id: 1536) — visible/enabled; anchors to the reviews section.
+  - Customer Reviews section — visible; review bodies are readable static text.
+  - Pagination link for Page 2 (id: 2221) — clicked; additional reviews now visible.
+  - “Add Your Review” (id: 1539) — visible/enabled; not required for extraction.
+- Notable criticism sentences visible in reviews include issues such as: inability to format/use the card, reduced usable capacity (~14GB), prior data present (suggesting used/refurbished), and lower performance/branding concerns.
+- No errors or detours detected; proceed to extract the critical sentences from the visible reviews (and paginate if more pages remain).

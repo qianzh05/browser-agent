@@ -1,0 +1,1001 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. your user name is byteblaze
+2. To add new members to the project, you can visit project information > members tab and click blue "invite members" button on top right
+3. To set your status, click profile button on top right corner of the page (it's next to the question mark button) and click edit status
+4. To edit your profile, click profile button on top right corner of the page (it's next to the question mark button) and click edit profile
+5. You can also access to your information e.g. access token, notifications, ssh keys and more from "edit profile" page
+6. Projects that you have contributed to are listed under Project / Yours / All tab of gitlab.site. You can sort repos using dropdown button on top right
+7. Projects's repository tab has menus like Commits, Branches, Contributors, and more. Contributors tab shows contributors and their number of commits
+8. If you want to see all the issues for you, you can either click button on the right of + icon on top right menu bar
+9. When the task mentions branch main, it often means master
+10. `dotfiles` is my one of repository
+11. Click the GitLab icon in the top-left corner to view all projects (Yours / Starred / Explore / Topics). In the Explore tab, you can browse All Explore, Most Stars, and Trending repository.
+12. When asked to make changes to a repository, commit changes to the main branch UNLESS the task specifically asks you to create a branch, make a merge request, or follow a different workflow.
+13. Do not use the global search bar(Search GitLab), it is currently not working. To search for a repository, go to the search URL instead: http://localhost:8023/search?search=<repository-name>&nav_source=navbar. Replace <repository-name> with the project name only (e.g., openapi-generator), without the group or namespace prefix (e.g., do not use OpenAPITools/openapi-generator). Example: goto('http://localhost:8023/search?search=openapi-generator&nav_source=navbar')
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Open an issue to request adding support for MT theme editor in a11y-syntax-highlighting.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Byte Blaze / a11y-syntax-highlighting · GitLab
+  URL: http://localhost:8023/byteblaze/a11y-syntax-highlighting
+
+# Current page Accessibility Tree
+
+RootWebArea 'Byte Blaze / a11y-syntax-highlighting · GitLab', focused
+	[67] banner ''
+		[68] link 'Skip to content'
+		StaticText 'GitLab'
+		[74] link 'Dashboard'
+			[75] image ''
+		[78] list ''
+			[79] listitem ''
+				[80] button '', hasPopup='menu', expanded=False
+		[140] list ''
+			[141] listitem ''
+				[143] Section ''
+					[145] image ''
+					[146] textbox 'Search GitLab'
+		[158] list ''
+			[159] listitem ''
+				[160] link 'Create new...'
+					[161] image ''
+					[162] image ''
+			[182] listitem ''
+				[183] link 'Issues'
+					[184] image ''
+			[186] listitem ''
+				[187] link 'Merge requests'
+					[188] image ''
+					[190] image ''
+			[200] listitem ''
+				[201] link 'To-Do List'
+					[202] image ''
+					StaticText '5'
+			[204] listitem ''
+				[205] link 'Help'
+					StaticText 'Help'
+					[207] image ''
+					[209] image ''
+			[230] listitem ''
+				[231] link 'Byte Blaze'
+					[232] image 'Byte Blaze'
+					[233] image ''
+	[269] complementary 'Project navigation'
+		[271] list ''
+			[272] listitem 'a11y-syntax-highlighting'
+				[273] link 'a11y-syntax-highlighting'
+					StaticText 'A'
+					StaticText 'a11y-syntax-highlighting'
+			[277] listitem ''
+				[278] link 'Project information'
+					[280] image ''
+					StaticText 'Project information'
+			[296] listitem ''
+				[297] link 'Repository'
+					[299] image ''
+					StaticText 'Repository'
+			[327] listitem ''
+				[328] link 'Issues'
+					[330] image ''
+					StaticText 'Issues'
+					StaticText '2'
+			[351] listitem ''
+				[352] link 'Merge requests'
+					[354] image ''
+					StaticText 'Merge requests'
+					StaticText '0'
+			[362] listitem ''
+				[363] link 'CI/CD'
+					[365] image ''
+					StaticText 'CI/CD'
+			[384] listitem ''
+				[385] link 'Security & Compliance'
+					[387] image ''
+					StaticText 'Security & Compliance'
+			[397] listitem ''
+				[398] link 'Deployments'
+					[400] image ''
+					StaticText 'Deployments'
+			[416] listitem ''
+				[417] link 'Packages and registries'
+					[419] image ''
+					StaticText 'Packages and registries'
+			[432] listitem ''
+				[433] link 'Infrastructure'
+					[435] image ''
+					StaticText 'Infrastructure'
+			[451] listitem ''
+				[452] link 'Monitor'
+					[454] image ''
+					StaticText 'Monitor'
+			[473] listitem ''
+				[474] link 'Analytics'
+					[476] image ''
+					StaticText 'Analytics'
+			[492] listitem ''
+				[493] link 'Wiki'
+					[495] image ''
+					StaticText 'Wiki'
+			[501] listitem ''
+				[502] link 'Snippets'
+					[504] image ''
+					StaticText 'Snippets'
+			[510] listitem ''
+				[511] link 'Settings'
+					[513] image ''
+					StaticText 'Settings'
+		[562] button 'Collapse sidebar'
+			[563] image ''
+			StaticText 'Collapse sidebar'
+	[571] alert '', live='assertive', atomic, relevant='additions text'
+		[572] image ''
+		[573] button 'Dismiss'
+			[574] image ''
+		[575] alert '', live='assertive', atomic, relevant='additions text'
+			StaticText "You can't push or pull repositories using SSH until you add an SSH key to your profile."
+			[578] link 'Add SSH key'
+			[579] button "Don't show again"
+	[580] alert '', live='assertive', atomic, relevant='additions text'
+		[581] image ''
+		[582] button 'Dismiss'
+			[583] image ''
+		[584] alert '', live='assertive', atomic, relevant='additions text'
+			StaticText 'The Auto DevOps pipeline has been enabled and will be used if no alternative CI configuration file is found.'
+			StaticText 'Container registry is not enabled on this GitLab instance. Ask an administrator to enable it in order for Auto DevOps to work.'
+			[588] link 'Settings'
+			[589] link 'More information'
+	[590] navigation 'Breadcrumbs'
+		[596] list ''
+			[597] listitem ''
+				[598] link 'Byte Blaze'
+				[599] image ''
+			[600] listitem ''
+				[601] link 'a11y-syntax-highlighting'
+					StaticText 'a11y-syntax-highlighting'
+	[606] main ''
+		StaticText 'A'
+		[614] heading 'a11y-syntax-highlighting Public - The project can be accessed without any authentication.'
+			[616] image ''
+		StaticText 'Project ID: 186'
+		[619] button 'Copy project ID', live='polite', relevant='additions text'
+			[620] image ''
+		[625] button '', hasPopup='menu', expanded=False
+		[683] button 'Star'
+			[684] image ''
+			StaticText 'Star'
+		[686] link '1'
+		[689] link 'Fork'
+			[690] image ''
+			StaticText 'Fork'
+		[692] link '0'
+		[693] navigation ''
+			[694] list ''
+				[695] listitem ''
+					[696] link '48 Commits'
+						[697] image ''
+						[698] strong ''
+							StaticText '48'
+				[699] listitem ''
+					[700] link '1 Branch'
+						[701] image ''
+						[702] strong ''
+							StaticText '1'
+				[703] listitem ''
+					[704] link '0 Tags'
+						[705] image ''
+						[706] strong ''
+							StaticText '0'
+				[707] listitem ''
+					[708] link '2 MB Project Storage'
+						[709] image ''
+						[710] strong ''
+							StaticText '2 MB'
+		[715] paragraph ''
+			StaticText '💄'
+			StaticText 'Accessible light and dark syntax highlighting themes'
+		[724] image 'user avatar'
+		[727] link 'Update README.md'
+		StaticText 'Eric Bailey authored'
+		[729] time 'Mar 19, 2023 4:40pm UTC'
+			StaticText '2 years ago'
+		[733] button 'Unverified'
+		[734] group ''
+			StaticText '62820763'
+			[737] button 'Copy commit SHA', live='polite', relevant='additions text'
+		[745] button 'main', hasPopup='menu', expanded=False
+			StaticText 'main'
+		[773] navigation 'Files breadcrumb'
+			[774] list ''
+				[775] listitem ''
+					[776] link 'a11y-syntax-highlighting'
+				[777] listitem ''
+					StaticText '/'
+					[779] button 'Add to tree', hasPopup='menu', expanded=False
+						StaticText 'Add to tree'
+			[812] Section ''
+			[813] Section ''
+		[816] link 'Find file'
+		[819] link 'Web IDE'
+			StaticText 'Web IDE'
+		[822] button 'Download'
+			[823] image ''
+			StaticText 'Select Archive Format'
+			[825] image ''
+		[837] link 'Clone'
+			StaticText 'Clone'
+			[839] image ''
+		[882] list ''
+			[883] listitem ''
+				[884] link 'README'
+					[885] image ''
+			[886] listitem ''
+				[887] link 'MIT License'
+					[888] image ''
+					StaticText 'MIT License'
+			[890] listitem ''
+				[891] link 'Auto DevOps enabled'
+					[892] image ''
+			[893] listitem ''
+				[894] link 'Add CHANGELOG'
+					[895] image ''
+			[896] listitem ''
+				[897] link 'Add CONTRIBUTING'
+					[898] image ''
+			[899] listitem ''
+				[900] link 'Add Kubernetes cluster'
+					[901] image ''
+			[902] listitem ''
+				[903] link 'Configure Integrations'
+					[904] image ''
+		[908] table 'Files, directories, and submodules in the path / for commit reference main', live='polite', relevant='additions text'
+			[909] rowgroup ''
+				[910] row ''
+					[911] columnheader 'Name'
+					[912] columnheader 'Last commit'
+					[913] columnheader 'Last update'
+			[914] rowgroup ''
+				[915] row ''
+					[916] gridcell 'dist'
+						[917] link 'dist'
+							StaticText 'dist'
+					[921] gridcell 'Add support for Vi/Vim'
+						[922] link 'Add support for Vi/Vim'
+					[924] gridcell '3 years ago'
+						[925] time 'Nov 5, 2022 4:14am UTC'
+							StaticText '3 years ago'
+				[926] row ''
+					[927] gridcell 'images'
+						[928] link 'images'
+							StaticText 'images'
+					[932] gridcell 'Added images'
+						[933] link 'Added images'
+					[935] gridcell '8 years ago'
+						[936] time 'Dec 7, 2017 2:23am UTC'
+							StaticText '8 years ago'
+				[937] row ''
+					[938] gridcell 'test'
+						[939] link 'test'
+							StaticText 'test'
+					[943] gridcell 'Fix name of theme'
+						[944] link 'Fix name of theme'
+					[946] gridcell '3 years ago'
+						[947] time 'Mar 18, 2022 9:27pm UTC'
+							StaticText '3 years ago'
+				[948] row ''
+					[949] gridcell '.npmignore'
+						[950] link '.npmignore'
+							[952] SvgRoot ''
+								group 'n'
+							StaticText '.npmignore'
+					[954] gridcell 'Add package.json and .npmignore'
+						[955] link 'Add package.json and .npmignore'
+					[957] gridcell '7 years ago'
+						[958] time 'Jan 2, 2019 3:33am UTC'
+							StaticText '7 years ago'
+				[959] row ''
+					[960] gridcell 'LICENSE'
+						[961] link 'LICENSE'
+							[963] image ''
+							StaticText 'LICENSE'
+					[965] gridcell 'Added MIT License'
+						[966] link 'Added MIT License'
+					[968] gridcell '8 years ago'
+						[969] time 'Dec 7, 2017 3:14pm UTC'
+							StaticText '8 years ago'
+				[970] row ''
+					[971] gridcell 'README.md'
+						[972] link 'README.md'
+							[974] image ''
+							StaticText 'README.md'
+					[976] gridcell 'Update README.md'
+						[977] link 'Update README.md'
+					[979] gridcell '2 years ago'
+						[980] time 'Mar 19, 2023 4:40pm UTC'
+							StaticText '2 years ago'
+				[981] row ''
+					[982] gridcell 'package.json'
+						[983] link 'package.json'
+							[985] image ''
+							StaticText 'package.json'
+					[987] gridcell 'Minor version bump'
+						[988] link 'Minor version bump'
+					[990] gridcell '4 years ago'
+						[991] time 'Sep 21, 2021 2:03am UTC'
+							StaticText '4 years ago'
+		[992] article ''
+			[996] link 'README.md'
+				[997] strong ''
+					StaticText 'README.md'
+			[1002] heading 'a11y-syntax-highlighting'
+				[1003] link '', hidden=True
+			[1004] paragraph ''
+				StaticText 'Accessible light and dark syntax highlighting themes.'
+			[1005] heading 'Support'
+				[1006] link '', hidden=True
+			[1007] heading 'Libraries'
+				[1008] link '', hidden=True
+			[1009] list ''
+				[1010] listitem ''
+					ListMarker '•'
+					[1011] link 'Highlight.js'
+				[1012] listitem ''
+					ListMarker '•'
+					[1013] link 'Prism.js'
+					[1014] list ''
+						[1015] listitem ''
+							ListMarker '◦'
+							[1016] link 'Line Highlight'
+						[1017] listitem ''
+							ListMarker '◦'
+							[1018] link 'Line Numbers'
+			[1019] heading 'Applications'
+				[1020] link '', hidden=True
+			[1021] list ''
+				[1022] listitem ''
+					ListMarker '•'
+					[1023] link 'Adobe'
+				[1024] listitem ''
+					ListMarker '•'
+					[1025] link 'Figma'
+					StaticText '(drag SVGs onto your canvas)'
+				[1026] listitem ''
+					ListMarker '•'
+					[1027] link 'macOS'
+				[1028] listitem ''
+					ListMarker '•'
+					[1029] link 'Sketch'
+					StaticText '(uses the'
+					[1030] link 'Sketch Palettes plugin'
+					StaticText ')'
+			[1031] heading 'Misc'
+				[1032] link '', hidden=True
+			[1033] list ''
+				[1034] listitem ''
+					ListMarker '•'
+					[1035] link 'Carbon'
+					StaticText '(remember to include alt text with your image!)'
+				[1036] listitem ''
+					ListMarker '•'
+					[1037] link 'JSON'
+			[1038] heading 'Roadmap'
+				[1039] link '', hidden=True
+			[1040] list ''
+				[1041] listitem ''
+					ListMarker '•'
+					StaticText 'Editors'
+					[1042] list ''
+						[1043] listitem ''
+							ListMarker '◦'
+							[1044] link 'Microsoft Visual Studio Code'
+						[1045] listitem ''
+							ListMarker '◦'
+							[1046] link 'Sublime Text'
+						[1047] listitem ''
+							ListMarker '◦'
+							[1048] link 'Vi/Vim'
+			[1049] heading 'Themes'
+				[1050] link '', hidden=True
+			[1051] heading 'a11y-dark'
+				[1052] link '', hidden=True
+			[1053] paragraph ''
+				[1054] link 'The a11y-dark theme being applied to the HTML of the Prism.js website. Screenshot.'
+					[1055] image 'The a11y-dark theme being applied to the HTML of the Prism.js website. Screenshot.'
+			[1056] list ''
+				[1057] listitem ''
+					ListMarker '•'
+					StaticText 'Light text on a dark background.'
+				[1058] listitem ''
+					ListMarker '•'
+					StaticText 'Background color of'
+					[1059] code ''
+						StaticText '#2b2b2b'
+					StaticText '.'
+				[1062] listitem ''
+					ListMarker '•'
+					[1063] link 'WCAG AAA compliant'
+					StaticText 'for color contrast.'
+			[1064] table ''
+				[1065] rowgroup ''
+					[1066] row ''
+						[1067] columnheader 'Color'
+						[1068] columnheader 'Hex'
+						[1069] columnheader 'Ratio'
+						[1070] columnheader 'Normal Text'
+						[1071] columnheader 'Large Text'
+				[1072] rowgroup ''
+					[1073] row ''
+						[1074] gridcell 'Bright Turquoise'
+							[1075] link 'Bright Turquoise'
+						[1076] gridcell '#00e0e0'
+							[1077] code ''
+								StaticText '#00e0e0'
+						[1080] gridcell '8.59:1'
+							[1081] link '8.59:1'
+						[1082] gridcell 'AAA'
+						[1083] gridcell 'AAA'
+					[1084] row ''
+						[1085] gridcell 'Chino'
+							[1086] link 'Chino'
+						[1087] gridcell '#d4d0ab'
+							[1088] code ''
+								StaticText '#d4d0ab'
+						[1091] gridcell '9.04:1'
+							[1092] link '9.04:1'
+						[1093] gridcell 'AAA'
+						[1094] gridcell 'AAA'
+					[1095] row ''
+						[1096] gridcell 'Conifer'
+							[1097] link 'Conifer'
+						[1098] gridcell '#abe338'
+							[1099] code ''
+								StaticText '#abe338'
+						[1102] gridcell '9.29:1'
+							[1103] link '9.29:1'
+						[1104] gridcell 'AAA'
+						[1105] gridcell 'AAA'
+					[1106] row ''
+						[1107] gridcell 'Gold'
+							[1108] link 'Gold'
+						[1109] gridcell '#ffd700'
+							[1110] code ''
+								StaticText '#ffd700'
+						[1113] gridcell '10.09:1'
+							[1114] link '10.09:1'
+						[1115] gridcell 'AAA'
+						[1116] gridcell 'AAA'
+					[1117] row ''
+						[1118] gridcell 'Snuff'
+							[1119] link 'Snuff'
+						[1120] gridcell '#dcc6e0'
+							[1121] code ''
+								StaticText '#dcc6e0'
+						[1124] gridcell '8.90:1'
+							[1125] link '8.90:1'
+						[1126] gridcell 'AAA'
+						[1127] gridcell 'AAA'
+					[1128] row ''
+						[1129] gridcell 'Spring Wood'
+							[1130] link 'Spring Wood'
+						[1131] gridcell '#f8f8f2'
+							[1132] code ''
+								StaticText '#f8f8f2'
+						[1135] gridcell '13.28:1'
+							[1136] link '13.28:1'
+						[1137] gridcell 'AAA'
+						[1138] gridcell 'AAA'
+					[1139] row ''
+						[1140] gridcell 'Vivid Tangerine'
+							[1141] link 'Vivid Tangerine'
+						[1142] gridcell '#ffa07a'
+							[1143] code ''
+								StaticText '#ffa07a'
+						[1146] gridcell '7.12:1'
+							[1147] link '7.12:1'
+						[1148] gridcell 'AAA'
+						[1149] gridcell 'AAA'
+			[1150] heading 'a11y-light'
+				[1151] link '', hidden=True
+			[1152] paragraph ''
+				[1153] link 'The a11y-light theme being applied to the HTML of the Prism.js website. Screenshot.'
+					[1154] image 'The a11y-light theme being applied to the HTML of the Prism.js website. Screenshot.'
+			[1155] list ''
+				[1156] listitem ''
+					ListMarker '•'
+					StaticText 'Dark text on a light background.'
+				[1157] listitem ''
+					ListMarker '•'
+					StaticText 'Background color of'
+					[1158] code ''
+						StaticText '#fefefe'
+					StaticText '.'
+				[1161] listitem ''
+					ListMarker '•'
+					[1162] link 'WCAG AA compliant'
+					StaticText 'for color contrast. WCAG AAA compliance forces the values on a light background to be too similar to each other to be used effectively for syntax highlighting.'
+			[1163] table ''
+				[1164] rowgroup ''
+					[1165] row ''
+						[1166] columnheader 'Color'
+						[1167] columnheader 'Hex'
+						[1168] columnheader 'Ratio'
+						[1169] columnheader 'Normal Text'
+						[1170] columnheader 'Large Text'
+				[1171] rowgroup ''
+					[1172] row ''
+						[1173] gridcell 'Chelsea Gem'
+							[1174] link 'Chelsea Gem'
+						[1175] gridcell '#aa5d00'
+							[1176] code ''
+								StaticText '#aa5d00'
+						[1179] gridcell '4.87:1'
+							[1180] link '4.87:1'
+						[1181] gridcell 'AA'
+						[1182] gridcell 'AAA'
+					[1183] row ''
+						[1184] gridcell 'Allports'
+							[1185] link 'Allports'
+						[1186] gridcell '#007299'
+							[1187] code ''
+								StaticText '#007299'
+						[1190] gridcell '4.51:1'
+							[1191] link '4.51:1'
+						[1192] gridcell 'AA'
+						[1193] gridcell 'AAA'
+					[1194] row ''
+						[1195] gridcell 'Dove Gray'
+							[1196] link 'Dove Gray'
+						[1197] gridcell '#696969'
+							[1198] code ''
+								StaticText '#696969'
+						[1201] gridcell '5.44:1'
+							[1202] link '5.44:1'
+						[1203] gridcell 'AA'
+						[1204] gridcell 'AAA'
+					[1205] row ''
+						[1206] gridcell 'Emperor'
+							[1207] link 'Emperor'
+						[1208] gridcell '#545454'
+							[1209] code ''
+								StaticText '#545454'
+						[1212] gridcell '7.51:1'
+							[1213] link '7.51:1'
+						[1214] gridcell 'AAA'
+						[1215] gridcell 'AAA'
+					[1216] row ''
+						[1217] gridcell 'Japanese Laurel'
+							[1218] link 'Japanese Laurel'
+						[1219] gridcell '#008000'
+							[1220] code ''
+								StaticText '#008000'
+						[1223] gridcell '5.09:1'
+							[1224] link '5.09:1'
+						[1225] gridcell 'AA'
+						[1226] gridcell 'AAA'
+					[1227] row ''
+						[1228] gridcell 'Thunderbird'
+							[1229] link 'Thunderbird'
+						[1230] gridcell '#d91e18'
+							[1231] code ''
+								StaticText '#d91e18'
+						[1234] gridcell '5.02:1'
+							[1235] link '5.02:1'
+						[1236] gridcell 'AA'
+						[1237] gridcell 'AAA'
+			[1238] heading 'High Contrast Mode'
+				[1239] link '', hidden=True
+			[1240] paragraph ''
+				StaticText 'Both themes have enhanced support for'
+				[1241] link 'Windows High Contrast Mode'
+				StaticText 'when possible:'
+			[1242] paragraph ''
+				[1243] link 'The a11y-dark theme responding to Windows High Contrast Mode. Screenshot.'
+					[1244] image 'The a11y-dark theme responding to Windows High Contrast Mode. Screenshot.'
+			[1245] heading 'Used by'
+				[1246] link '', hidden=True
+			[1247] list ''
+				[1248] listitem ''
+					ListMarker '•'
+					[1249] link 'Eleventy'
+				[1250] listitem ''
+					ListMarker '•'
+					[1251] link 'Melanie Richards'
+				[1252] listitem ''
+					ListMarker '•'
+					[1253] link 'Paul Kinchla'
+				[1254] listitem ''
+					ListMarker '•'
+					[1255] link 'Sarah Higley'
+				[1256] listitem ''
+					ListMarker '•'
+					[1257] link 'Quarto'
+				[1258] listitem ''
+					ListMarker '•'
+					[1259] link 'W3C Design System'
+				[1260] listitem ''
+					ListMarker '•'
+					[1261] link 'aaron-gustafson.com'
+			[1262] paragraph ''
+				StaticText 'Run across it being used elsewhere?'
+				[1263] link 'Let me know'
+				StaticText '!'
+			[1264] heading 'Thanks'
+				[1265] link '', hidden=True
+			[1266] list ''
+				[1267] listitem ''
+					ListMarker '•'
+					[1268] link 'Michael Ball'
+					StaticText ', for the idea.'
+				[1269] listitem ''
+					ListMarker '•'
+					[1270] link 'Scott Vinkle'
+					StaticText ','
+					[1271] link 'Carie Fischer'
+					StaticText ', and'
+					[1272] link "Scott O'Hara"
+					StaticText 'for the encouragement.'
+				[1273] listitem ''
+					ListMarker '•'
+					[1274] link 'Aaron Gustafson'
+					StaticText ', for suggesting line highlighting support.'
+				[1275] listitem ''
+					ListMarker '•'
+					[1276] link 'Reuben L. Lillie'
+					StaticText ', for Vi/Vim support.'
+
+# History of past actions
+
+
+<reasoning>The user wants to "Open an issue to request adding support for MT theme editor in a11y-syntax-highlighting."
+
+We are on Gitlab dashboard listing projects, with a list item for "Byte Blaze / a11y-syntax-highlighting". Need to click that project, go to Issues tab, click New issue, fill title and description, then submit.
+
+First step: click the link for that project. The link id likely is '320' but need to verify. In tree: under listitem for a11y-syntax-highlighting: there is a heading 'Byte Blaze / a11y-syntax-highlighting' and a link with id 320. So click that.
+
+We'll perform click('320').
+
+</reasoning><think>
+To create a new issue, I first need to open the repository page for "a11y-syntax-highlighting". In the project list, the link with ID 320 corresponds to the project name "Byte Blaze / a11y-syntax-highlighting". Clicking this link will navigate to the project's main page where I can access the Issues section.
+</think>
+<action>
+```click('320')```
+</action>
+
+
+<reasoning>We need to respond with summary as per format: ✅ Current Progress and 🔍 Current State Analysis. No next-step guidance. Ensure formatting exactly.</reasoning>✅ Current Progress  
+- Clicked the link for **“Byte Blaze / a11y‑syntax‑highlighting”**, opening the project’s main page. This is the first required step toward creating a new issue.
+
+🔍 Current State Analysis  
+- The current page is the project overview for *a11y‑syntax‑highlighting* (the expected location before opening the Issues section).  
+- Relevant interactive elements present in the accessibility tree:  
+  - **Issues tab** – link with label “Issues” (ID `328`), enabled and visible.  
+  - **New issue button** – will become available after entering the Issues list.  
+- The page is on the critical path to the goal; the next action should be to navigate to the Issues section and create the issue.
+
+
+<reasoning>We need to output just the summary. Ensure no extra.</reasoning>✅ Current Progress  
+- Clicked the link for **“Byte Blaze / a11y‑syntax‑highlighting”**, opening the project's main page. This is the first required step toward creating a new issue.
+
+🔍 Current State Analysis  
+- The current page is the project overview for *a11y‑syntax‑highlighting* (the expected location before opening the Issues section).  
+- Relevant interactive elements present in the accessibility tree:  
+  - **Issues tab** – link with label “Issues” (ID `328`), enabled and visible.  
+  - **New issue button** – will become available after entering the Issues list.  
+- The page is on the critical path to the goal; the next action should be to navigate to the Issues section and create the issue.
+
+
+<reasoning>We need to output summary, not an action. The previous assistant tried to output summary but got error because the format expects an action? Actually the system expects an action after think. But the user asked to give summary? The instruction: "When providing a progress summary ... respond only with the summary and not with any direct next-step or next-step guidance". So we should respond with summary only, no action tags. The system previously gave error because assistant gave empty action. We must output just text. So final answer: the summary as above, no markdown formatting.
+
+</reasoning>✅ Current Progress  
+- Clicked the link for **“Byte Blaze / a11y‑syntax‑highlighting”**, opening the project's main page. This is the first required step toward creating a new issue.
+
+🔍 Current State Analysis  
+- The current page is the project overview for *a11y‑syntax‑highlighting* (the expected location before opening the Issues section).  
+- Relevant interactive elements present in the accessibility tree:  
+  - **Issues tab** – link with label “Issues” (ID `328`), enabled and visible.  
+  - **New issue button** – will become available after entering the Issues list.  
+- The page is on the critical path to the goal; the next logical step is to navigate to the Issues section and create the issue.
+
+# Error message from last action
+
+ValueError: Received an empty action.
+
+# Progress Summary
+<reasoning>We need to generate summary based on current context after the action. The user (assistant) performed click('320'). Now we need to summarize progress. The current page likely changed to the project page. We have only the axtree from before? The axtree provided corresponds to current page before click? Actually after click, the environment would have updated but we don't have new axtree. The assistant must summarize: progress: clicked on project link, moving towards goal. Current state analysis: likely on project main page, need to navigate to Issues tab. Identify Issues link (id maybe 328?) Actually in axtree under Project navigation list, there is listitem with link 'Issues' at [328] link 'Issues'. So after navigation, we can click that to go to issues list. The current state: we are on project page after click? But we don't have updated axtree; we can assume still same, but we have indicator that we clicked. So summarization: progress: opened project page. Current state: on project page, need to click Issues tab. Since not deviated, no Next-step Guidance needed. But we might include next-step guidance? The instruction: only include Next-step Guidance if clearly deviated. Not deviated. So provide only two sections.
+
+Let's write concise.</reasoning>✅ Current Progress  
+- Clicked the link for **“Byte Blaze / a11y‑syntax‑highlighting”**, opening the project’s main page. This is the first required step toward creating a new issue.
+
+🔍 Current State Analysis  
+- The current page is the project overview for *a11y‑syntax‑highlighting* (the expected location before opening the Issues section).  
+- Relevant interactive elements present in the accessibility tree:  
+  - **Issues tab** – link with label “Issues” (ID `328`), enabled and visible.  
+  - **New issue button** – will become available after entering the Issues list.  
+- The page is on the critical path to the goal; next action should be to navigate to the Issues section and create the issue.

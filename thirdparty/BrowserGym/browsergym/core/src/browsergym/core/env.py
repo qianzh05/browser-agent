@@ -277,6 +277,7 @@ class BrowserEnv(gym.Env, ABC):
                 if self.resizeable_window
                 else None
             ),
+            "--disable-web-security",  # allow cross-origin requests to Docker containers
             "--disable-features=OverlayScrollbars,ExtendedOverlayScrollbars",  # otherwise the screenshot doesn't see the scrollbars
         ]
         args = [arg for arg in args if arg is not None]  # Remove None values

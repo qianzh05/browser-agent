@@ -1,0 +1,953 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. your user name is byteblaze
+2. To add new members to the project, you can visit project information > members tab and click blue "invite members" button on top right
+3. To set your status, click profile button on top right corner of the page (it's next to the question mark button) and click edit status
+4. To edit your profile, click profile button on top right corner of the page (it's next to the question mark button) and click edit profile
+5. You can also access to your information e.g. access token, notifications, ssh keys and more from "edit profile" page
+6. Projects that you have contributed to are listed under Project / Yours / All tab of gitlab.site. You can sort repos using dropdown button on top right
+7. Projects's repository tab has menus like Commits, Branches, Contributors, and more. Contributors tab shows contributors and their number of commits
+8. If you want to see all the issues for you, you can either click button on the right of + icon on top right menu bar
+9. When the task mentions branch main, it often means master
+10. `dotfiles` is my one of repository
+11. Click the GitLab icon in the top-left corner to view all projects (Yours / Starred / Explore / Topics). In the Explore tab, you can browse All Explore, Most Stars, and Trending repository.
+12. When asked to make changes to a repository, commit changes to the main branch UNLESS the task specifically asks you to create a branch, make a merge request, or follow a different workflow.
+13. Do not use the global search bar(Search GitLab), it is currently not working. To search for a repository, go to the search URL instead: http://localhost:8023/search?search=<repository-name>&nav_source=navbar. Replace <repository-name> with the project name only (e.g., openapi-generator), without the group or namespace prefix (e.g., do not use OpenAPITools/openapi-generator). Example: goto('http://localhost:8023/search?search=openapi-generator&nav_source=navbar')
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Display the list of issues in the keycloak/keycloak repository that have labels related to flaky-test
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Issues · Keycloak / keycloak · GitLab
+  URL: http://localhost:8023/keycloak/keycloak/-/issues/?state=opened&label_name%5B%5D=flaky-test
+
+# Current page Accessibility Tree
+
+RootWebArea 'Issues · Keycloak / keycloak · GitLab', focused
+	[66] banner ''
+		[67] link 'Skip to content'
+		StaticText 'GitLab'
+		[73] link 'Dashboard'
+			[74] image ''
+		[77] list ''
+			[78] listitem ''
+				[79] button '', hasPopup='menu', expanded=False
+		[139] list ''
+			[140] listitem ''
+				[142] Section ''
+					[144] image ''
+					[145] textbox 'Search GitLab'
+		[157] list ''
+			[158] listitem ''
+				[159] link 'Create new...'
+					[160] image ''
+					[161] image ''
+			[175] listitem ''
+				[176] link 'Issues'
+					[177] image ''
+			[179] listitem ''
+				[180] link 'Merge requests'
+					[181] image ''
+					[183] image ''
+			[193] listitem ''
+				[194] link 'To-Do List'
+					[195] image ''
+					StaticText '5'
+			[197] listitem ''
+				[198] link 'Help'
+					StaticText 'Help'
+					[200] image ''
+					[202] image ''
+			[223] listitem ''
+				[224] link 'Byte Blaze'
+					[225] image 'Byte Blaze'
+					[226] image ''
+	[262] complementary 'Project navigation'
+		[264] list ''
+			[265] listitem 'keycloak'
+				[266] link 'keycloak'
+					StaticText 'K'
+					StaticText 'keycloak'
+			[270] listitem ''
+				[271] link 'Project information'
+					[273] image ''
+					StaticText 'Project information'
+			[289] listitem ''
+				[290] link 'Repository'
+					[292] image ''
+					StaticText 'Repository'
+			[320] listitem ''
+				[321] link 'Issues'
+					[323] image ''
+					StaticText 'Issues'
+					StaticText '1,604'
+			[344] listitem ''
+				[345] link 'Merge requests'
+					[347] image ''
+					StaticText 'Merge requests'
+					StaticText '230'
+			[355] listitem ''
+				[356] link 'CI/CD'
+					[358] image ''
+					StaticText 'CI/CD'
+			[374] listitem ''
+				[375] link 'Deployments'
+					[377] image ''
+					StaticText 'Deployments'
+			[390] listitem ''
+				[391] link 'Packages and registries'
+					[393] image ''
+					StaticText 'Packages and registries'
+			[406] listitem ''
+				[407] link 'Monitor'
+					[409] image ''
+					StaticText 'Monitor'
+			[419] listitem ''
+				[420] link 'Analytics'
+					[422] image ''
+					StaticText 'Analytics'
+			[438] listitem ''
+				[439] link 'Wiki'
+					[441] image ''
+					StaticText 'Wiki'
+			[447] listitem ''
+				[448] link 'Snippets'
+					[450] image ''
+					StaticText 'Snippets'
+		[468] button 'Toggle sidebar'
+			[469] image ''
+	[477] navigation 'Breadcrumbs'
+		[483] list ''
+			[484] listitem ''
+				[485] link 'Keycloak'
+				[486] image ''
+			[487] listitem ''
+				[488] link 'keycloak'
+					StaticText 'keycloak'
+				[490] image ''
+			[491] listitem ''
+				[492] link 'Issues'
+	[495] main ''
+		[503] tablist '', multiselectable=False, orientation='horizontal'
+			[505] tab 'Open 16', selected=True, controls='__BVID__9'
+				StaticText 'Open'
+				StaticText '16'
+			[509] tab 'Closed 41', selected=False, controls='__BVID__12'
+				StaticText 'Closed'
+				StaticText '41'
+			[513] tab 'All 57', selected=False, controls='__BVID__15'
+				StaticText 'All'
+				StaticText '57'
+		[517] tabpanel 'Open 16'
+		[521] link 'Subscribe to RSS feed'
+		[523] link 'Subscribe to calendar'
+		[526] group ''
+			[527] button 'Export as CSV'
+		[529] link 'New issue'
+			StaticText 'New issue'
+		[532] group ''
+			[535] button 'Toggle history', hasPopup='menu', expanded=False
+				StaticText 'Toggle history'
+			StaticText 'Label'
+			StaticText '='
+			StaticText '~flaky-test'
+			[577] button 'Close'
+			[581] button 'Clear'
+			[584] button 'Search'
+		[586] group ''
+			[588] button 'Created date', hasPopup='menu', expanded=False
+				StaticText 'Created date'
+			[644] button 'Sort direction: Ascending'
+		[646] complementary '', live='polite', relevant='additions text'
+		[648] list ''
+			[649] listitem ''
+				[652] link 'Flaky test: org.keycloak.testsuite.model.session.UserSessionProviderOfflineModelTest#testExpired'
+				StaticText 'Issue'
+				StaticText '#16511'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[662] link 'Administrator'
+					StaticText 'Administrator'
+				[666] link 'Backlog'
+				StaticText ''
+				[668] group 'Labels'
+					[670] link 'area/ci'
+						StaticText 'area/ci'
+					[673] link 'area/storage'
+						StaticText 'area/storage'
+					[676] link 'flaky-test'
+						StaticText 'flaky-test'
+					[679] link 'kind/bug'
+						StaticText 'kind/bug'
+					[682] link 'team/store'
+						StaticText 'team/store'
+				[685] list ''
+					[686] listitem ''
+					[687] list ''
+					[688] listitem ''
+						[689] link '0'
+				StaticText 'updated 3 years ago'
+			[692] listitem ''
+				[695] link 'Flaky test: org.keycloak.testsuite.admin.ComponentsTest#testConcurrencyWithChildren'
+				StaticText 'Issue'
+				StaticText '#16521'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[705] link 'Administrator'
+					StaticText 'Administrator'
+				[709] link 'Backlog'
+				StaticText ''
+				[711] group 'Labels'
+					[713] link 'area/storage'
+						StaticText 'area/storage'
+					[716] link 'flaky-test'
+						StaticText 'flaky-test'
+					[719] link 'kind/bug'
+						StaticText 'kind/bug'
+					[722] link 'team/store'
+						StaticText 'team/store'
+				[725] list ''
+					[726] listitem ''
+					[727] list ''
+					[728] listitem ''
+						[729] link '0'
+				StaticText 'updated 3 years ago'
+			[732] listitem ''
+				[735] link 'Flaky test: org.keycloak.testsuite.model.session.OfflineSessionPersistenceTest#testPersistenceClientSessionsMultipleNodes'
+				StaticText 'Issue'
+				StaticText '#16564'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[745] link 'Administrator'
+					StaticText 'Administrator'
+				[749] link 'Backlog'
+				StaticText ''
+				[751] group 'Labels'
+					[753] link 'area/infinispan'
+						StaticText 'area/infinispan'
+					[756] link 'area/storage'
+						StaticText 'area/storage'
+					[759] link 'flaky-test'
+						StaticText 'flaky-test'
+					[762] link 'kind/bug'
+						StaticText 'kind/bug'
+					[765] link 'team/store'
+						StaticText 'team/store'
+				[768] list ''
+					[769] listitem ''
+					[770] list ''
+					[771] listitem ''
+						[772] link '0'
+				StaticText 'updated 2 years ago'
+			[775] listitem ''
+				[778] link 'Flaky test: org.keycloak.testsuite.model.session.UserSessionProviderOfflineModelTest#testOfflineSessionLazyLoading'
+				StaticText 'Issue'
+				StaticText '#16565'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[788] link 'Administrator'
+					StaticText 'Administrator'
+				[792] link 'Backlog'
+				StaticText ''
+				[794] group 'Labels'
+					[796] link 'area/ci'
+						StaticText 'area/ci'
+					[799] link 'area/storage'
+						StaticText 'area/storage'
+					[802] link 'flaky-test'
+						StaticText 'flaky-test'
+					[805] link 'kind/bug'
+						StaticText 'kind/bug'
+					[808] link 'team/store'
+						StaticText 'team/store'
+				[811] list ''
+					[812] listitem ''
+					[813] list ''
+					[814] listitem ''
+						[815] link '0'
+				StaticText 'updated 2 years ago'
+			[818] listitem ''
+				[821] link 'Flaky test: org.keycloak.testsuite.model.session.UserSessionInitializerTest#testUserSessionInitializerWithDeletingClient'
+				StaticText 'Issue'
+				StaticText '#16569'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[831] link 'Administrator'
+					StaticText 'Administrator'
+				[835] link 'Backlog'
+				StaticText ''
+				[837] group 'Labels'
+					[839] link 'area/ci'
+						StaticText 'area/ci'
+					[842] link 'area/storage'
+						StaticText 'area/storage'
+					[845] link 'flaky-test'
+						StaticText 'flaky-test'
+					[848] link 'kind/bug'
+						StaticText 'kind/bug'
+					[851] link 'team/store'
+						StaticText 'team/store'
+				[854] list ''
+					[855] listitem ''
+					[856] list ''
+					[857] listitem ''
+						[858] link '0'
+				StaticText 'updated 3 years ago'
+			[861] listitem ''
+				[864] link 'Flaky test: org.keycloak.testsuite.model.session.OfflineSessionPersistenceTest#testLazyOfflineUserSessionFetching'
+				StaticText 'Issue'
+				StaticText '#16570'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[874] link 'Administrator'
+					StaticText 'Administrator'
+				[878] link 'Backlog'
+				StaticText ''
+				[880] group 'Labels'
+					[882] link 'area/ci'
+						StaticText 'area/ci'
+					[885] link 'area/storage'
+						StaticText 'area/storage'
+					[888] link 'flaky-test'
+						StaticText 'flaky-test'
+					[891] link 'kind/bug'
+						StaticText 'kind/bug'
+					[894] link 'team/store'
+						StaticText 'team/store'
+				[897] list ''
+					[898] listitem ''
+					[899] list ''
+					[900] listitem ''
+						[901] link '0'
+				StaticText 'updated 3 years ago'
+			[904] listitem ''
+				[907] link 'Flaky test: org.keycloak.testsuite.model.session.OfflineSessionPersistenceTest#testPersistenceMultipleNodesClientSessionAtSameNode'
+				StaticText 'Issue'
+				StaticText '#16571'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[917] link 'Administrator'
+					StaticText 'Administrator'
+				[921] link 'Backlog'
+				StaticText ''
+				[923] group 'Labels'
+					[925] link 'area/ci'
+						StaticText 'area/ci'
+					[928] link 'area/storage'
+						StaticText 'area/storage'
+					[931] link 'flaky-test'
+						StaticText 'flaky-test'
+					[934] link 'kind/bug'
+						StaticText 'kind/bug'
+					[937] link 'team/store'
+						StaticText 'team/store'
+				[940] list ''
+					[941] listitem ''
+					[942] list ''
+					[943] listitem ''
+						[944] link '0'
+				StaticText 'updated 2 years ago'
+			[947] listitem ''
+				[950] link 'Flaky test: org.keycloak.testsuite.model.session.OfflineSessionPersistenceTest#testPersistenceMultipleNodesClientSessionsAtRandomNode'
+				StaticText 'Issue'
+				StaticText '#16671'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[960] link 'Administrator'
+					StaticText 'Administrator'
+				[964] link 'Backlog'
+				StaticText ''
+				[966] group 'Labels'
+					[968] link 'area/ci'
+						StaticText 'area/ci'
+					[971] link 'area/storage'
+						StaticText 'area/storage'
+					[974] link 'flaky-test'
+						StaticText 'flaky-test'
+					[977] link 'kind/bug'
+						StaticText 'kind/bug'
+					[980] link 'team/store'
+						StaticText 'team/store'
+				[983] list ''
+					[984] listitem ''
+					[985] listitem ''
+						[987] link 'Assigned to Alexander Schwartz'
+							[989] image 'Assigned to Alexander Schwartz'
+					[990] list ''
+					[991] listitem ''
+						[992] link '0'
+				StaticText 'updated 2 years ago'
+			[995] listitem ''
+				[998] link 'Flaky test: org.keycloak.testsuite.model.UserSessionProviderTest#testRestartSession'
+				StaticText 'Issue'
+				StaticText '#17071'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[1008] link 'Administrator'
+					StaticText 'Administrator'
+				StaticText ''
+				[1011] group 'Labels'
+					[1013] link 'area/ci'
+						StaticText 'area/ci'
+					[1016] link 'flaky-test'
+						StaticText 'flaky-test'
+					[1019] link 'kind/bug'
+						StaticText 'kind/bug'
+				[1022] list ''
+					[1023] listitem ''
+					[1024] list ''
+					[1025] listitem ''
+						[1026] link '0'
+				StaticText 'updated 3 years ago'
+			[1029] listitem ''
+				[1032] link 'Flaky test: org.keycloak.testsuite.model.UserSessionProviderOfflineTest#testOnClientRemoved'
+				StaticText 'Issue'
+				StaticText '#17072'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[1042] link 'Administrator'
+					StaticText 'Administrator'
+				StaticText ''
+				[1045] group 'Labels'
+					[1047] link 'area/ci'
+						StaticText 'area/ci'
+					[1050] link 'flaky-test'
+						StaticText 'flaky-test'
+					[1053] link 'kind/bug'
+						StaticText 'kind/bug'
+				[1056] list ''
+					[1057] listitem ''
+					[1058] list ''
+					[1059] listitem ''
+						[1060] link '0'
+				StaticText 'updated 3 years ago'
+			[1063] listitem ''
+				[1066] link 'Flaky test: org.keycloak.testsuite.webauthn.account.WebAuthnSigningInTest#availableAuthenticatorsAfterRemove'
+				StaticText 'Issue'
+				StaticText '#17282'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[1076] link 'Administrator'
+					StaticText 'Administrator'
+				StaticText ''
+				[1079] group 'Labels'
+					[1081] link 'area/ci'
+						StaticText 'area/ci'
+					[1084] link 'flaky-test'
+						StaticText 'flaky-test'
+					[1087] link 'kind/bug'
+						StaticText 'kind/bug'
+					[1090] link 'team/continuous-testing'
+						StaticText 'team/continuous-testing'
+				[1093] list ''
+					[1094] listitem ''
+					[1095] listitem ''
+						[1097] link 'Assigned to Martin Bartoš'
+							[1099] image 'Assigned to Martin Bartoš'
+					[1100] list ''
+					[1101] listitem ''
+						[1102] link '0'
+				StaticText 'updated 2 years ago'
+			[1105] listitem ''
+				[1108] link 'Flaky test: org.keycloak.testsuite.ui.account2.ApplicationsTest#navigationTest'
+				StaticText 'Issue'
+				StaticText '#17357'
+				StaticText ''
+				StaticText 'created'
+				StaticText '3 years ago'
+				StaticText 'by'
+				[1118] link 'Administrator'
+					StaticText 'Administrator'
+				StaticText ''
+				[1121] group 'Labels'
+					[1123] link 'area/ci'
+						StaticText 'area/ci'
+					[1126] link 'flaky-test'
+						StaticText 'flaky-test'
+					[1129] link 'kind/bug'
+						StaticText 'kind/bug'
+					[1132] link 'team/continuous-testing'
+						StaticText 'team/continuous-testing'
+				[1135] list ''
+					[1136] listitem ''
+					[1137] list ''
+					[1138] listitem ''
+						[1139] link '0'
+				StaticText 'updated 3 years ago'
+			[1142] listitem ''
+				[1145] link 'Flaky test: org.keycloak.testsuite.federation.sync.SyncFederationTest#test03ConcurrentSync'
+				StaticText 'Issue'
+				StaticText '#17430'
+				StaticText ''
+				StaticText 'created'
+				StaticText '2 years ago'
+				StaticText 'by'
+				[1155] link 'Administrator'
+					StaticText 'Administrator'
+				StaticText ''
+				[1158] group 'Labels'
+					[1160] link 'area/ci'
+						StaticText 'area/ci'
+					[1163] link 'flaky-test'
+						StaticText 'flaky-test'
+					[1166] link 'kind/bug'
+						StaticText 'kind/bug'
+					[1169] link 'team/continuous-testing'
+						StaticText 'team/continuous-testing'
+				[1172] list ''
+					[1173] listitem ''
+					[1174] listitem ''
+						[1176] link 'Assigned to Ricardo Martin'
+							[1178] image 'Assigned to Ricardo Martin'
+					[1179] list ''
+					[1180] listitem ''
+						[1181] link '0'
+				StaticText 'updated 2 years ago'
+			[1184] listitem ''
+				[1187] link 'Flaky test: org.keycloak.testsuite.federation.sync.SyncFederationTest#test04IgnoredSync'
+				StaticText 'Issue'
+				StaticText '#17431'
+				StaticText ''
+				StaticText 'created'
+				StaticText '2 years ago'
+				StaticText 'by'
+				[1197] link 'Administrator'
+					StaticText 'Administrator'
+				StaticText ''
+				[1200] group 'Labels'
+					[1202] link 'area/ci'
+						StaticText 'area/ci'
+					[1205] link 'flaky-test'
+						StaticText 'flaky-test'
+					[1208] link 'kind/bug'
+						StaticText 'kind/bug'
+					[1211] link 'team/continuous-testing'
+						StaticText 'team/continuous-testing'
+				[1214] list ''
+					[1215] listitem ''
+					[1216] listitem ''
+						[1218] link 'Assigned to Ricardo Martin'
+							[1220] image 'Assigned to Ricardo Martin'
+					[1221] list ''
+					[1222] listitem ''
+						[1223] link '0'
+				StaticText 'updated 2 years ago'
+			[1226] listitem ''
+				[1229] link 'Flaky test: org.keycloak.testsuite.ui.account2.SigningInTest#updatePasswordTest'
+				StaticText 'Issue'
+				StaticText '#17448'
+				StaticText ''
+				StaticText 'created'
+				StaticText '2 years ago'
+				StaticText 'by'
+				[1239] link 'Administrator'
+					StaticText 'Administrator'
+				StaticText ''
+				[1242] group 'Labels'
+					[1244] link 'area/ci'
+						StaticText 'area/ci'
+					[1247] link 'flaky-test'
+						StaticText 'flaky-test'
+					[1250] link 'kind/bug'
+						StaticText 'kind/bug'
+					[1253] link 'team/continuous-testing'
+						StaticText 'team/continuous-testing'
+				[1256] list ''
+					[1257] listitem ''
+					[1258] list ''
+					[1259] listitem ''
+						[1260] link '0'
+				StaticText 'updated 2 years ago'
+			[1263] listitem ''
+				[1266] link 'Flaky test: org.keycloak.testsuite.ui.account2.SmokeTest#baseFunctionalityTest'
+				StaticText 'Issue'
+				StaticText '#17613'
+				StaticText ''
+				StaticText 'created'
+				StaticText '2 years ago'
+				StaticText 'by'
+				[1276] link 'Michal Hajas'
+					StaticText 'Michal Hajas'
+				StaticText ''
+				[1279] group 'Labels'
+					[1281] link 'area/ci'
+						StaticText 'area/ci'
+					[1284] link 'flaky-test'
+						StaticText 'flaky-test'
+					[1287] link 'kind/bug'
+						StaticText 'kind/bug'
+					[1290] link 'team/continuous-testing'
+						StaticText 'team/continuous-testing'
+				[1293] list ''
+					[1294] listitem ''
+					[1295] list ''
+					[1296] listitem ''
+						[1297] link '0'
+				StaticText 'updated 2 years ago'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+<think>
+The user wants to show issues in keycloak/keycloak with labels related to flaky-test. I’m on the project’s Issues page. The search/filter textbox (id 1481) is focused and currently contains the query "label:~flaky", which should match any labels containing "flaky" (including "flaky-test"). The issue list still shows unrelated items because the filter hasn’t been applied yet. The next step is to click the adjacent "Search" button (id 553) to apply the filter and update the list.
+</think>
+<action>
+```click("553")```
+</action>
+
+
+<think>
+The goal is to show issues in keycloak/keycloak with labels related to “flaky-test.” I’m on the repository’s Issues page. The search/filter textbox (bid 1481) currently contains "label:~flaky" and the results haven’t changed, suggesting the filter wasn’t applied or is too broad. To be precise and align with the request, I should change the query to "label:~flaky-test", which targets labels containing “flaky-test”. After updating the field, I can apply it by clicking Search in the next step.
+</think>
+<action>
+```fill("1481", "label:~flaky-test")```
+</action>
+
+
+<think>
+The user wants to display issues in the Keycloak/keycloak repository that have labels related to "flaky-test." I’m on the Issues page where the search/filter textbox already contains "label:~flaky-test" (bid 1481). The current issue list still shows unrelated labels, meaning the filter hasn’t been applied yet after editing. The appropriate next step is to click the "Search" button (bid 553) next to the filter input to apply the query and refresh the results to show only issues with labels matching "flaky-test."
+</think>
+<action>
+```click("553")```
+</action>
+
+
+<think>
+The user wants to display issues in the Keycloak/keycloak repository with labels related to “flaky-test.” I’m on the repository’s Issues page. The filter textbox ("Search or filter results...") currently contains "label:~flaky-test" but the results still show unrelated issues, which suggests the filter hasn’t actually been applied. Clicking the “Search” button previously didn’t change the list, likely because the input’s submit action is triggered by pressing Enter in the textbox. Using the press action on the textbox with Enter should apply the filter and refresh the list. I will press Enter on the textbox (bid 1481) to submit the query.
+</think>
+<action>
+```press("1481", "Enter")```
+</action>
+
+
+<think>
+The user wants to display issues in the keycloak/keycloak repository with labels related to "flaky-test." I’m already on the project’s Issues page, and the filter textbox shows "label:~flaky-test," but applying the search hasn’t changed the results or URL, indicating the input-based filter didn’t execute. A reliable way in GitLab to filter by label is via URL parameters using label_name[]=<label>. I will navigate directly to the issues URL with label_name[]=flaky-test to ensure the page displays only issues tagged with that label while keeping the state as opened. If the label exists, the list should update accordingly.
+</think>
+<action>
+```goto('http://localhost:8023/keycloak/keycloak/-/issues/?state=opened&label_name[]=flaky-test')```
+</action>
+
+# Progress Summary
+✅ Current Progress:
+- Navigated to the Keycloak/keycloak project’s Issues page and applied label filtering.
+- The list is now filtered by label "~flaky-test" and shows matching issues.
+- Tabs indicate counts for this filter: Open 16, Closed 41, All 57.
+- ✅ Task completed.
+
+🔍 Current State Analysis:
+- The page is exactly on the critical path: project-scoped Issues list filtered by the target label.
+- Relevant elements:
+  - Filter chip: “Label = ~flaky-test” within group (buttons: Close [577], Clear [581], Search [584] — all visible/enabled).
+  - Tabs: “Open 16” [505] (selected), “Closed 41” [509], “All 57” [513] — visible/enabled.
+  - Issue list [648] — visible; items include links such as “Flaky test: org.keycloak.testsuite.model.session.UserSessionProviderOfflineModelTest#testExpired” [652], etc., confirming the flaky-test-labeled issues are displayed.

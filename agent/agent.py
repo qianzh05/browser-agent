@@ -158,9 +158,34 @@ class BroswerAgent(Agent):
         # if not (use_html or use_axtree):
         #     raise ValueError(f"Either use_html or use_axtree must be set to True.")
 
+        # -----------------------------------------------------------------------
+        # OPTION 1: Standard OpenAI client (use for GPT models via LiteLLM)
+        # -----------------------------------------------------------------------
+        # self.openai_client = openai.OpenAI(
+        #     api_key=os.getenv("OPENAI_API_KEY"),
+        #     base_url=os.getenv("OPENAI_BASE_URL"),
+        # )
+
+        # -----------------------------------------------------------------------
+        # OPTION 2: OpenAI client with custom httpx transport that strips top_p
+        # and temperature from requests before sending. Required for Claude via
+        # Bedrock/LiteLLM, which rejects requests containing both params.
+        # -----------------------------------------------------------------------
+        import httpx, json
+        def strip_params(request: httpx.Request):
+            try:
+                body = json.loads(request.content)
+                body.pop("top_p", None)
+                body.pop("temperature", None)
+                encoded = json.dumps(body).encode()
+                request.headers["content-length"] = str(len(encoded))
+                request.stream = httpx.ByteStream(encoded)
+            except Exception:
+                pass
         self.openai_client = openai.OpenAI(
             api_key=os.getenv("OPENAI_API_KEY"),
             base_url=os.getenv("OPENAI_BASE_URL"),
+            http_client=httpx.Client(event_hooks={"request": [strip_params]}),
         )
 
         if self.mode == "bid":
@@ -267,6 +292,7 @@ class BroswerAgent(Agent):
         # 4. Call OpenAI API
         response = self.openai_client.chat.completions.create(
             model=self.model_name,
+            extra_body={"drop_params": True},
             messages=[
                 {"role": "system", "content": system_msgs},
                 {"role": "user", "content": user_msgs},
@@ -506,7 +532,7 @@ You will now think step by step and produce your next best action. Reflect on yo
 
         if self.note_contents:
             user_msgs.append({"type": "text", "text": "# Notes\n"})
-            user_msgs.append({"type": "text", "text": f"{'\n'.join(self.note_contents)}\n\n"})
+            user_msgs.append({"type": "text", "text": f"{chr(10).join(self.note_contents)}\n\n"})
 
         if self.progress_summary_content:
             user_msgs.append({"type": "text", "text": f"# Progress Summary\n{self.progress_summary_content}\n"})
@@ -529,18 +555,21 @@ You will now think step by step and produce your next best action. Reflect on yo
         user_contents = [
             {"type": "text", "text": f"# goal\n{obs['goal']}\n"},
             {"type": "text", "text": f"# axtree_txt\n{axtree_txt}\n"},
-            {"type": "text", "text": f"# screenshot\n"},
-            {"type": "image_url", "image_url": {
-                "url": image_to_jpg_base64_url(obs["screenshot_som"]),
-                "detail": "auto",
-            }},
-            {"type": "text", "text": f"# action_history\n{'\n'.join(self.action_history)}\n"},
+            # GPT-5 (vision): uncomment below for screenshot in progress_summary
+            # {"type": "text", "text": f"# screenshot\n"},
+            # {"type": "image_url", "image_url": {
+            #     "url": image_to_jpg_base64_url(obs["screenshot_som"]),
+            #     "detail": "auto",
+            # }},
+            # Bedrock gpt-oss-120b (text only): screenshot lines commented out above
+            {"type": "text", "text": f"# action_history\n{chr(10).join(self.action_history)}\n"},
             {"type": "text", "text": f"# previous_summary\n{self.progress_summary_content}\n"},
         ]
 
         messages.append({"role": "user", "content": user_contents})
         response = self.openai_client.chat.completions.create(
             model=self.model_name,
+            extra_body={"drop_params": True},
             messages=messages
         )
         self.progress_summary_content = response.choices[0].message.content.strip()

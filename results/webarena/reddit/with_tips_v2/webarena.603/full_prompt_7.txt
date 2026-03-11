@@ -1,0 +1,483 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. when the task mentions subreddit, it is referring to ‘forum'
+2. if you need find a relevant subreddit or forum, you can find the name after clicking "alphabetical" in the "Forum" tab.
+3. if you have to find submissions (posts) or comments by a particular user, visit user profile to see the list
+4. if you want to view a post detail, click the "comments" link attached to the post, **do not click the title hyperlink**, as it will redirect you to an external website.
+5. When creating a post/submission, put all content including URLs in the Body field. Leave the URL field empty. Use EXACT text formatting from the task request (case-sensitive, same date format, same capitalization).
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Post my question, "safe and budge apartment to live in nyc", in a subreddit where I'm likely to get an answer
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Search
+  URL: http://localhost:9999/search?q=asknyc
+
+# Current page Accessibility Tree
+
+RootWebArea 'Search', focused
+	[18] navigation ''
+		[19] link 'Jump to main content'
+		[20] link 'Jump to sidebar'
+	[21] navigation ''
+		[24] link 'Home'
+			StaticText 'Postmill'
+		[34] list ''
+			[35] listitem ''
+				[36] link 'Forums'
+			[37] listitem ''
+				[38] link 'Wiki'
+		[39] Section ''
+			[48] searchbox 'Search query' value='asknyc'
+				StaticText 'asknyc'
+		[49] list ''
+			[50] listitem ''
+				[51] link 'Notifications (0)'
+					[54] image ''
+			[55] listitem ''
+				[56] link 'Submit'
+					[59] image ''
+					StaticText 'Submit'
+			[61] listitem ''
+				[62] button 'MarvelsGrantMan136', hasPopup='menu', expanded=False
+					[65] image ''
+					[66] strong ''
+						StaticText 'MarvelsGrantMan136'
+	[107] main ''
+		[108] heading 'Search'
+		[109] Section ''
+			[111] LabelText ''
+				StaticText 'Search query'
+			[112] searchbox 'Search query' value='asknyc'
+				StaticText 'asknyc'
+			[115] button 'Search'
+		[116] heading '2 results for asknyc:'
+			[117] emphasis ''
+				StaticText 'asknyc'
+		[118] article ''
+			[119] checkbox 'Hide −', checked='true'
+			[123] heading 'oscarweiner_ [t1_j27dkpd] wrote 3 years ago'
+				[125] link 'oscarweiner_', expanded=False
+					[126] strong ''
+						StaticText 'oscarweiner_'
+				StaticText ''
+				StaticText '['
+				StaticText 't1_j27dkpd'
+				StaticText ']'
+				StaticText 'wrote'
+				[128] time 'December 29, 2022 at 11:21:06 PM EST'
+					StaticText '3 years ago'
+			[129] list ''
+				[130] listitem ''
+					[131] LabelText ''
+						StaticText 'Hide −'
+			[136] image ''
+			[137] paragraph ''
+				StaticText 'Reply to'
+				[138] link 'Luxury building tenants have CrossFit gym, skyline views — but no heat, gas'
+					[139] strong ''
+						StaticText 'Luxury building tenants have CrossFit gym, skyline views — but no heat, gas'
+				StaticText 'by'
+				[140] link 'PichuLovy', expanded=False
+					[141] strong ''
+						StaticText 'PichuLovy'
+			[143] paragraph ''
+				StaticText 'plates as a temporary solution, but they’re required to return them between meals* someone in'
+				[144] mark ''
+					StaticText 'asknyc'
+				StaticText "awhile ago had said there are issues in the bldg he's in, and the quote from"
+			[145] navigation ''
+				[146] list ''
+					[147] listitem ''
+						[148] link 'Reply'
+							[149] strong ''
+								StaticText 'Reply'
+					[150] listitem ''
+						[151] link 'Permalink'
+			[153] Section ''
+				[155] button 'Upvote'
+				StaticText '2'
+				[165] button 'Downvote'
+		[170] article ''
+			[175] heading 'Should I move to Newport?'
+				[176] link 'Should I move to Newport?'
+			[177] paragraph ''
+				StaticText 'Submitted by'
+				[179] link 'Strong-Serve6290', expanded=False
+					[180] strong ''
+						StaticText 'Strong-Serve6290'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zq2f4q'
+				StaticText ']'
+				StaticText ''
+				[182] time 'December 19, 2022 at 3:21:53 PM EST'
+					StaticText '3 years ago'
+				StaticText 'in'
+				[183] link 'newjersey'
+					[184] strong ''
+						StaticText 'newjersey'
+			[187] paragraph ''
+				StaticText 'posted this in'
+				[188] mark ''
+					StaticText 'asknyc'
+				StaticText "and someone pointed out the answers would be biased, which made sense lol. I'm early to mid 20s who currently live in small studio in Midtown South for 2400/mo"
+			[189] navigation ''
+				[190] list ''
+					[191] listitem ''
+						[192] link '20 comments'
+							[193] strong ''
+								StaticText '20 comments'
+			[195] Section ''
+				[197] button 'Upvote'
+				StaticText '0'
+				[207] button 'Downvote'
+	[213] contentinfo ''
+		[214] paragraph ''
+			StaticText 'Running'
+			[216] link 'Postmill'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+<think>
+We’re on the List of forums page with the searchbox already filled with "nyc". To find a relevant NYC-focused forum quickly (like nyc or AskNYC), I should execute the search. There’s no visible search button, so pressing Enter in the focused search field [50] should trigger the search/filter. After results load, I’ll pick the most relevant NYC forum and proceed to submit the post with the exact text the user provided.
+</think>
+<action>
+```press('50', 'Enter')```
+</action>
+
+
+<think>
+The user wants me to post their question in a subreddit (forum) where they’re likely to get an answer. From the current Search page for "nyc", I can see multiple results and importantly, direct links to the "nyc" forum (e.g., link [180] under one article shows "in nyc"). The best path is to navigate to the "nyc" forum first, then use its Submit to ensure the post goes to that forum, which is relevant and likely to yield responses. The top nav Submit might require choosing a forum, so clicking the "nyc" forum link first is more reliable. I will click the "nyc" forum link [180] to go to the forum page.
+</think>
+<action>
+```click("180")```
+</action>
+
+
+<think>
+The user wants to post their question in a subreddit (forum) likely to get answers. We’re already on /f/nyc, which is highly active (many posts with lots of comments), making it a good choice. The next step is to start the submission process. The top navigation has a visible "Submit" link [65]. Per task tips, when creating a post, we’ll later ensure the content is placed in the Body field and the URL field is left empty, preserving the exact text "safe and budge apartment to live in nyc". First, I need to open the submission form by clicking Submit.
+</think>
+<action>
+```click("65")```
+</action>
+
+
+<think>
+We are on the Create submission page for the forum "nyc," but the sidebar shows "No subscribers," which is unlikely to yield answers. The goal is to post in a subreddit (forum) where we’re likely to get an answer. A better target would be a more active Q&A forum like "AskNYC." The header has a Search query field [53]. To find a better forum, I should use this search box to look up "asknyc," then navigate to that forum and submit the post there. First, I will fill the search box with "asknyc." After that, I will press Enter to search in the following step.
+</think>
+<action>
+```fill('53', 'asknyc')```
+</action>
+
+
+<think>
+The goal is to post the user's question in a forum where it's likely to get answers. We're on the Create submission page for "nyc," which shows "No subscribers," making it a poor choice. I previously entered "asknyc" into the site-wide search box at the top ([53]). To find a more active forum (likely "asknyc"), I should execute this search. Pressing Enter in the focused search field should navigate to results where I can select the appropriate forum to post in.
+</think>
+<action>
+```press('53', 'Enter')```
+</action>
+
+# Progress Summary
+✅ Current Progress:
+- Executed a site-wide search for “asknyc” and arrived on the Search results page.
+
+🔍 Current State Analysis:
+- This page shows general search results for “asknyc” but does not provide a direct link to the AskNYC forum; it’s not on the direct path to posting the question in a relevant subreddit/forum.
+- Relevant interactive elements:
+  - Navigation link “Forums” [36] — visible/enabled; likely leads to the forum directory where “AskNYC” can be located.
+  - Header “Submit” link [56] — visible/enabled; opens a submission form but may require selecting the correct forum.
+  - Search controls on this page: searchbox “Search query” [112] (value='asknyc'), button “Search” [115] — currently show results mentioning asknyc but not the forum itself.
+  - Irrelevant result links include “Should I move to Newport?” [176] and forum link “newjersey” [183].
+
+➡️ Next-step Guidance:
+- Click link “Forums” [36] to open the forum directory, then search/select “AskNYC” to ensure the post is made in a high-traffic, relevant forum.

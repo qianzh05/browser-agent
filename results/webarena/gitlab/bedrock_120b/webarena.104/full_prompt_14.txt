@@ -1,0 +1,1037 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. your user name is byteblaze
+2. To add new members to the project, you can visit project information > members tab and click blue "invite members" button on top right
+3. To set your status, click profile button on top right corner of the page (it's next to the question mark button) and click edit status
+4. To edit your profile, click profile button on top right corner of the page (it's next to the question mark button) and click edit profile
+5. You can also access to your information e.g. access token, notifications, ssh keys and more from "edit profile" page
+6. Projects that you have contributed to are listed under Project / Yours / All tab of gitlab.site. You can sort repos using dropdown button on top right
+7. Projects's repository tab has menus like Commits, Branches, Contributors, and more. Contributors tab shows contributors and their number of commits
+8. If you want to see all the issues for you, you can either click button on the right of + icon on top right menu bar
+9. When the task mentions branch main, it often means master
+10. `dotfiles` is my one of repository
+11. Click the GitLab icon in the top-left corner to view all projects (Yours / Starred / Explore / Topics). In the Explore tab, you can browse All Explore, Most Stars, and Trending repository.
+12. When asked to make changes to a repository, commit changes to the main branch UNLESS the task specifically asks you to create a branch, make a merge request, or follow a different workflow.
+13. Do not use the global search bar(Search GitLab), it is currently not working. To search for a repository, go to the search URL instead: http://localhost:8023/search?search=<repository-name>&nav_source=navbar. Replace <repository-name> with the project name only (e.g., openapi-generator), without the group or namespace prefix (e.g., do not use OpenAPITools/openapi-generator). Example: goto('http://localhost:8023/search?search=openapi-generator&nav_source=navbar')
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Display the list of issues in the keycloak/keycloak repository that have labels related to flaky-test
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Issues · Keycloak / keycloak · GitLab
+  URL: http://localhost:8023/keycloak/keycloak/-/issues
+
+# Current page Accessibility Tree
+
+RootWebArea 'Issues · Keycloak / keycloak · GitLab', focused
+	[64] banner ''
+		[65] link 'Skip to content'
+		StaticText 'GitLab'
+		[71] link 'Dashboard'
+			[72] image ''
+		[75] list ''
+			[76] listitem ''
+				[77] button '', hasPopup='menu', expanded=False
+		[137] list ''
+			[138] listitem ''
+				[140] Section ''
+					[142] image ''
+					[143] textbox 'Search GitLab'
+		[155] list ''
+			[156] listitem ''
+				[157] link 'Create new...'
+					[158] image ''
+					[159] image ''
+			[173] listitem ''
+				[174] link 'Issues'
+					[175] image ''
+			[177] listitem ''
+				[178] link 'Merge requests'
+					[179] image ''
+					[181] image ''
+			[191] listitem ''
+				[192] link 'To-Do List'
+					[193] image ''
+					StaticText '5'
+			[195] listitem ''
+				[196] link 'Help'
+					StaticText 'Help'
+					[198] image ''
+					[200] image ''
+			[221] listitem ''
+				[222] link 'Byte Blaze'
+					[223] image 'Byte Blaze'
+					[224] image ''
+	[260] complementary 'Project navigation'
+		[262] list ''
+			[263] listitem 'keycloak'
+				[264] link 'keycloak'
+					StaticText 'K'
+					StaticText 'keycloak'
+			[268] listitem ''
+				[269] link 'Project information'
+					[271] image ''
+					StaticText 'Project information'
+			[287] listitem ''
+				[288] link 'Repository'
+					[290] image ''
+					StaticText 'Repository'
+			[318] listitem ''
+				[319] link 'Issues'
+					[321] image ''
+					StaticText 'Issues'
+					StaticText '1,604'
+			[342] listitem ''
+				[343] link 'Merge requests'
+					[345] image ''
+					StaticText 'Merge requests'
+					StaticText '230'
+			[353] listitem ''
+				[354] link 'CI/CD'
+					[356] image ''
+					StaticText 'CI/CD'
+			[372] listitem ''
+				[373] link 'Deployments'
+					[375] image ''
+					StaticText 'Deployments'
+			[388] listitem ''
+				[389] link 'Packages and registries'
+					[391] image ''
+					StaticText 'Packages and registries'
+			[404] listitem ''
+				[405] link 'Monitor'
+					[407] image ''
+					StaticText 'Monitor'
+			[417] listitem ''
+				[418] link 'Analytics'
+					[420] image ''
+					StaticText 'Analytics'
+			[436] listitem ''
+				[437] link 'Wiki'
+					[439] image ''
+					StaticText 'Wiki'
+			[445] listitem ''
+				[446] link 'Snippets'
+					[448] image ''
+					StaticText 'Snippets'
+		[466] button 'Toggle sidebar'
+			[467] image ''
+	[475] navigation 'Breadcrumbs'
+		[481] list ''
+			[482] listitem ''
+				[483] link 'Keycloak'
+				[484] image ''
+			[485] listitem ''
+				[486] link 'keycloak'
+					StaticText 'keycloak'
+				[488] image ''
+			[489] listitem ''
+				[490] link 'Issues'
+	[493] main ''
+		[501] tablist '', multiselectable=False, orientation='horizontal'
+			[503] tab 'Open 1,604', selected=True, controls='__BVID__9'
+				StaticText 'Open'
+				StaticText '1,604'
+			[507] tab 'Closed 4,041', selected=False, controls='__BVID__12'
+				StaticText 'Closed'
+				StaticText '4,041'
+			[511] tab 'All 5,645', selected=False, controls='__BVID__15'
+				StaticText 'All'
+				StaticText '5,645'
+		[515] tabpanel 'Open 1,604'
+		[519] link 'Subscribe to RSS feed'
+		[521] link 'Subscribe to calendar'
+		[524] group ''
+			[525] button 'Export as CSV'
+		[527] link 'New issue'
+			StaticText 'New issue'
+		[530] group ''
+			[533] button 'Toggle history', hasPopup='menu', expanded=False
+				StaticText 'Toggle history'
+			[551] textbox 'Search or filter results...'
+			[553] button 'Search'
+		[555] group ''
+			[557] button 'Created date', hasPopup='menu', expanded=False
+				StaticText 'Created date'
+			[613] button 'Sort direction: Ascending'
+		[615] complementary '', live='polite', relevant='additions text'
+		[617] list ''
+			[618] listitem ''
+				[621] link "Group resource: setOrCreateChild don't return 'location header'"
+				StaticText 'Issue'
+				StaticText '#16925'
+				StaticText ''
+				StaticText 'created'
+				StaticText '6 years ago'
+				StaticText 'by'
+				[631] link 'Administrator'
+					StaticText 'Administrator'
+				[635] link 'Backlog'
+				StaticText ''
+				[637] group 'Labels'
+					[639] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[642] link 'kind/bug'
+						StaticText 'kind/bug'
+					[645] link 'team/ui'
+						StaticText 'team/ui'
+				[648] list ''
+					[649] listitem ''
+					[650] list ''
+					[651] listitem ''
+						[652] link '0'
+				StaticText 'updated 3 years ago'
+			[655] listitem ''
+				[658] link 'Logout'
+				StaticText 'Issue'
+				StaticText '#16926'
+				StaticText ''
+				StaticText 'created'
+				StaticText '6 years ago'
+				StaticText 'by'
+				[668] link 'Administrator'
+					StaticText 'Administrator'
+				[672] link 'Backlog'
+				StaticText ''
+				[674] group 'Labels'
+					[676] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[679] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[682] link 'team/ui'
+						StaticText 'team/ui'
+				[685] list ''
+					[686] listitem ''
+					[687] list ''
+					[688] listitem ''
+						[689] link '0'
+				StaticText 'updated 3 years ago'
+			[692] listitem ''
+				[695] link 'users.create: UnhandledPromiseRejectionWarning: Error: Request failed with status code 500'
+				StaticText 'Issue'
+				StaticText '#16927'
+				StaticText ''
+				StaticText 'created'
+				StaticText '6 years ago'
+				StaticText 'by'
+				[705] link 'Administrator'
+					StaticText 'Administrator'
+				[709] link 'Backlog'
+				StaticText ''
+				[711] group 'Labels'
+					[713] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[716] link 'kind/bug'
+						StaticText 'kind/bug'
+					[719] link 'team/ui'
+						StaticText 'team/ui'
+				[722] list ''
+					[723] listitem ''
+					[724] list ''
+					[725] listitem ''
+						[726] link '0'
+				StaticText 'updated 2 years ago'
+			[729] listitem ''
+				[732] link 'No group assigned while creating a user'
+				StaticText 'Issue'
+				StaticText '#16930'
+				StaticText ''
+				StaticText 'created'
+				StaticText '6 years ago'
+				StaticText 'by'
+				[742] link 'Administrator'
+					StaticText 'Administrator'
+				[746] link 'Backlog'
+				StaticText ''
+				[748] group 'Labels'
+					[750] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[753] link 'kind/bug'
+						StaticText 'kind/bug'
+					[756] link 'team/ui'
+						StaticText 'team/ui'
+				[759] list ''
+					[760] listitem ''
+					[761] list ''
+					[762] listitem ''
+						[763] link '0'
+				StaticText 'updated 3 years ago'
+			[766] listitem ''
+				[769] link 'is Impersonation Supported?'
+				StaticText 'Issue'
+				StaticText '#16934'
+				StaticText ''
+				StaticText 'created'
+				StaticText '5 years ago'
+				StaticText 'by'
+				[779] link 'Administrator'
+					StaticText 'Administrator'
+				[783] link 'Backlog'
+				StaticText ''
+				[785] group 'Labels'
+					[787] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[790] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[793] link 'team/ui'
+						StaticText 'team/ui'
+				[796] list ''
+					[797] listitem ''
+					[798] list ''
+					[799] listitem ''
+						[800] link '0'
+				StaticText 'updated 3 years ago'
+			[803] listitem ''
+				[806] link 'Add credentials endpoint'
+				StaticText 'Issue'
+				StaticText '#16935'
+				StaticText ''
+				StaticText 'created'
+				StaticText '5 years ago'
+				StaticText 'by'
+				[816] link 'Administrator'
+					StaticText 'Administrator'
+				[820] link 'Backlog'
+				StaticText ''
+				[822] group 'Labels'
+					[824] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[827] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[830] link 'team/ui'
+						StaticText 'team/ui'
+				[833] list ''
+					[834] listitem ''
+					[835] list ''
+					[836] listitem ''
+						[837] link '0'
+				StaticText 'updated 3 years ago'
+			[840] listitem ''
+				[843] link 'Test using pre-configured Keycloak docker container'
+				StaticText 'Issue'
+				StaticText '#16936'
+				StaticText ''
+				StaticText 'created'
+				StaticText '5 years ago'
+				StaticText 'by'
+				[853] link 'Administrator'
+					StaticText 'Administrator'
+				[857] link 'Backlog'
+				StaticText ''
+				[859] group 'Labels'
+					[861] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[864] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[867] link 'team/ui'
+						StaticText 'team/ui'
+				[870] list ''
+					[871] listitem ''
+					[872] list ''
+					[873] listitem ''
+						[874] link '0'
+				StaticText 'updated 3 years ago'
+			[877] listitem ''
+				[880] link 'Realms "endpoint" needs current realm parameter'
+				StaticText 'Issue'
+				StaticText '#16937'
+				StaticText ''
+				StaticText 'created'
+				StaticText '5 years ago'
+				StaticText 'by'
+				[890] link 'Erik Jan de Wit'
+					StaticText 'Erik Jan de Wit'
+				[894] link 'Backlog'
+				StaticText ''
+				[896] group 'Labels'
+					[898] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[901] link 'kind/bug'
+						StaticText 'kind/bug'
+					[904] link 'team/ui'
+						StaticText 'team/ui'
+				[907] list ''
+					[908] listitem ''
+					[909] list ''
+					[910] listitem ''
+						[911] link '0'
+				StaticText 'updated 3 years ago'
+			[914] listitem ''
+				[917] link 'Use the Time component on the User Federation pages'
+				StaticText 'Issue'
+				StaticText '#17781'
+				StaticText ''
+				StaticText 'created'
+				StaticText '5 years ago'
+				StaticText 'by'
+				[927] link 'Erik Jan de Wit'
+					StaticText 'Erik Jan de Wit'
+				[931] link 'Backlog'
+				StaticText ''
+				[933] group 'Labels'
+					[935] link 'area/admin/ui'
+						StaticText 'area/admin/ui'
+					[938] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[941] link 'team/ui'
+						StaticText 'team/ui'
+				[944] list ''
+					[945] listitem ''
+					[946] list ''
+					[947] listitem ''
+						[948] link '0'
+				StaticText 'updated 2 years ago'
+			[951] listitem ''
+				[954] link '[UX review] Make the search behavior consistent around the console'
+				StaticText 'Issue'
+				StaticText '#17780'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[964] link 'Administrator'
+					StaticText 'Administrator'
+				[968] link 'Backlog'
+				StaticText ''
+				[970] group 'Labels'
+					[972] link 'area/admin/ui'
+						StaticText 'area/admin/ui'
+					[975] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[978] link 'team/ui'
+						StaticText 'team/ui'
+				[981] list ''
+					[982] listitem ''
+					[983] list ''
+					[984] listitem ''
+						[985] link '0'
+				StaticText 'updated 2 years ago'
+			[988] listitem ''
+				[991] link 'Add AccountRestService interfaces'
+				StaticText 'Issue'
+				StaticText '#16939'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1001] link 'Administrator'
+					StaticText 'Administrator'
+				[1005] link 'Backlog'
+				StaticText ''
+				[1007] group 'Labels'
+					[1009] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[1012] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[1015] link 'team/ui'
+						StaticText 'team/ui'
+				[1018] list ''
+					[1019] listitem ''
+					[1020] list ''
+					[1021] listitem ''
+						[1022] link '0'
+				StaticText 'updated 3 years ago'
+			[1025] listitem ''
+				[1028] link 'Warn when using deprecated endpoints'
+				StaticText 'Issue'
+				StaticText '#16940'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1038] link 'Administrator'
+					StaticText 'Administrator'
+				[1042] link 'Backlog'
+				StaticText ''
+				[1044] group 'Labels'
+					[1046] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[1049] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[1052] link 'team/ui'
+						StaticText 'team/ui'
+				[1055] list ''
+					[1056] listitem ''
+					[1057] list ''
+					[1058] listitem ''
+						[1059] link '0'
+				StaticText 'updated 3 years ago'
+			[1062] listitem ''
+				[1065] link 'Token exchange request'
+				StaticText 'Issue'
+				StaticText '#16941'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1075] link 'Administrator'
+					StaticText 'Administrator'
+				[1079] link 'Backlog'
+				StaticText ''
+				[1081] group 'Labels'
+					[1083] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[1086] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[1089] link 'team/ui'
+						StaticText 'team/ui'
+				[1092] list ''
+					[1093] listitem ''
+					[1094] list ''
+					[1095] listitem ''
+						[1096] link '0'
+				StaticText 'updated 3 years ago'
+			[1099] listitem ''
+				[1102] link 'localize date format'
+				StaticText 'Issue'
+				StaticText '#17778'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1112] link 'Erik Jan de Wit'
+					StaticText 'Erik Jan de Wit'
+				[1116] link 'Backlog'
+				StaticText ''
+				[1118] group 'Labels'
+					[1120] link 'area/admin/ui'
+						StaticText 'area/admin/ui'
+					[1123] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[1126] link 'team/ui'
+						StaticText 'team/ui'
+				[1129] list ''
+					[1130] listitem ''
+					[1131] list ''
+					[1132] listitem ''
+						[1133] link '0'
+				StaticText 'updated 2 years ago'
+			[1136] listitem ''
+				[1139] link 'PolicyRepresentation should have specific extended interface for Role Policies'
+				StaticText 'Issue'
+				StaticText '#16942'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1149] link 'Administrator'
+					StaticText 'Administrator'
+				[1153] link 'Backlog'
+				StaticText ''
+				[1155] group 'Labels'
+					[1157] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[1160] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[1163] link 'team/ui'
+						StaticText 'team/ui'
+				[1166] list ''
+					[1167] listitem ''
+					[1168] list ''
+					[1169] listitem ''
+						[1170] link '0'
+				StaticText 'updated 3 years ago'
+			[1173] listitem ''
+				[1176] link 'Consider new fields'
+				StaticText 'Issue'
+				StaticText '#17777'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1186] link 'Administrator'
+					StaticText 'Administrator'
+				[1190] link 'Backlog'
+				StaticText ''
+				[1192] group 'Labels'
+					[1194] link 'area/admin/ui'
+						StaticText 'area/admin/ui'
+					[1197] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[1200] link 'team/ui'
+						StaticText 'team/ui'
+				[1203] list ''
+					[1204] listitem ''
+					[1205] list ''
+					[1206] listitem ''
+						[1207] link '0'
+				StaticText 'updated 2 years ago'
+			[1210] listitem ''
+				[1213] link 'Remove/rename deprecated attribute from RealmRepresentation'
+				StaticText 'Issue'
+				StaticText '#16943'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1223] link 'Administrator'
+					StaticText 'Administrator'
+				[1227] link 'Backlog'
+				StaticText ''
+				[1229] group 'Labels'
+					[1231] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[1234] link 'kind/bug'
+						StaticText 'kind/bug'
+					[1237] link 'team/ui'
+						StaticText 'team/ui'
+				[1240] list ''
+					[1241] listitem ''
+					[1242] list ''
+					[1243] listitem ''
+						[1244] link '0'
+				StaticText 'updated 3 years ago'
+			[1247] listitem ''
+				[1250] link 'Apply typeahead style to dropdown with more than 10 options'
+				StaticText 'Issue'
+				StaticText '#17776'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1260] link 'Administrator'
+					StaticText 'Administrator'
+				[1264] link 'Backlog'
+				StaticText ''
+				[1266] group 'Labels'
+					[1268] link 'area/admin/ui'
+						StaticText 'area/admin/ui'
+					[1271] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[1274] link 'team/ui'
+						StaticText 'team/ui'
+				[1277] list ''
+					[1278] listitem ''
+					[1279] list ''
+					[1280] listitem ''
+						[1281] link '0'
+				StaticText 'updated 2 years ago'
+			[1284] listitem ''
+				[1287] link 'Use @Nonnull annotations on Java models and generate strict TypeScript'
+				StaticText '0 of 2 checklist items completed'
+				StaticText 'Issue'
+				StaticText '#16944'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1298] link 'Jon Koops'
+					StaticText 'Jon Koops'
+				[1302] link 'Backlog'
+				StaticText ''
+				[1304] group 'Labels'
+					[1306] link 'area/admin/client-js'
+						StaticText 'area/admin/client-js'
+					[1309] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[1312] link 'team/ui'
+						StaticText 'team/ui'
+				[1315] list ''
+					[1316] listitem ''
+					[1317] list ''
+					[1318] listitem ''
+						[1319] link '0'
+				StaticText 'updated 3 years ago'
+			[1322] listitem ''
+				[1325] link 'Replace hardcoded paths for navigation with route configuration'
+				StaticText 'Issue'
+				StaticText '#17775'
+				StaticText ''
+				StaticText 'created'
+				StaticText '4 years ago'
+				StaticText 'by'
+				[1335] link 'Jon Koops'
+					StaticText 'Jon Koops'
+				[1339] link 'Backlog'
+				StaticText ''
+				[1341] group 'Labels'
+					[1343] link 'area/admin/ui'
+						StaticText 'area/admin/ui'
+					[1346] link 'good first issue'
+						StaticText 'good first issue'
+					[1349] link 'kind/enhancement'
+						StaticText 'kind/enhancement'
+					[1352] link 'team/ui'
+						StaticText 'team/ui'
+				[1355] list ''
+					[1356] listitem ''
+					[1357] list ''
+					[1358] listitem ''
+						[1359] link '0'
+				StaticText 'updated 2 years ago'
+		[1363] group ''
+			[1364] button 'Prev', disabled=True
+				StaticText 'Prev'
+			[1368] button 'Next'
+				StaticText 'Next'
+		[1373] button 'Show 20 items', hasPopup='menu', expanded=False
+			StaticText 'Show 20 items'
+
+# History of past actions
+
+
+<reasoning>We have an error: click failed because element not visible. Perhaps need to scroll or use a different selector. Since cannot scroll? We can scroll but limited. Instead, maybe the link is not visible because result list may require loading? Could be that element ID is not correct. We need to locate correct ID for link "Keycloak / keycloak". In accessibility tree we saw listitem [311] -> link. But not sure its bid. We could search for the link text using find? Not available. We could use "click" on the link by its name maybe we need to click the listitem first? The link may be within listitem. Could try click on listitem ID maybe '311' or '310'? Let's attempt click on listitem '311' (assuming it's clickable as link). Or we can click on the link element. Maybe the link is id '320' as guessed earlier but not visible. Let's try scroll a bit down then click.
+
+We can scroll down a bit: scroll(0,200). Then try click again. Use scroll then click.
+
+First scroll a bit.</reasoning><think>
+The repository link “Keycloak / keycloak” is present in the search results but not currently in view, causing the click to fail. I’ll scroll the page down to bring the result into view, then attempt to click the link again. The link’s element ID is likely “320” (as previously identified), so after scrolling I’ll click that ID.
+</think>
+<action>
+```scroll(0, 300)```
+</action>
+
+
+<reasoning>We need to review: Did we correctly identify ID? The accessibility tree shows listitem [311] and link within. The IDs are not shown directly. In earlier examples, children IDs often increased sequentially. We guessed 320 but not sure. Could be 321? The link might be the child of listitem. We could attempt to click the listitem '311' which may be clickable (listitem). Let's consider if click('311') works. Safer might be to click listitem. But listitem may not be interactive. Usually link is clickable. So we need correct ID. Could inspect screenshot, but not available. Maybe the link ID is '322'? The list shows IDs like 322 for link "Issues". So these are sequential. The repository link likely has some ID near there. We can try to find by pattern: earlier, Issues tab link is id 322 (as per tree). The repository link maybe earlier in list, could be id something like 320. That's plausible.
+
+If click fails again, we may need alternative. But proceed.
+
+</reasoning><think>
+After scrolling the page down, the “Keycloak / keycloak” repository link should be visible. I will click the link (element ID 320) to open the repository page, where I can then navigate to the Issues tab and filter by flaky‑test labels.
+</think>
+<action>
+```click('320')```
+</action>
+
+
+<reasoning>The user wants to display list of issues in keycloak/keycloak repo that have labels related to flaky-test. We have attempted to click repository link but failed due to element not visible. Perhaps need to adjust scroll more or use different ID. Could also directly go to repository URL: http://localhost:8023/keycloak/keycloak. That would bypass needing to click the link. We can use goto to that URL. Simpler. Use goto('http://localhost:8023/keycloak/keycloak'). Then navigate to Issues tab, filter.
+
+Thus next action: goto repository URL.
+
+Proceed.</reasoning><think>
+The repository “keycloak/keycloak” is accessible directly via its URL. By navigating straight to that URL, we avoid the visibility issues with the search result link. Once on the repository page, we can open the Issues tab and apply a filter for labels containing “flaky-test”.
+</think>
+<action>
+```goto('http://localhost:8023/keycloak/keycloak')```
+</action>
+
+
+<reasoning>The user last gave a "previous_summary" block which essentially asked the assistant to output the final answer: "The last step we produced click('320').". But the system now responded with a progress summary after the click. The instructions at the top: The assistant should be performing tasks. Now we have given a progress summary. The user might expect us to continue to achieve the goal: display list of issues with labels related to flaky-test in the keycloak/keycloak repository. We have not yet opened Issues tab or filtered.
+
+Thus next action: click the Issues link. Need its ID. In the axtree of repository page, earlier we saw listitem [322] link "Issues". The ID for the link was '322'? Actually in the previous axtree near the top, under Project navigation we saw listitem 322 link 'Issues' and statictext '1,604' (issue count). That is likely a link with ID '322' or maybe another. Usually the link itself may have a bid id separate from listitem. In tree: listitem id 322, link inside? The representation: [322] link 'Issues' (maybe link element ID is 322). We can try click('322').
+
+Thus next action: click('322').
+
+After clicking, we need to filter issues by label containing flaky-test. On Issues page, there is a filter bar where you can type label: "label:flaky-test". There is also a label filter UI. The simplest is to use the search field (top). On GitLab issues, there is a search and filter field. Could fill it. Need the field ID. Not sure. Let's first click Issues.
+
+Proceed with click('322').
+
+</reasoning><think>
+The repository page is open and the “Issues” link (element ID 322) is visible in the project navigation bar. Clicking this link will load the repository’s issues list, where I can then apply a label filter to show only issues with labels related to “flaky‑test”.
+</think>
+<action>
+```click('322')```
+</action>
+
+
+<reasoning>We need to respond with a progress summary after the last action. The last action was click('320'), which succeeded (they said "Arrived at the keycloak/keycloak repository main page after clicking the repository link.") Actually they used click('320')? The summary says we arrived at repository main page after clicking the repository link. But did we navigate? We used goto to the repo directly; then attempted click('322') had timeout. So we are still on repository main page, not on issues. The progress summary should reflect state after click('320')? The system says after click('320') we are on repository main page. So summary should reflect that.
+
+We need to follow "Progress Summary" format: ✅ Current Progress, 🔍 Current State Analysis. No Next-step Guidance.
+
+Provide that.</reasoning>✅ Current Progress  
+- Navigated to the **keycloak/keycloak** repository main page.
+
+🔍 Current State Analysis  
+- The repository page displays the standard project navigation bar with the **Issues** link (element ID 322) visible and enabled.  
+- The Issues list has not been opened yet, so no issue data or label filters are currently displayed.  
+- To fulfill the goal, the next step is to open the **Issues** tab and then filter the issues by labels related to **flaky‑test**.
+
+# Error message from last action
+
+ValueError: Received an empty action.
+
+# Progress Summary
+<reasoning>We need to provide progress summary after last action (click('320')). According to guidelines, we should include ✅ Current Progress and 🔍 Current State Analysis, no Next-step Guidance unless deviated. The summary above matches. Ensure correct formatting: sections with headings. Already done. Should we include bullet points? It's fine. Provide final answer.</reasoning>✅ Current Progress  
+- Arrived at the **keycloak/keycloak** repository main page after clicking the repository link.
+
+🔍 Current State Analysis  
+- The repository page displays the standard project navigation bar with the following relevant, enabled elements:  
+  - **Link “Issues”** – visible and focusable; clicking it will open the repository’s Issues list.  
+  - **Search / filter controls** (e.g., label filter) are not yet visible because the Issues tab has not been opened.  
+- No label filter for “flaky‑test” has been applied yet, so the issues list (once opened) will show all issues. The page is on the correct path toward the goal; the next required step is to open the Issues tab and apply a label filter for any label containing **flaky‑test**.

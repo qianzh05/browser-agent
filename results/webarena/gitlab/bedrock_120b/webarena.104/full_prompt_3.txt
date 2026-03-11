@@ -1,0 +1,493 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. your user name is byteblaze
+2. To add new members to the project, you can visit project information > members tab and click blue "invite members" button on top right
+3. To set your status, click profile button on top right corner of the page (it's next to the question mark button) and click edit status
+4. To edit your profile, click profile button on top right corner of the page (it's next to the question mark button) and click edit profile
+5. You can also access to your information e.g. access token, notifications, ssh keys and more from "edit profile" page
+6. Projects that you have contributed to are listed under Project / Yours / All tab of gitlab.site. You can sort repos using dropdown button on top right
+7. Projects's repository tab has menus like Commits, Branches, Contributors, and more. Contributors tab shows contributors and their number of commits
+8. If you want to see all the issues for you, you can either click button on the right of + icon on top right menu bar
+9. When the task mentions branch main, it often means master
+10. `dotfiles` is my one of repository
+11. Click the GitLab icon in the top-left corner to view all projects (Yours / Starred / Explore / Topics). In the Explore tab, you can browse All Explore, Most Stars, and Trending repository.
+12. When asked to make changes to a repository, commit changes to the main branch UNLESS the task specifically asks you to create a branch, make a merge request, or follow a different workflow.
+13. Do not use the global search bar(Search GitLab), it is currently not working. To search for a repository, go to the search URL instead: http://localhost:8023/search?search=<repository-name>&nav_source=navbar. Replace <repository-name> with the project name only (e.g., openapi-generator), without the group or namespace prefix (e.g., do not use OpenAPITools/openapi-generator). Example: goto('http://localhost:8023/search?search=openapi-generator&nav_source=navbar')
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Display the list of issues in the keycloak/keycloak repository that have labels related to flaky-test
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: keycloak · Search · GitLab
+  URL: http://localhost:8023/search?search=keycloak&nav_source=navbar
+
+# Current page Accessibility Tree
+
+RootWebArea 'keycloak · Search · GitLab', focused
+	[52] banner ''
+		[53] link 'Skip to content'
+		StaticText 'GitLab'
+		[59] link 'Dashboard'
+			[60] image ''
+		[63] list ''
+			[64] listitem ''
+				[65] button '', hasPopup='menu', expanded=False
+		[106] list ''
+			[107] listitem ''
+		[112] list ''
+			[113] listitem ''
+				[114] link 'Create new...'
+					[115] image ''
+					[116] image ''
+			[125] listitem ''
+				[126] link 'Issues'
+					[127] image ''
+			[129] listitem ''
+				[130] link 'Merge requests'
+					[131] image ''
+					[133] image ''
+			[143] listitem ''
+				[144] link 'To-Do List'
+					[145] image ''
+					StaticText '5'
+			[147] listitem ''
+				[148] link 'Help'
+					StaticText 'Help'
+					[150] image ''
+					[152] image ''
+			[173] listitem ''
+				[174] link 'Byte Blaze'
+					[175] image 'Byte Blaze'
+					[176] image ''
+	[216] main ''
+		[219] heading 'Search'
+		[221] Section ''
+			[225] LabelText ''
+				StaticText 'What are you searching for?'
+			[226] group ''
+				[227] searchbox 'Search for projects, issues, etc.' value='keycloak'
+					StaticText 'keycloak'
+				[228] button 'Clear'
+				[231] button 'Search'
+			[234] LabelText ''
+				StaticText 'Group'
+			[236] button 'Any', hasPopup='menu', expanded=False
+				StaticText 'Any'
+			[257] LabelText ''
+				StaticText 'Project'
+			[259] button 'Any', hasPopup='menu', expanded=False
+				StaticText 'Any'
+			[279] separator '', orientation='horizontal'
+		[281] Section ''
+			[282] navigation ''
+				[283] list ''
+					[284] listitem ''
+						[285] link 'Projects 1'
+							StaticText 'Projects'
+							StaticText '1'
+					[288] listitem ''
+						[289] link 'Issues 99 Result count is over limit.'
+							StaticText 'Issues'
+							StaticText '99'
+							[292] image 'Result count is over limit.'
+					[293] listitem ''
+						[294] link 'Merge requests 99 Result count is over limit.'
+							StaticText 'Merge requests'
+							StaticText '99'
+							[297] image 'Result count is over limit.'
+					[298] listitem ''
+						[299] link 'Milestones 2'
+							StaticText 'Milestones'
+							StaticText '2'
+					[302] listitem ''
+						[303] link 'Users 1'
+							StaticText 'Users'
+							StaticText '1'
+		[311] list ''
+			[312] listitem ''
+				[314] link 'K'
+					StaticText 'K'
+				[319] heading 'Keycloak / keycloak'
+					[320] link 'Keycloak / keycloak'
+						StaticText 'Keycloak /'
+						StaticText 'keycloak'
+				[324] image ''
+				[326] paragraph ''
+					StaticText 'Open Source Identity and Access Management For Modern Applications and Services'
+				[337] link '43'
+					[338] image ''
+				[339] link '0'
+					[340] image ''
+				[341] link '230'
+					[342] image ''
+				[343] link '1.6k'
+					[344] image ''
+				StaticText 'Updated'
+				[347] time 'Mar 21, 2023 6:16am UTC'
+					StaticText '2 years ago'
+		[349] list ''
+
+# History of past actions
+
+
+<reasoning>The user wants: "Display the list of issues in the keycloak/keycloak repository that have labels related to flaky-test". We need to navigate GitLab to that repository's issues list, apply filter for label containing "flaky-test". The current page is dashboard home listing user's projects. Need to go to search URL for repository "keycloak". According to tips, global search bar not working; use search URL: http://localhost:8023/search?search=<repository-name>&nav_source=navbar. Repository name is "keycloak". But need full repo "keycloak/keycloak". Probably search for "keycloak". Then click result matching group? Might be probably under group "keycloak". Let's try goto search URL.
+
+We need to open new tab? Could just navigate current tab to url. Use goto.
+
+We'll go to http://localhost:8023/search?search=keycloak&nav_source=navbar
+
+</reasoning><think>
+The user wants to see issues in the keycloak/keycloak repository filtered by labels related to flaky-test. From the dashboard we can navigate to the repository using the dedicated search URL (global search bar is broken). I’ll go directly to the search page for “keycloak” which will list matching projects, then later we can click the keycloak/keycloak repo and navigate to its Issues page with the appropriate label filter.
+</think>
+<action>
+```goto('http://localhost:8023/search?search=keycloak&nav_source=navbar')```
+</action>
+
+
+<reasoning>The user asked for a progress summary after the last action (goto). We need to output the progress summary using the specified format: include ✅ Current Progress, 🔍 Current State Analysis, and Next-step Guidance if needed. Need to follow the structure exactly.
+
+We have to include bullet points etc.
+
+Let's craft final answer.</reasoning>**✅ Current Progress**  
+- Navigated to the GitLab search page for “keycloak”. The repository **Keycloak / keycloak** now appears in the results list.
+
+**🔍 Current State Analysis**  
+- The page displays a list of search results with the following relevant, focusable, and enabled elements:  
+  - **Link “Keycloak / keycloak”** – clicking this will open the repository’s main page.  
+  - **Link “Issues 99 Result count is over limit.”** – points to a global issues search, not the repository‑specific issues list.  
+- To achieve the goal, the next steps are to:  
+  1. Click the **“Keycloak / keycloak”** link to access the repository.  
+  2. In the repository view, open the **“Issues”** tab.  
+  3. Apply a label filter for any label containing **flaky‑test** to display the relevant issues.
+
+
+<reasoning>We have provided the progress summary as requested.</reasoning>**✅ Current Progress**  
+- Navigated to the GitLab search page for “keycloak”. The repository **Keycloak / keycloak** now appears in the results.
+
+**🔍 Current State Analysis**  
+- The page shows a list of search results.  
+  - **Link “Keycloak / keycloak”** (listitem [311] → link) – focusable, enabled, visible. Clicking it will open the repository’s main page.  
+  - In the top navigation bar, there is a **link “Issues 99 Result count is over limit.”** (listitem [289] → link) that points to a global issues search, not the repository‑specific issues list.  
+- To reach the goal, the next required actions are:  
+  1. Click the **“Keycloak / keycloak”** link to open the repository.  
+  2. Inside the repository page, click the **“Issues”** tab and apply a label filter for terms containing **flaky‑test**.
+
+# Error message from last action
+
+ValueError: Received an empty action.
+
+# Progress Summary
+<reasoning>The user gave goal, axtree for a page (GitLab, search page) and action_history shows they have executed a go-to search URL. So now we need to produce a progress summary based on current page (after navigation). We have not been given the new axtree after navigation nor screenshot. The assistant must summarize current progress: they navigated to search page. The goal is to display list of issues with labels related to flaky-test. So far they have navigated to search page for "keycloak". Not yet at issues list. So progress: partially on track, have reached search results page for repository but not yet opened repo issues nor applied label filter.
+
+Current state analysis: We have axtree of a page (likely the initial dashboard? Actually before navigation, the axtree shows a search box with value keycloak and also a link "Issues 99 Result count is over limit." That's part of the search results for "keycloak". That indicates we are on the global search results page for "keycloak"? In the axtree, under Section[281] navigation... there is link "Issues 99 Result count is over limit." This seems to be a link to issues list for the search term across all projects? Also there is link under listitem [311] for repository "Keycloak / keycloak". That's a project link. So we are on a search results page showing repository list and a top navigation. So we are on track to click the repository link.
+
+Thus the current page is on path; we need to click link with text 'Keycloak / keycloak' (listitem [311] contains link). Then on repo page need to click Issues, then apply label filter. So next-step guidance needed? The instructions: Next-step Guidance only if deviation or counterproductive action. Here we are on track, no deviation. So we should not include Next-step Guidance. Just Current Progress and Current State Analysis.
+
+We must mention relevant interactive elements: the link 'Keycloak / keycloak' (maybe id not given, but we can reference its visible text). Also in navigation list, link 'Issues 99 Result count is over limit.' but that's for global issues, not repo-specific. The repository link is more appropriate.
+
+Thus summary:
+
+✅ Current Progress: Navigated to search results for “keycloak”, located repository entry.
+
+🔍 Current State Analysis: The page displays a list of search results, includes link labeled “Keycloak / keycloak” (listitem [311] link) which is focusable and enabled. Also navigation contains “Issues 99 Result count is over limit.” link. To achieve goal, need to click the repository link, then click its “Issues” tab, then filter by label containing flaky-test.
+
+No Next-step Guidance.
+
+Let's craft.</reasoning>**✅ Current Progress**  
+- Navigated to the GitLab search page for “keycloak”. The repository **Keycloak / keycloak** now appears in the results.
+
+**🔍 Current State Analysis**  
+- The page shows a list of search results.  
+  - **Link “Keycloak / keycloak”** (listitem [311] → link) – focusable, enabled, visible. Clicking it will open the repository’s main page.  
+  - In the top navigation bar, there is a **link “Issues 99 Result count is over limit.”** (listitem [289] → link) that points to a global issues search, not the repository‑specific issues list.  
+- To reach the goal, the next required actions are:  
+  1. Click the **“Keycloak / keycloak”** link to open the repository.  
+  2. Inside the repository page, click the **“Issues”** tab and apply a label filter for terms containing **flaky‑test**.  
+
+*No deviation detected; continue with the steps above.*

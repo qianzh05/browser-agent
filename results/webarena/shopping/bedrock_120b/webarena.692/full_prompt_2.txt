@@ -1,0 +1,510 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. This website provides very detailed category of products. You can hover categories on the top menu to see subcategories.
+2. If you need to find information about your previous purchases, you can go My Account > My Orders, and find order by date, order number, or any other available information
+3. An order is considered out of delivery if it is marked as "processing" in the order status
+4. When the task asks you to draft and email. DO NOT send the email. Just draft it and provide the content in the last message
+5. For questions ONLY about **Nintendo Switch game cards** please navigate back to the url of the product you end up choosing. This is because the benchmark evalautes using the page you are on for the Nintendo task. If you are own the wrong product page it will assume you selected that product.
+6. When asked to "show me products under a price" the benchmark evaluates based on the url. so just ensure the price is under the price asked for in the url.
+7. When asked about product type don't return the acutal product name but rather the type of product it is. Ex: If the most common products are "harry potter" and "twilight" the product type is "books".
+8. **For SHOPPING/BROWSING tasks**: When asked to browse products in a particular category, navigate using the dropdown menus (not search) when possible. This may require hovering over nested dropdowns (e.g., hover over "Electronics" → hover over "Computers" → click "Laptops"). Use the hover tool to reveal these nested menus before clicking.
+9. Task wording can contain typos or singular/plural mismatches. Treat singular terms like "order" or "transaction" as potentially plural. If multiple entries match the described criteria, summarize all of them, list each matching item with its key details, make the quantity explicit, and when the question asks for an amount/total, include the combined sum alongside the itemized numbers. Never assume "the most recent one" unless the instructions explicitly say so.
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Draft an email to the shop owner via their contact us function for a coupon as I am a student
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Contact Us
+  URL: http://localhost:7770/contact/
+
+# Current page Accessibility Tree
+
+RootWebArea 'Contact Us', focused
+	[213] banner ''
+		[216] list ''
+			[217] listitem ''
+				[218] link 'My Account'
+			[219] listitem ''
+				[220] link 'My Wish List 1 item'
+					StaticText '1 item'
+			[222] listitem ''
+				[223] link 'Sign Out'
+			[224] listitem ''
+			[227] listitem ''
+				StaticText 'Welcome, Emma Lopez!'
+		[229] link 'Skip to Content'
+			StaticText 'Skip to Content'
+		[234] link 'store logo'
+			[235] image 'one_stop_market_logo'
+		[237] link '\ue611 My Cart 4 4items'
+			StaticText '\ue611'
+			StaticText 'My Cart'
+			StaticText '4'
+			StaticText '4'
+			StaticText 'items'
+		[400] Section ''
+			[402] LabelText ''
+				StaticText '\ue615'
+				StaticText 'Search'
+			[405] combobox '\ue615 Search', autocomplete='both', hasPopup='listbox', expanded=False
+			[408] link 'Advanced Search'
+			[410] button 'Search', disabled=True
+				StaticText '\ue615'
+				StaticText 'Search'
+	[413] tablist '', multiselectable=False, orientation='horizontal'
+		[416] tabpanel ''
+			[417] navigation ''
+				[418] menu '', orientation='vertical'
+					[420] menuitem '\ue622 Beauty & Personal Care', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Beauty & Personal Care'
+					[637] menuitem '\ue622 Sports & Outdoors', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Sports & Outdoors'
+					[675] menuitem '\ue622 Clothing, Shoes & Jewelry', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Clothing, Shoes & Jewelry'
+					[727] menuitem '\ue622 Home & Kitchen', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Home & Kitchen'
+					[854] menuitem '\ue622 Office Products', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Office Products'
+					[886] menuitem '\ue622 Tools & Home Improvement', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Tools & Home Improvement'
+					[905] menuitem '\ue622 Health & Household', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Health & Household'
+					[929] menuitem '\ue622 Patio, Lawn & Garden', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Patio, Lawn & Garden'
+					[948] menuitem '\ue622 Electronics', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Electronics'
+					[1157] menuitem '\ue622 Cell Phones & Accessories', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Cell Phones & Accessories'
+					[1208] menuitem '\ue622 Video Games', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Video Games'
+					[1257] menuitem '\ue622 Grocery & Gourmet Food', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Grocery & Gourmet Food'
+	[1486] main ''
+		[1489] heading 'Contact Us'
+			StaticText 'Contact Us'
+		[1499] Section ''
+			[1500] group 'Write Us'
+				[1501] Legend ''
+					StaticText 'Write Us'
+				StaticText 'Jot us a note and we’ll get back to you as quickly as possible.'
+				[1506] LabelText ''
+					StaticText 'Name'
+					StaticText '*'
+				[1509] textbox 'Name*' value='Emma Lopez', required
+					StaticText 'Emma Lopez'
+				[1511] LabelText ''
+					StaticText 'Email'
+					StaticText '*'
+				[1514] textbox 'Email*' value='emma.lopez@gmail.com', required
+					StaticText 'emma.lopez@gmail.com'
+				[1516] LabelText ''
+					StaticText 'Phone Number'
+				[1519] textbox 'Phone Number'
+				[1521] LabelText ''
+					StaticText 'What’s on your mind?'
+					StaticText ''
+					StaticText '*'
+				[1524] textbox 'What’s on your mind? *' value='Hello, I am a student and I love your store. Could you please provide a student discount coupon? Thank you!', focused, required
+					StaticText 'Hello, I am a student and I love your store. Could you please provide a student discount coupon? Thank you!'
+			[1528] button 'Submit'
+				StaticText 'Submit'
+	[1530] contentinfo ''
+		[1536] Section ''
+			StaticText '\ue61d'
+			[1539] LabelText ''
+				StaticText 'Sign Up for Our Newsletter:'
+				[1541] textbox 'Sign Up for Our Newsletter:'
+			[1543] button 'Subscribe'
+				StaticText 'Subscribe'
+		[1545] list ''
+			[1546] listitem ''
+				[1547] link 'Privacy and Cookie Policy'
+			[1548] listitem ''
+				[1549] link 'Search Terms'
+			[1550] listitem ''
+				[1551] link 'Advanced Search'
+			[1552] listitem ''
+				[1553] strong ''
+					StaticText 'Contact Us'
+		StaticText 'Copyright © 2013-present Magento, Inc. All rights reserved.'
+		StaticText 'Help Us Keep Magento Healthy'
+		StaticText ''
+		[1558] link 'Report All Bugs'
+
+# History of past actions
+
+
+<reasoning>The user wants: "Draft an email to the shop owner via their contact us function for a coupon as I am a student". We need to navigate to Contact Us page (link at bottom). Then fill contact form presumably with email content requesting coupon. Probably there's a form with fields like Name, Email, Subject, Comment. We need to draft email content, but not send. We need to fill fields? The requirement: "Draft an email to the shop owner via their contact us function". So we need to fill the contact us form with subject and message, but likely do not submit. Then we can send the drafted email content to user. Or we could just craft the email content manually and send via send_msg_to_user. However guidelines: For drafting email, we need to provide content in final message. But they also say "via their contact us function". So maybe they want us to go to Contact Us page, fill the form, and then output the drafted email (maybe we can copy the filled content). Usually we would fill the fields and then maybe send_msg_to_user with the drafted email.
+
+First navigate to Contact Us link. The link is at bottom list item id 2003. Use click on that element. Need its bid. From tree: [2003] link 'Contact Us'. So click('2003').
+
+After clicking, we need to see form fields. Then fill them. Let's proceed stepwise: first click Contact Us.
+
+</reasoning><think>
+The user wants an email drafted using the website’s “Contact Us” form, asking for a coupon as a student. I need to navigate to the Contact Us page, which is available as a link with accessibility ID 2003 in the page’s footer. I will click that link to open the contact form.
+</think>
+<action>
+```click('2003')```
+</action>
+
+
+<reasoning>We need to consider that the previous action might have been executed; but we haven't yet seen result. The last action we proposed is click('2003'). The system likely will now return updated page, but we haven't seen it. In this step, we need to act based on latest page. The user wants the email drafted, not necessarily to actually submit. Usually they want the email content. We must fill fields? Could fill 'What’s on your mind?' with email body, but not submit. Then maybe send_msg_to_user with email draft.
+
+But we need to see the form fields after navigation; we anticipate the contact us page we already saw earlier (maybe same). Actually current page already shows Contact Us page with form (the initial page content includes contact form). Wait the current page shows "Contact Us" title and sections; that appears to be the contact page already. The header shows navigation and main includes heading Contact Us and a section Write Us with fields. So perhaps we are already on Contact Us page. The link at bottom could also lead to same page, but we are already there. The accessibility tree shows that earlier page is Contact Us page; note the URL is http://localhost:7770/contact/. So we are already on Contact Us page. So we don't need to click contact us again.
+
+The fields: Name already filled Emma Lopez, Email Emma Lopez email, Phone number empty, What’s on your mind? textbox (empty). We need to draft email content in that textbox: request for a coupon as a student. So we need to fill that textbox (bid 1524) with appropriate body. Then we could send a message to user with the drafted email content (maybe they want us to output email). But we must also fill fields maybe.
+
+Thus next step: fill the 'What’s on your mind?' textbox (bid 1524) with a polite request.
+
+We'll craft: "Hello, I am a student and I love your store. Could you please provide a student discount coupon? Thank you!"
+
+We'll fill that.
+
+So action: fill('1524', 'Hello, I am a student and I love your store. Could you please provide a student discount coupon? Thank you!').
+
+Then we may also fill phone number if needed? Not required.
+
+Then send_msg_to_user with draft email? The instruction: "Draft an email to the shop owner via their contact us function for a coupon as I am a student". Probably they want the drafted email content. So after filling, we can send_msg_to_user the content. But need to include the email fields? Might include Name, Email, Subject (there is no subject field). The form only includes Name, Email, Phone, Message. So email body is our message. We'll send that as final answer.
+
+Thus after fill, we can send_msg_to_user with email draft. Or maybe we need to ask them to review? But we can provide final drafted email.
+
+Let's fill first.</reasoning><think>
+The current page is already the Contact Us form with the required fields. I need to draft the email requesting a student coupon. The appropriate place for the email body is the “What’s on your mind?” textbox (accessibility ID 1524). I will fill this textbox with a polite request for a student discount coupon.
+</think>
+<action>
+```fill('1524', 'Hello, I am a student and I love your store. Could you please provide a student discount coupon? Thank you!')```
+</action>
+
+# Progress Summary
+<reasoning>We need to produce progress summary based on latest inputs after actions? The user provided axtree showing Contact Us page with fields already filled, including what’s on your mind already has the email text (the earlier default: "Hello, I am a student..."). So apparently the system had already navigated to Contact Us and typed the message. The action history might have previous steps but not shown. The latest axtree shows the form filled with the email.
+
+Thus we need to generate progress summary now.
+
+Goal: Draft an email to the shop owner via contact us function for a coupon as a student.
+
+Current state: The Contact Us page is loaded. Name and Email fields are pre-filled. The "What’s on your mind?" textbox already contains a draft message: "Hello, I am a student and I love your store. Could you please provide a student discount coupon? Thank you!" (focused). This is the email content. No action has been taken to submit. The task likely considered done: email drafted.
+
+Thus:
+
+✅ Current Progress: Drafted email message in contact form (fields filled). Not yet sent.
+
+🔍 Current State Analysis: On critical path. Contact Us form present. Relevant interactive elements: textbox 'Name*' (id 1509) value Emma Lopez; textbox 'Email*' (1514) value emma...; textbox 'What’s on your mind? *' (1524) contains draft message; button 'Submit' (1528) enabled? Not sure if disabled. The form ready to submit. No deviation.
+
+Since not deviated, we do not include Next-step Guidance.
+
+We might suggest user to review and submit, but only if needed. The instruction: Next-step Guidance only if deviated. So omit.
+
+Thus final answer.</reasoning>✅ **Current Progress**  
+- The “Contact Us” page is open.  
+- Required fields have been filled:  
+  - **Name**: “Emma Lopez” (textbox id 1509)  
+  - **Email**: “emma.lopez@gmail.com” (textbox id 1514)  
+  - **Message** (What’s on your mind?): “Hello, I am a student and I love your store. Could you please provide a student discount coupon? Thank you!” (textbox id 1524)  
+
+🔍 **Current State Analysis**  
+- The page is directly on the critical path to the goal – the contact‑form needed to draft the email is displayed.  
+- Interactive elements relevant for completing the task:  
+  - Textbox **Name** (id 1509) – filled, enabled.  
+  - Textbox **Email** (id 1514) – filled, enabled.  
+  - Textbox **Message** (id 1524) – contains the drafted email, focused, enabled.  
+  - Button **Submit** (id 1528) – present (presumably enabled) for sending the message.  
+- No errors, login walls, or unrelated content are detected.  
+
+*No deviation from the goal; the email has been drafted and is ready to be sent.*

@@ -1,0 +1,1850 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. To find routes from point A to B, you can use the ‘two arrow' button on the right hand side of the ‘Go' button. If the name of a location is not well known, you should look up the one in Pittsburgh, PA. If the question has a yes/no answer, include yes or no in the answer. If your answer contains an address, please use the format ‘OpenAI, 575 Florida Street, Mission District, San Francisco' (landmark, street, district, city). If the answer contains a phone number, please use the format ‘8002428478' (no country calling codes). If the answer contains a distance, please use the format ‘5km', ‘645m' (no space between the number and the unit). 
+2. To search for a location, you just input the name and click on the 'Go' button. To find routes from point A to B, you need to use the 'press' button after you input the starting location and ending location.
+3. Please only perform actions on the current map website, as it is sufficient to complete all tasks. You should not return an answer with a request for other map engine like google map.
+4. When the task asks for the full address make sure to inclue **ZIP CODE** (this means choosing the address that has a zip code).
+5. **For ADDRESS questions**: A "full address" means a COMPLETE street address with ALL components (GET THE ADDRESS ALWAYS FROM OPENSTREETMAP!):
+    - Street number (e.g., "1000")
+    - Street name (e.g., "Airport Boulevard" or "International Drive")
+    - City or Township
+    - State
+    - ZIP code
+    - Country (if applicable)
+    Example: "1000 Airport Boulevard, Pittsburgh, PA 15231, United States"
+    If OpenStreetMap doesn't have the street number, try:
+    - Using the Wikipedia subagent to find the official address
+    - Searching for the location's "Contact" or "About" page
+    - Cross-referencing multiple sources until you have the complete address
+6. Because the evaluation is conducted in a mock environment, all data and information are current as of December 31, 2022. For example, Turing Award winners should be based on data available prior to December 31, 2022.
+7. Keep your responses as concise as possible and avoid redundant information. Example:
+    Q: "What's the closest national park to the largest city in Maine?".
+    A: "Acadia National Park"
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+I will arrive Pittsburgh Airport soon. Provide the name of a Hilton hotel in the vicinity, if available. Then, tell me the the walking distance to the nearest supermarket own by a local company from the hotel.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Way: ‪Hilton Garden Inn Pittsburgh Airport South-Robinson Mall‬ (‪390501003‬) | OpenStreetMap
+  URL: http://localhost:3000/directions?engine=fossgis_osrm_foot&route=40.45024%2C-80.16677%3B40.34540%2C-78.93995#map=9/40.3772/-79.5531
+
+# Current page Accessibility Tree
+
+RootWebArea 'Way: \u202aHilton Garden Inn Pittsburgh Airport South-Robinson Mall\u202c (\u202a390501003\u202c) | OpenStreetMap', focused
+	[44] banner ''
+		[45] heading 'OpenStreetMap logo OpenStreetMap'
+			[46] link 'OpenStreetMap logo OpenStreetMap'
+				[49] image 'OpenStreetMap logo'
+				StaticText ''
+		[51] navigation ''
+			[95] link 'Edit'
+			[96] button ''
+			[102] link 'History'
+			[103] link 'Export'
+		[104] navigation ''
+			[105] list ''
+				[106] listitem ''
+					[107] link 'GPS Traces'
+				[108] listitem ''
+					[109] link 'User Diaries'
+				[110] listitem ''
+					[111] link 'Communities'
+				[112] listitem ''
+					[113] link 'Copyright'
+				[114] listitem ''
+					[115] link 'Help'
+				[116] listitem ''
+					[117] link 'About'
+			[134] link 'Log In'
+			[135] link 'Sign Up'
+	[151] Section ''
+		[153] button 'Close'
+		[156] image ''
+		[158] textbox 'From' value='Hilton Garden Inn Pittsburgh Airport South-Robinson Mall, 303, Park Manor Drive, Pittsburgh, Allegheny County, 15205, United States'
+			StaticText 'Hilton Garden Inn Pittsburgh Airport South-Robinson Mall, 303, Park Manor Drive, Pittsburgh, Allegheny County, 15205, United States'
+		[161] image ''
+		[163] textbox 'To' value='Giant Eagle Robinson Township', focused
+			StaticText 'Giant Eagle Robinson Township'
+		[166] combobox '' value='Foot (OSRM)', hasPopup='menu', expanded=False
+			[167] option 'Bicycle (OSRM)', selected=False
+			[168] option 'Car (OSRM)', selected=False
+			[169] option 'Foot (OSRM)', selected=True
+		[171] button 'Go'
+		[174] button 'Reverse Directions'
+	[678] heading 'Directions'
+	[680] button 'Close'
+	[681] paragraph ''
+		StaticText 'Distance: 132km. Time: 29:28.'
+	[682] table ''
+		[683] row ''
+			[684] gridcell ''
+			[686] gridcell '1. Start on unnamed road'
+				StaticText '1.'
+			[688] gridcell '80m'
+		[689] row ''
+			[690] gridcell ''
+			[692] gridcell '2. At the end of the road turn right onto Park Manor Drive'
+				StaticText '2.'
+				StaticText 'Park Manor Drive'
+			[695] gridcell '170m'
+		[696] row ''
+			[697] gridcell ''
+			[699] gridcell '3. At the fork turn right onto Park Manor Drive'
+				StaticText '3.'
+				StaticText 'Park Manor Drive'
+			[702] gridcell '150m'
+		[703] row ''
+			[704] gridcell ''
+			[706] gridcell '4. Continue on Robinson Center Drive'
+				StaticText '4.'
+				StaticText 'Robinson Center Drive'
+			[709] gridcell '60m'
+		[710] row ''
+			[711] gridcell ''
+			[713] gridcell '5. Turn left onto Park Terrace'
+				StaticText '5.'
+				StaticText 'Park Terrace'
+			[716] gridcell '300m'
+		[717] row ''
+			[718] gridcell ''
+			[720] gridcell '6. Turn right onto unnamed road'
+				StaticText '6.'
+			[722] gridcell '40m'
+		[723] row ''
+			[724] gridcell ''
+			[726] gridcell '7. Turn left onto unnamed road'
+				StaticText '7.'
+			[728] gridcell '60m'
+		[729] row ''
+			[730] gridcell ''
+			[732] gridcell '8. At the end of the road turn right onto unnamed road'
+				StaticText '8.'
+			[734] gridcell '20m'
+		[735] row ''
+			[736] gridcell ''
+			[738] gridcell '9. Turn left onto Steubenville Pike (PA 60)'
+				StaticText '9.'
+				StaticText 'Steubenville Pike (PA 60)'
+			[741] gridcell '900m'
+		[742] row ''
+			[743] gridcell ''
+			[745] gridcell '10. Turn left onto unnamed road'
+				StaticText '10.'
+			[747] gridcell '40m'
+		[748] row ''
+			[749] gridcell ''
+			[751] gridcell '11. Turn right onto unnamed road'
+				StaticText '11.'
+			[753] gridcell '10m'
+		[754] row ''
+			[755] gridcell ''
+			[757] gridcell '12. Turn left onto Steubenville Pike (PA 60; Yellow Belt)'
+				StaticText '12.'
+				StaticText 'Steubenville Pike (PA 60; Yellow Belt)'
+			[760] gridcell '900m'
+		[761] row ''
+			[762] gridcell ''
+			[764] gridcell '13. Turn left onto unnamed road'
+				StaticText '13.'
+			[766] gridcell '20m'
+		[767] row ''
+			[768] gridcell ''
+			[770] gridcell '14. Turn right onto unnamed road'
+				StaticText '14.'
+			[772] gridcell '70m'
+		[773] row ''
+			[774] gridcell ''
+			[776] gridcell '15. At the end of the road turn right onto unnamed road'
+				StaticText '15.'
+			[778] gridcell '10m'
+		[779] row ''
+			[780] gridcell ''
+			[782] gridcell '16. Turn right onto Waterford Drive'
+				StaticText '16.'
+				StaticText 'Waterford Drive'
+			[785] gridcell '10m'
+		[786] row ''
+			[787] gridcell ''
+			[789] gridcell '17. Turn left onto unnamed road'
+				StaticText '17.'
+			[791] gridcell '110m'
+		[792] row ''
+			[793] gridcell ''
+			[795] gridcell '18. Turn left onto Steubenville Pike (PA 60; Yellow Belt)'
+				StaticText '18.'
+				StaticText 'Steubenville Pike (PA 60; Yellow Belt)'
+			[798] gridcell '2.2km'
+		[799] row ''
+			[800] gridcell ''
+			[802] gridcell '19. Continue on Steubenville Pike (PA 60)'
+				StaticText '19.'
+				StaticText 'Steubenville Pike (PA 60)'
+			[805] gridcell '3.2km'
+		[806] row ''
+			[807] gridcell ''
+			[809] gridcell '20. Turn right onto Cornell Avenue'
+				StaticText '20.'
+				StaticText 'Cornell Avenue'
+			[812] gridcell '20m'
+		[813] row ''
+			[814] gridcell ''
+			[816] gridcell '21. Turn left onto unnamed road'
+				StaticText '21.'
+			[818] gridcell '300m'
+		[819] row ''
+			[820] gridcell ''
+			[822] gridcell '22. Turn left onto Township Road'
+				StaticText '22.'
+				StaticText 'Township Road'
+			[825] gridcell '10m'
+		[826] row ''
+			[827] gridcell ''
+			[829] gridcell '23. Slight right onto Ingram Avenue'
+				StaticText '23.'
+				StaticText 'Ingram Avenue'
+			[832] gridcell '1300m'
+		[833] row ''
+			[834] gridcell ''
+			[836] gridcell '24. Turn right onto unnamed road'
+				StaticText '24.'
+			[838] gridcell '30m'
+		[839] row ''
+			[840] gridcell ''
+			[842] gridcell '25. Turn left onto unnamed road'
+				StaticText '25.'
+			[844] gridcell '20m'
+		[845] row ''
+			[846] gridcell ''
+			[848] gridcell '26. Turn left onto unnamed road'
+				StaticText '26.'
+			[850] gridcell '120m'
+		[851] row ''
+			[852] gridcell ''
+			[854] gridcell '27. Turn right onto East Prospect Avenue'
+				StaticText '27.'
+				StaticText 'East Prospect Avenue'
+			[857] gridcell '200m'
+		[858] row ''
+			[859] gridcell ''
+			[861] gridcell '28. At the end of the road turn right onto Danvers Avenue'
+				StaticText '28.'
+				StaticText 'Danvers Avenue'
+			[864] gridcell '100m'
+		[865] row ''
+			[866] gridcell ''
+			[868] gridcell '29. Turn left onto Hodgson Avenue'
+				StaticText '29.'
+				StaticText 'Hodgson Avenue'
+			[871] gridcell '300m'
+		[872] row ''
+			[873] gridcell ''
+			[875] gridcell '30. At the end of the road turn right onto Middletown Road'
+				StaticText '30.'
+				StaticText 'Middletown Road'
+			[878] gridcell '400m'
+		[879] row ''
+			[880] gridcell ''
+			[882] gridcell '31. Continue on Steuben Street'
+				StaticText '31.'
+				StaticText 'Steuben Street'
+			[885] gridcell '1000m'
+		[886] row ''
+			[887] gridcell ''
+			[889] gridcell '32. Turn right onto Herschel Street'
+				StaticText '32.'
+				StaticText 'Herschel Street'
+			[892] gridcell '90m'
+		[893] row ''
+			[894] gridcell ''
+			[896] gridcell '33. Turn left onto Lorenz Avenue'
+				StaticText '33.'
+				StaticText 'Lorenz Avenue'
+			[899] gridcell '130m'
+		[900] row ''
+			[901] gridcell ''
+			[903] gridcell '34. Continue on Lorenz Avenue'
+				StaticText '34.'
+				StaticText 'Lorenz Avenue'
+			[906] gridcell '50m'
+		[907] row ''
+			[908] gridcell ''
+			[910] gridcell '35. Turn right onto Neidel Street'
+				StaticText '35.'
+				StaticText 'Neidel Street'
+			[913] gridcell '200m'
+		[914] row ''
+			[915] gridcell ''
+			[917] gridcell '36. Turn left onto Elbon Street'
+				StaticText '36.'
+				StaticText 'Elbon Street'
+			[920] gridcell '40m'
+		[921] row ''
+			[922] gridcell ''
+			[924] gridcell '37. Turn right onto Steuben Street'
+				StaticText '37.'
+				StaticText 'Steuben Street'
+			[927] gridcell '600m'
+		[928] row ''
+			[929] gridcell ''
+			[931] gridcell '38. Turn left onto unnamed road'
+				StaticText '38.'
+			[933] gridcell '600m'
+		[934] row ''
+			[935] gridcell ''
+			[937] gridcell '39. Sharp left onto unnamed road'
+				StaticText '39.'
+			[939] gridcell '50m'
+		[940] row ''
+			[941] gridcell ''
+			[943] gridcell '40. At the fork turn left onto unnamed road'
+				StaticText '40.'
+			[945] gridcell '900m'
+		[946] row ''
+			[947] gridcell ''
+			[949] gridcell '41. At the fork turn right onto unnamed road'
+				StaticText '41.'
+			[951] gridcell '1100m'
+		[952] row ''
+			[953] gridcell ''
+			[955] gridcell '42. Turn right onto unnamed road'
+				StaticText '42.'
+			[957] gridcell '70m'
+		[958] row ''
+			[959] gridcell ''
+			[961] gridcell '43. Turn right onto unnamed road'
+				StaticText '43.'
+			[963] gridcell '160m'
+		[964] row ''
+			[965] gridcell ''
+			[967] gridcell '44. Turn right onto unnamed road'
+				StaticText '44.'
+			[969] gridcell '20m'
+		[970] row ''
+			[971] gridcell ''
+			[973] gridcell '45. Turn right onto unnamed road'
+				StaticText '45.'
+			[975] gridcell '100m'
+		[976] row ''
+			[977] gridcell ''
+			[979] gridcell '46. Turn left onto unnamed road'
+				StaticText '46.'
+			[981] gridcell '20m'
+		[982] row ''
+			[983] gridcell ''
+			[985] gridcell '47. Slight right onto unnamed road'
+				StaticText '47.'
+			[987] gridcell '500m'
+		[988] row ''
+			[989] gridcell ''
+			[991] gridcell '48. Turn right onto unnamed road'
+				StaticText '48.'
+			[993] gridcell ''
+		[994] row ''
+			[995] gridcell ''
+			[997] gridcell '49. Turn left onto unnamed road'
+				StaticText '49.'
+			[999] gridcell '10m'
+		[1000] row ''
+			[1001] gridcell ''
+			[1003] gridcell '50. Continue on unnamed road'
+				StaticText '50.'
+			[1005] gridcell '300m'
+		[1006] row ''
+			[1007] gridcell ''
+			[1009] gridcell '51. Turn left onto unnamed road'
+				StaticText '51.'
+			[1011] gridcell '20m'
+		[1012] row ''
+			[1013] gridcell ''
+			[1015] gridcell '52. Turn right onto unnamed road'
+				StaticText '52.'
+			[1017] gridcell '10m'
+		[1018] row ''
+			[1019] gridcell ''
+			[1021] gridcell '53. Turn left onto unnamed road'
+				StaticText '53.'
+			[1023] gridcell '120m'
+		[1024] row ''
+			[1025] gridcell ''
+			[1027] gridcell '54. Turn left onto unnamed road'
+				StaticText '54.'
+			[1029] gridcell '20m'
+		[1030] row ''
+			[1031] gridcell ''
+			[1033] gridcell '55. At the end of the road turn left onto unnamed road'
+				StaticText '55.'
+			[1035] gridcell '10m'
+		[1036] row ''
+			[1037] gridcell ''
+			[1039] gridcell '56. Turn right onto unnamed road'
+				StaticText '56.'
+			[1041] gridcell '700m'
+		[1042] row ''
+			[1043] gridcell ''
+			[1045] gridcell '57. At the end of the road turn left onto unnamed road'
+				StaticText '57.'
+			[1047] gridcell '10m'
+		[1048] row ''
+			[1049] gridcell ''
+			[1051] gridcell '58. Turn right onto Second Avenue'
+				StaticText '58.'
+				StaticText 'Second Avenue'
+			[1054] gridcell '200m'
+		[1055] row ''
+			[1056] gridcell ''
+			[1058] gridcell '59. Turn right onto unnamed road'
+				StaticText '59.'
+			[1060] gridcell '30m'
+		[1061] row ''
+			[1062] gridcell ''
+			[1064] gridcell '60. At the end of the road turn left onto unnamed road'
+				StaticText '60.'
+			[1066] gridcell '200m'
+		[1067] row ''
+			[1068] gridcell ''
+			[1070] gridcell '61. Continue on Eliza Furnace Trail'
+				StaticText '61.'
+				StaticText 'Eliza Furnace Trail'
+			[1073] gridcell '2.4km'
+		[1074] row ''
+			[1075] gridcell ''
+			[1077] gridcell '62. At the fork turn right onto Great Allegheny Passage'
+				StaticText '62.'
+				StaticText 'Great Allegheny Passage'
+			[1080] gridcell '160m'
+		[1081] row ''
+			[1082] gridcell ''
+			[1084] gridcell '63. Continue on Eliza Furnace Trail'
+				StaticText '63.'
+				StaticText 'Eliza Furnace Trail'
+			[1087] gridcell '400m'
+		[1088] row ''
+			[1089] gridcell ''
+			[1091] gridcell '64. At the fork turn left onto Eliza Furnace Trail'
+				StaticText '64.'
+				StaticText 'Eliza Furnace Trail'
+			[1094] gridcell '80m'
+		[1095] row ''
+			[1096] gridcell ''
+			[1098] gridcell '65. Turn left onto unnamed road'
+				StaticText '65.'
+			[1100] gridcell '60m'
+		[1101] row ''
+			[1102] gridcell ''
+			[1104] gridcell '66. Turn left onto unnamed road'
+				StaticText '66.'
+			[1106] gridcell '300m'
+		[1107] row ''
+			[1108] gridcell ''
+			[1110] gridcell '67. Turn right onto unnamed road'
+				StaticText '67.'
+			[1112] gridcell '10m'
+		[1113] row ''
+			[1114] gridcell ''
+			[1116] gridcell '68. Turn right onto Saline Street'
+				StaticText '68.'
+				StaticText 'Saline Street'
+			[1119] gridcell '10m'
+		[1120] row ''
+			[1121] gridcell ''
+			[1123] gridcell '69. Turn left onto Greenfield Avenue'
+				StaticText '69.'
+				StaticText 'Greenfield Avenue'
+			[1126] gridcell '200m'
+		[1127] row ''
+			[1128] gridcell ''
+			[1130] gridcell '70. Sharp right onto Sylvan Avenue'
+				StaticText '70.'
+				StaticText 'Sylvan Avenue'
+			[1133] gridcell '10m'
+		[1134] row ''
+			[1135] gridcell ''
+			[1137] gridcell '71. Slight left onto unnamed road'
+				StaticText '71.'
+			[1139] gridcell '70m'
+		[1140] row ''
+			[1141] gridcell ''
+			[1143] gridcell '72. Turn right onto Bigelow Street'
+				StaticText '72.'
+				StaticText 'Bigelow Street'
+			[1146] gridcell '800m'
+		[1147] row ''
+			[1148] gridcell ''
+			[1150] gridcell '73. Slight left onto Connor Street'
+				StaticText '73.'
+				StaticText 'Connor Street'
+			[1153] gridcell '300m'
+		[1154] row ''
+			[1155] gridcell ''
+			[1157] gridcell '74. At the end of the road turn left onto Winterburn Avenue'
+				StaticText '74.'
+				StaticText 'Winterburn Avenue'
+			[1160] gridcell '50m'
+		[1161] row ''
+			[1162] gridcell ''
+			[1164] gridcell '75. Turn right onto Loretto Road'
+				StaticText '75.'
+				StaticText 'Loretto Road'
+			[1167] gridcell '200m'
+		[1168] row ''
+			[1169] gridcell ''
+			[1171] gridcell '76. Turn right onto unnamed road'
+				StaticText '76.'
+			[1173] gridcell '60m'
+		[1174] row ''
+			[1175] gridcell ''
+			[1177] gridcell '77. Continue on Loretta Street'
+				StaticText '77.'
+				StaticText 'Loretta Street'
+			[1180] gridcell '300m'
+		[1181] row ''
+			[1182] gridcell ''
+			[1184] gridcell '78. Turn right onto Frank Street'
+				StaticText '78.'
+				StaticText 'Frank Street'
+			[1187] gridcell '110m'
+		[1188] row ''
+			[1189] gridcell ''
+			[1191] gridcell '79. Turn left onto Exeter Street'
+				StaticText '79.'
+				StaticText 'Exeter Street'
+			[1194] gridcell '300m'
+		[1195] row ''
+			[1196] gridcell ''
+			[1198] gridcell '80. Turn right onto Theodolite Way'
+				StaticText '80.'
+				StaticText 'Theodolite Way'
+			[1201] gridcell '80m'
+		[1202] row ''
+			[1203] gridcell ''
+			[1205] gridcell '81. Turn left onto Hazelwood Avenue'
+				StaticText '81.'
+				StaticText 'Hazelwood Avenue'
+			[1208] gridcell '200m'
+		[1209] row ''
+			[1210] gridcell ''
+			[1212] gridcell '82. Slight right onto Beechwood Boulevard'
+				StaticText '82.'
+				StaticText 'Beechwood Boulevard'
+			[1215] gridcell '110m'
+		[1216] row ''
+			[1217] gridcell ''
+			[1219] gridcell '83. Turn right onto Saline Street'
+				StaticText '83.'
+				StaticText 'Saline Street'
+			[1222] gridcell '400m'
+		[1223] row ''
+			[1224] gridcell ''
+			[1226] gridcell '84. Turn right onto unnamed road'
+				StaticText '84.'
+			[1228] gridcell '80m'
+		[1229] row ''
+			[1230] gridcell ''
+			[1232] gridcell '85. Turn left onto Browns Hill Road (Blue Belt)'
+				StaticText '85.'
+				StaticText 'Browns Hill Road (Blue Belt)'
+			[1235] gridcell '200m'
+		[1236] row ''
+			[1237] gridcell ''
+			[1239] gridcell '86. Turn left onto unnamed road'
+				StaticText '86.'
+			[1241] gridcell '30m'
+		[1242] row ''
+			[1243] gridcell ''
+			[1245] gridcell '87. Turn left onto Parkview Boulevard'
+				StaticText '87.'
+				StaticText 'Parkview Boulevard'
+			[1248] gridcell '70m'
+		[1249] row ''
+			[1250] gridcell ''
+			[1252] gridcell '88. Turn right onto Old Browns Hill Road'
+				StaticText '88.'
+				StaticText 'Old Browns Hill Road'
+			[1255] gridcell '600m'
+		[1256] row ''
+			[1257] gridcell ''
+			[1259] gridcell '89. Turn left onto unnamed road'
+				StaticText '89.'
+			[1261] gridcell '60m'
+		[1262] row ''
+			[1263] gridcell ''
+			[1265] gridcell '90. At the fork turn right onto unnamed road'
+				StaticText '90.'
+			[1267] gridcell '500m'
+		[1268] row ''
+			[1269] gridcell ''
+			[1271] gridcell '91. At the end of the road turn right onto unnamed road'
+				StaticText '91.'
+			[1273] gridcell '900m'
+		[1274] row ''
+			[1275] gridcell ''
+			[1277] gridcell '92. At the fork turn left onto unnamed road'
+				StaticText '92.'
+			[1279] gridcell '180m'
+		[1280] row ''
+			[1281] gridcell ''
+			[1283] gridcell '93. At the fork turn left onto unnamed road'
+				StaticText '93.'
+			[1285] gridcell '150m'
+		[1286] row ''
+			[1287] gridcell ''
+			[1289] gridcell '94. Turn left onto unnamed road'
+				StaticText '94.'
+			[1291] gridcell '10m'
+		[1292] row ''
+			[1293] gridcell ''
+			[1295] gridcell '95. Turn right onto River Road'
+				StaticText '95.'
+				StaticText 'River Road'
+			[1298] gridcell '800m'
+		[1299] row ''
+			[1300] gridcell ''
+			[1302] gridcell '96. Turn right onto unnamed road'
+				StaticText '96.'
+			[1304] gridcell '50m'
+		[1305] row ''
+			[1306] gridcell ''
+			[1308] gridcell '97. Sharp left onto Carrie Furnace Boulevard'
+				StaticText '97.'
+				StaticText 'Carrie Furnace Boulevard'
+			[1311] gridcell '1100m'
+		[1312] row ''
+			[1313] gridcell ''
+			[1315] gridcell '98. Turn right onto unnamed road'
+				StaticText '98.'
+			[1317] gridcell '20m'
+		[1318] row ''
+			[1319] gridcell ''
+			[1321] gridcell '99. Turn left onto unnamed road'
+				StaticText '99.'
+			[1323] gridcell '130m'
+		[1324] row ''
+			[1325] gridcell ''
+			[1327] gridcell '100. Turn left onto unnamed road'
+				StaticText '100.'
+			[1329] gridcell '700m'
+		[1330] row ''
+			[1331] gridcell ''
+			[1333] gridcell '101. Turn right onto 5th Street'
+				StaticText '101.'
+				StaticText '5th Street'
+			[1336] gridcell '30m'
+		[1337] row ''
+			[1338] gridcell ''
+			[1340] gridcell '102. Turn left onto Halket Avenue'
+				StaticText '102.'
+				StaticText 'Halket Avenue'
+			[1343] gridcell '200m'
+		[1344] row ''
+			[1345] gridcell ''
+			[1347] gridcell '103. Continue on Woodlawn Avenue'
+				StaticText '103.'
+				StaticText 'Woodlawn Avenue'
+			[1350] gridcell '140m'
+		[1351] row ''
+			[1352] gridcell ''
+			[1354] gridcell '104. Turn left onto 7th Street'
+				StaticText '104.'
+				StaticText '7th Street'
+			[1357] gridcell '60m'
+		[1358] row ''
+			[1359] gridcell ''
+			[1361] gridcell '105. Turn right onto Braddock Avenue'
+				StaticText '105.'
+				StaticText 'Braddock Avenue'
+			[1364] gridcell '10m'
+		[1365] row ''
+			[1366] gridcell ''
+			[1368] gridcell '106. Turn left onto Maple Way'
+				StaticText '106.'
+				StaticText 'Maple Way'
+			[1371] gridcell '400m'
+		[1372] row ''
+			[1373] gridcell ''
+			[1375] gridcell '107. Continue on Maple Way'
+				StaticText '107.'
+				StaticText 'Maple Way'
+			[1378] gridcell '90m'
+		[1379] row ''
+			[1380] gridcell ''
+			[1382] gridcell '108. At the end of the road turn left onto Verona Street'
+				StaticText '108.'
+				StaticText 'Verona Street'
+			[1385] gridcell '50m'
+		[1386] row ''
+			[1387] gridcell ''
+			[1389] gridcell '109. Turn right onto Mapleview Terrace'
+				StaticText '109.'
+				StaticText 'Mapleview Terrace'
+			[1392] gridcell '180m'
+		[1393] row ''
+			[1394] gridcell ''
+			[1396] gridcell '110. Turn left onto Frazier Street'
+				StaticText '110.'
+				StaticText 'Frazier Street'
+			[1399] gridcell '110m'
+		[1400] row ''
+			[1401] gridcell ''
+			[1403] gridcell '111. Turn right onto Franklin Avenue'
+				StaticText '111.'
+				StaticText 'Franklin Avenue'
+			[1406] gridcell '300m'
+		[1407] row ''
+			[1408] gridcell ''
+			[1410] gridcell '112. Turn right onto Packer Avenue'
+				StaticText '112.'
+				StaticText 'Packer Avenue'
+			[1413] gridcell '100m'
+		[1414] row ''
+			[1415] gridcell ''
+			[1417] gridcell '113. Turn left onto Lydia Street'
+				StaticText '113.'
+				StaticText 'Lydia Street'
+			[1420] gridcell '20m'
+		[1421] row ''
+			[1422] gridcell ''
+			[1424] gridcell '114. Turn right onto McCrea Way'
+				StaticText '114.'
+				StaticText 'McCrea Way'
+			[1427] gridcell '300m'
+		[1428] row ''
+			[1429] gridcell ''
+			[1431] gridcell '115. At the end of the road turn left onto Curry Street'
+				StaticText '115.'
+				StaticText 'Curry Street'
+			[1434] gridcell '50m'
+		[1435] row ''
+			[1436] gridcell ''
+			[1438] gridcell '116. Turn right onto Bell Avenue'
+				StaticText '116.'
+				StaticText 'Bell Avenue'
+			[1441] gridcell '600m'
+		[1442] row ''
+			[1443] gridcell ''
+			[1445] gridcell '117. Continue on Center Street'
+				StaticText '117.'
+				StaticText 'Center Street'
+			[1448] gridcell '300m'
+		[1449] row ''
+			[1450] gridcell ''
+			[1452] gridcell '118. Turn right onto Western Avenue'
+				StaticText '118.'
+				StaticText 'Western Avenue'
+			[1455] gridcell '90m'
+		[1456] row ''
+			[1457] gridcell ''
+			[1459] gridcell '119. Turn left onto Bessemer Avenue'
+				StaticText '119.'
+				StaticText 'Bessemer Avenue'
+			[1462] gridcell '140m'
+		[1463] row ''
+			[1464] gridcell ''
+			[1466] gridcell '120. Turn right onto Main Street'
+				StaticText '120.'
+				StaticText 'Main Street'
+			[1469] gridcell '400m'
+		[1470] row ''
+			[1471] gridcell ''
+			[1473] gridcell '121. Turn left onto unnamed road'
+				StaticText '121.'
+			[1475] gridcell '300m'
+		[1476] row ''
+			[1477] gridcell ''
+			[1479] gridcell '122. At the fork turn left onto unnamed road'
+				StaticText '122.'
+			[1481] gridcell '4.5km'
+		[1482] row ''
+			[1483] gridcell ''
+			[1485] gridcell '123. Sharp right onto unnamed road'
+				StaticText '123.'
+			[1487] gridcell '60m'
+		[1488] row ''
+			[1489] gridcell ''
+			[1491] gridcell '124. Sharp left onto unnamed road'
+				StaticText '124.'
+			[1493] gridcell '1.5km'
+		[1494] row ''
+			[1495] gridcell ''
+			[1497] gridcell '125. Turn right onto unnamed road'
+				StaticText '125.'
+			[1499] gridcell '30m'
+		[1500] row ''
+			[1501] gridcell ''
+			[1503] gridcell '126. Turn left onto Wall Avenue'
+				StaticText '126.'
+				StaticText 'Wall Avenue'
+			[1506] gridcell '200m'
+		[1507] row ''
+			[1508] gridcell ''
+			[1510] gridcell '127. Turn left onto unnamed road'
+				StaticText '127.'
+			[1512] gridcell '700m'
+		[1513] row ''
+			[1514] gridcell ''
+			[1516] gridcell '128. Turn left onto Mosside Boulevard (PA 48; Orange Belt)'
+				StaticText '128.'
+				StaticText 'Mosside Boulevard (PA 48; Orange Belt)'
+			[1519] gridcell '30m'
+		[1520] row ''
+			[1521] gridcell ''
+			[1523] gridcell '129. Turn right onto Broadway Boulevard (PA 130)'
+				StaticText '129.'
+				StaticText 'Broadway Boulevard (PA 130)'
+			[1526] gridcell '500m'
+		[1527] row ''
+			[1528] gridcell ''
+			[1530] gridcell '130. Slight left onto Coffey Street'
+				StaticText '130.'
+				StaticText 'Coffey Street'
+			[1533] gridcell '200m'
+		[1534] row ''
+			[1535] gridcell ''
+			[1537] gridcell '131. Turn right onto Haymaker Road'
+				StaticText '131.'
+				StaticText 'Haymaker Road'
+			[1540] gridcell '150m'
+		[1541] row ''
+			[1542] gridcell ''
+			[1544] gridcell '132. Continue on Broadway Boulevard (PA 130)'
+				StaticText '132.'
+				StaticText 'Broadway Boulevard (PA 130)'
+			[1547] gridcell '80m'
+		[1548] row ''
+			[1549] gridcell ''
+			[1551] gridcell '133. Continue on Tri Boro Expressway (PA 130)'
+				StaticText '133.'
+				StaticText 'Tri Boro Expressway (PA 130)'
+			[1554] gridcell '300m'
+		[1555] row ''
+			[1556] gridcell ''
+			[1558] gridcell '134. Continue on 5th Street (PA 130)'
+				StaticText '134.'
+				StaticText '5th Street (PA 130)'
+			[1561] gridcell '400m'
+		[1562] row ''
+			[1563] gridcell ''
+			[1565] gridcell '135. Turn right onto Brinton Avenue (PA 993)'
+				StaticText '135.'
+				StaticText 'Brinton Avenue (PA 993)'
+			[1568] gridcell '60m'
+		[1569] row ''
+			[1570] gridcell ''
+			[1572] gridcell '136. Slight right onto Westmoreland Road'
+				StaticText '136.'
+				StaticText 'Westmoreland Road'
+			[1575] gridcell '90m'
+		[1576] row ''
+			[1577] gridcell ''
+			[1579] gridcell '137. At the fork turn left onto Adrian Avenue'
+				StaticText '137.'
+				StaticText 'Adrian Avenue'
+			[1582] gridcell '400m'
+		[1583] row ''
+			[1584] gridcell ''
+			[1586] gridcell '138. At the end of the road turn left onto 1st Street'
+				StaticText '138.'
+				StaticText '1st Street'
+			[1589] gridcell '50m'
+		[1590] row ''
+			[1591] gridcell ''
+			[1593] gridcell '139. Turn right onto unnamed road'
+				StaticText '139.'
+			[1595] gridcell '500m'
+		[1596] row ''
+			[1597] gridcell ''
+			[1599] gridcell '140. Turn right onto East Brinton Avenue (PA 993)'
+				StaticText '140.'
+				StaticText 'East Brinton Avenue (PA 993)'
+			[1602] gridcell '400m'
+		[1603] row ''
+			[1604] gridcell ''
+			[1606] gridcell '141. Turn right onto Irwin Avenue'
+				StaticText '141.'
+				StaticText 'Irwin Avenue'
+			[1609] gridcell '90m'
+		[1610] row ''
+			[1611] gridcell ''
+			[1613] gridcell '142. Turn left onto Wallace Avenue'
+				StaticText '142.'
+				StaticText 'Wallace Avenue'
+			[1616] gridcell '190m'
+		[1617] row ''
+			[1618] gridcell ''
+			[1620] gridcell '143. Turn right onto unnamed road'
+				StaticText '143.'
+			[1622] gridcell '40m'
+		[1623] row ''
+			[1624] gridcell ''
+			[1626] gridcell '144. Sharp right onto unnamed road'
+				StaticText '144.'
+			[1628] gridcell '15km'
+		[1629] row ''
+			[1630] gridcell ''
+			[1632] gridcell '145. At the fork turn left onto unnamed road'
+				StaticText '145.'
+			[1634] gridcell '3.8km'
+		[1635] row ''
+			[1636] gridcell ''
+			[1638] gridcell '146. Continue on North Greengate Road'
+				StaticText '146.'
+				StaticText 'North Greengate Road'
+			[1641] gridcell '600m'
+		[1642] row ''
+			[1643] gridcell ''
+			[1645] gridcell '147. Continue on Tollgate Hill Road'
+				StaticText '147.'
+				StaticText 'Tollgate Hill Road'
+			[1648] gridcell '1000m'
+		[1649] row ''
+			[1650] gridcell ''
+			[1652] gridcell '148. At the fork turn left onto unnamed road'
+				StaticText '148.'
+			[1654] gridcell '300m'
+		[1655] row ''
+			[1656] gridcell ''
+			[1658] gridcell '149. Continue on West Otterman Street'
+				StaticText '149.'
+				StaticText 'West Otterman Street'
+			[1661] gridcell '800m'
+		[1662] row ''
+			[1663] gridcell ''
+			[1665] gridcell '150. Turn left onto Brown Avenue'
+				StaticText '150.'
+				StaticText 'Brown Avenue'
+			[1668] gridcell '200m'
+		[1669] row ''
+			[1670] gridcell ''
+			[1672] gridcell '151. Turn right onto Gas Alley'
+				StaticText '151.'
+				StaticText 'Gas Alley'
+			[1675] gridcell '10m'
+		[1676] row ''
+			[1677] gridcell ''
+			[1679] gridcell '152. Turn left onto Holloway Way'
+				StaticText '152.'
+				StaticText 'Holloway Way'
+			[1682] gridcell '200m'
+		[1683] row ''
+			[1684] gridcell ''
+			[1686] gridcell '153. Turn right onto unnamed road'
+				StaticText '153.'
+			[1688] gridcell '30m'
+		[1689] row ''
+			[1690] gridcell ''
+			[1692] gridcell '154. At the end of the road turn left onto unnamed road'
+				StaticText '154.'
+			[1694] gridcell '10m'
+		[1695] row ''
+			[1696] gridcell ''
+			[1698] gridcell '155. At the end of the road turn right onto unnamed road'
+				StaticText '155.'
+			[1700] gridcell ''
+		[1701] row ''
+			[1702] gridcell ''
+			[1704] gridcell '156. Turn left onto unnamed road'
+				StaticText '156.'
+			[1706] gridcell '90m'
+		[1707] row ''
+			[1708] gridcell ''
+			[1710] gridcell '157. Turn right onto Tunnel Avenue'
+				StaticText '157.'
+				StaticText 'Tunnel Avenue'
+			[1713] gridcell '10m'
+		[1714] row ''
+			[1715] gridcell ''
+			[1717] gridcell '158. Turn left onto West Otterman Street'
+				StaticText '158.'
+				StaticText 'West Otterman Street'
+			[1720] gridcell '10m'
+		[1721] row ''
+			[1722] gridcell ''
+			[1724] gridcell '159. Turn right onto unnamed road'
+				StaticText '159.'
+			[1726] gridcell '120m'
+		[1727] row ''
+			[1728] gridcell ''
+			[1730] gridcell '160. Turn left onto West Pittsburgh Street (PA 130)'
+				StaticText '160.'
+				StaticText 'West Pittsburgh Street (PA 130)'
+			[1733] gridcell '140m'
+		[1734] row ''
+			[1735] gridcell ''
+			[1737] gridcell '161. Continue on East Pittsburgh Street (US 119; PA 130; PA 819)'
+				StaticText '161.'
+				StaticText 'East Pittsburgh Street (US 119; PA 130; PA 819)'
+			[1740] gridcell '140m'
+		[1741] row ''
+			[1742] gridcell ''
+			[1744] gridcell '162. Turn right onto Teeter Way'
+				StaticText '162.'
+				StaticText 'Teeter Way'
+			[1747] gridcell '50m'
+		[1748] row ''
+			[1749] gridcell ''
+			[1751] gridcell '163. Turn left onto Hutchinson Way'
+				StaticText '163.'
+				StaticText 'Hutchinson Way'
+			[1754] gridcell '400m'
+		[1755] row ''
+			[1756] gridcell ''
+			[1758] gridcell '164. At the end of the road turn left onto South Urania Avenue'
+				StaticText '164.'
+				StaticText 'South Urania Avenue'
+			[1761] gridcell '50m'
+		[1762] row ''
+			[1763] gridcell ''
+			[1765] gridcell '165. Turn right onto East Pittsburgh Street (PA 130)'
+				StaticText '165.'
+				StaticText 'East Pittsburgh Street (PA 130)'
+			[1768] gridcell '160m'
+		[1769] row ''
+			[1770] gridcell ''
+			[1772] gridcell '166. Turn left onto Welty Court'
+				StaticText '166.'
+				StaticText 'Welty Court'
+			[1775] gridcell '50m'
+		[1776] row ''
+			[1777] gridcell ''
+			[1779] gridcell '167. Turn right onto unnamed road'
+				StaticText '167.'
+			[1781] gridcell '90m'
+		[1782] row ''
+			[1783] gridcell ''
+			[1785] gridcell '168. Turn left onto North Tremont Avenue'
+				StaticText '168.'
+				StaticText 'North Tremont Avenue'
+			[1788] gridcell '1.5km'
+		[1789] row ''
+			[1790] gridcell ''
+			[1792] gridcell '169. At the end of the road turn right onto Roseytown Road'
+				StaticText '169.'
+				StaticText 'Roseytown Road'
+			[1795] gridcell '1200m'
+		[1796] row ''
+			[1797] gridcell ''
+			[1799] gridcell '170. Turn left onto unnamed road'
+				StaticText '170.'
+			[1801] gridcell '100m'
+		[1802] row ''
+			[1803] gridcell ''
+			[1805] gridcell '171. Turn right onto unnamed road'
+				StaticText '171.'
+			[1807] gridcell '180m'
+		[1808] row ''
+			[1809] gridcell ''
+			[1811] gridcell '172. Turn right onto unnamed road'
+				StaticText '172.'
+			[1813] gridcell '300m'
+		[1814] row ''
+			[1815] gridcell ''
+			[1817] gridcell '173. At the end of the road turn left onto Donohoe Road'
+				StaticText '173.'
+				StaticText 'Donohoe Road'
+			[1820] gridcell '2.4km'
+		[1821] row ''
+			[1822] gridcell ''
+			[1824] gridcell '174. Continue on Donahue Road'
+				StaticText '174.'
+				StaticText 'Donahue Road'
+			[1827] gridcell '400m'
+		[1828] row ''
+			[1829] gridcell ''
+			[1831] gridcell '175. Slight left onto Leon Street'
+				StaticText '175.'
+				StaticText 'Leon Street'
+			[1834] gridcell '200m'
+		[1835] row ''
+			[1836] gridcell ''
+			[1838] gridcell '176. Turn left onto Donahue Road'
+				StaticText '176.'
+				StaticText 'Donahue Road'
+			[1841] gridcell '5km'
+		[1842] row ''
+			[1843] gridcell ''
+			[1845] gridcell "177. Continue on Saint Mary's Road"
+				StaticText '177.'
+				StaticText "Saint Mary's Road"
+			[1848] gridcell '1000m'
+		[1849] row ''
+			[1850] gridcell ''
+			[1852] gridcell '178. Turn left onto unnamed road'
+				StaticText '178.'
+			[1854] gridcell '50m'
+		[1855] row ''
+			[1856] gridcell ''
+			[1858] gridcell '179. Turn right onto unnamed road'
+				StaticText '179.'
+			[1860] gridcell '10m'
+		[1861] row ''
+			[1862] gridcell ''
+			[1864] gridcell '180. Slight left onto unnamed road'
+				StaticText '180.'
+			[1866] gridcell '80m'
+		[1867] row ''
+			[1868] gridcell ''
+			[1870] gridcell '181. At the fork turn left onto unnamed road'
+				StaticText '181.'
+			[1872] gridcell '200m'
+		[1873] row ''
+			[1874] gridcell ''
+			[1876] gridcell '182. Continue on Garfield Road'
+				StaticText '182.'
+				StaticText 'Garfield Road'
+			[1879] gridcell '200m'
+		[1880] row ''
+			[1881] gridcell ''
+			[1883] gridcell '183. Turn left onto West 2nd Avenue'
+				StaticText '183.'
+				StaticText 'West 2nd Avenue'
+			[1886] gridcell '700m'
+		[1887] row ''
+			[1888] gridcell ''
+			[1890] gridcell '184. Turn right onto Polk Street'
+				StaticText '184.'
+				StaticText 'Polk Street'
+			[1893] gridcell '80m'
+		[1894] row ''
+			[1895] gridcell ''
+			[1897] gridcell '185. Turn left onto West 1st Avenue'
+				StaticText '185.'
+				StaticText 'West 1st Avenue'
+			[1900] gridcell '140m'
+		[1901] row ''
+			[1902] gridcell ''
+			[1904] gridcell '186. Turn right onto Ligonier Street'
+				StaticText '186.'
+				StaticText 'Ligonier Street'
+			[1907] gridcell '300m'
+		[1908] row ''
+			[1909] gridcell ''
+			[1911] gridcell '187. Turn left onto Oak Street'
+				StaticText '187.'
+				StaticText 'Oak Street'
+			[1914] gridcell '200m'
+		[1915] row ''
+			[1916] gridcell ''
+			[1918] gridcell '188. Turn right onto South Alexandria Street'
+				StaticText '188.'
+				StaticText 'South Alexandria Street'
+			[1921] gridcell '160m'
+		[1922] row ''
+			[1923] gridcell ''
+			[1925] gridcell '189. Turn left onto Miller Street'
+				StaticText '189.'
+				StaticText 'Miller Street'
+			[1928] gridcell '400m'
+		[1929] row ''
+			[1930] gridcell ''
+			[1932] gridcell '190. Turn left onto Derry Street'
+				StaticText '190.'
+				StaticText 'Derry Street'
+			[1935] gridcell '500m'
+		[1936] row ''
+			[1937] gridcell ''
+			[1939] gridcell '191. At the fork turn right onto Lattanzio Road'
+				StaticText '191.'
+				StaticText 'Lattanzio Road'
+			[1942] gridcell '170m'
+		[1943] row ''
+			[1944] gridcell ''
+			[1946] gridcell '192. Slight right onto Freddie Road'
+				StaticText '192.'
+				StaticText 'Freddie Road'
+			[1949] gridcell '150m'
+		[1950] row ''
+			[1951] gridcell ''
+			[1953] gridcell '193. Turn right onto Latrobe New Alex Road'
+				StaticText '193.'
+				StaticText 'Latrobe New Alex Road'
+			[1956] gridcell '300m'
+		[1957] row ''
+			[1958] gridcell ''
+			[1960] gridcell '194. At the end of the road turn left onto Latrobe Derry Road'
+				StaticText '194.'
+				StaticText 'Latrobe Derry Road'
+			[1963] gridcell '800m'
+		[1964] row ''
+			[1965] gridcell ''
+			[1967] gridcell '195. Turn left onto North Main Street'
+				StaticText '195.'
+				StaticText 'North Main Street'
+			[1970] gridcell '500m'
+		[1971] row ''
+			[1972] gridcell ''
+			[1974] gridcell '196. Continue on Pandora Road'
+				StaticText '196.'
+				StaticText 'Pandora Road'
+			[1977] gridcell '2.7km'
+		[1978] row ''
+			[1979] gridcell ''
+			[1981] gridcell '197. Sharp right onto Greenfield Road'
+				StaticText '197.'
+				StaticText 'Greenfield Road'
+			[1984] gridcell '1400m'
+		[1985] row ''
+			[1986] gridcell ''
+			[1988] gridcell '198. At the end of the road turn left onto PA 982'
+				StaticText '198.'
+				StaticText 'PA 982'
+			[1991] gridcell '500m'
+		[1992] row ''
+			[1993] gridcell ''
+			[1995] gridcell '199. Turn right onto Hickory Avenue'
+				StaticText '199.'
+				StaticText 'Hickory Avenue'
+			[1998] gridcell '180m'
+		[1999] row ''
+			[2000] gridcell ''
+			[2002] gridcell '200. At the fork turn left onto Hickory Avenue'
+				StaticText '200.'
+				StaticText 'Hickory Avenue'
+			[2005] gridcell '170m'
+		[2006] row ''
+			[2007] gridcell ''
+			[2009] gridcell '201. Turn left onto Stella Street'
+				StaticText '201.'
+				StaticText 'Stella Street'
+			[2012] gridcell '150m'
+		[2013] row ''
+			[2014] gridcell ''
+			[2016] gridcell '202. Turn right onto Edith Street'
+				StaticText '202.'
+				StaticText 'Edith Street'
+			[2019] gridcell '110m'
+		[2020] row ''
+			[2021] gridcell ''
+			[2023] gridcell '203. Turn left onto Traction Avenue'
+				StaticText '203.'
+				StaticText 'Traction Avenue'
+			[2026] gridcell '300m'
+		[2027] row ''
+			[2028] gridcell ''
+			[2030] gridcell '204. Slight left onto West Keeling Avenue'
+				StaticText '204.'
+				StaticText 'West Keeling Avenue'
+			[2033] gridcell '30m'
+		[2034] row ''
+			[2035] gridcell ''
+			[2037] gridcell '205. Turn right onto Charles Street'
+				StaticText '205.'
+				StaticText 'Charles Street'
+			[2040] gridcell '300m'
+		[2041] row ''
+			[2042] gridcell ''
+			[2044] gridcell '206. Turn left onto unnamed road'
+				StaticText '206.'
+			[2046] gridcell '170m'
+		[2047] row ''
+			[2048] gridcell ''
+			[2050] gridcell '207. Turn right onto Y Street (PA 217)'
+				StaticText '207.'
+				StaticText 'Y Street (PA 217)'
+			[2053] gridcell '300m'
+		[2054] row ''
+			[2055] gridcell ''
+			[2057] gridcell '208. Turn left onto West 1st Street'
+				StaticText '208.'
+				StaticText 'West 1st Street'
+			[2060] gridcell '120m'
+		[2061] row ''
+			[2062] gridcell ''
+			[2064] gridcell '209. Turn right onto South Chestnut Street'
+				StaticText '209.'
+				StaticText 'South Chestnut Street'
+			[2067] gridcell '60m'
+		[2068] row ''
+			[2069] gridcell ''
+			[2071] gridcell '210. Turn left onto Brown Way'
+				StaticText '210.'
+				StaticText 'Brown Way'
+			[2074] gridcell '40m'
+		[2075] row ''
+			[2076] gridcell ''
+			[2078] gridcell '211. Turn right onto unnamed road'
+				StaticText '211.'
+			[2080] gridcell '110m'
+		[2081] row ''
+			[2082] gridcell ''
+			[2084] gridcell '212. Turn left onto unnamed road'
+				StaticText '212.'
+			[2086] gridcell '20m'
+		[2087] row ''
+			[2088] gridcell ''
+			[2090] gridcell '213. Turn right onto unnamed road'
+				StaticText '213.'
+			[2092] gridcell '60m'
+		[2093] row ''
+			[2094] gridcell ''
+			[2096] gridcell '214. Turn left onto East 3rd Avenue'
+				StaticText '214.'
+				StaticText 'East 3rd Avenue'
+			[2099] gridcell '60m'
+		[2100] row ''
+			[2101] gridcell ''
+			[2103] gridcell '215. Turn right onto South Ligonier Street'
+				StaticText '215.'
+				StaticText 'South Ligonier Street'
+			[2106] gridcell '3.6km'
+		[2107] row ''
+			[2108] gridcell ''
+			[2110] gridcell '216. Turn left onto unnamed road'
+				StaticText '216.'
+			[2112] gridcell '2.1km'
+		[2113] row ''
+			[2114] gridcell ''
+			[2116] gridcell '217. Turn right onto unnamed road'
+				StaticText '217.'
+			[2118] gridcell '400m'
+		[2119] row ''
+			[2120] gridcell ''
+			[2122] gridcell '218. Slight right onto Fire Tower Road'
+				StaticText '218.'
+				StaticText 'Fire Tower Road'
+			[2125] gridcell '2.8km'
+		[2126] row ''
+			[2127] gridcell ''
+			[2129] gridcell '219. Turn left onto Derry Ridge Road'
+				StaticText '219.'
+				StaticText 'Derry Ridge Road'
+			[2132] gridcell '700m'
+		[2133] row ''
+			[2134] gridcell ''
+			[2136] gridcell '220. Turn left onto Shirey'
+				StaticText '220.'
+				StaticText 'Shirey'
+			[2139] gridcell '1000m'
+		[2140] row ''
+			[2141] gridcell ''
+			[2143] gridcell '221. Turn left onto PA 259'
+				StaticText '221.'
+				StaticText 'PA 259'
+			[2146] gridcell '3.1km'
+		[2147] row ''
+			[2148] gridcell ''
+			[2150] gridcell '222. Turn right onto Knupp Road'
+				StaticText '222.'
+				StaticText 'Knupp Road'
+			[2153] gridcell '80m'
+		[2154] row ''
+			[2155] gridcell ''
+			[2157] gridcell '223. Turn left onto Hypocrite Creek Road'
+				StaticText '223.'
+				StaticText 'Hypocrite Creek Road'
+			[2160] gridcell '1100m'
+		[2161] row ''
+			[2162] gridcell ''
+			[2164] gridcell '224. Continue on Tr 987'
+				StaticText '224.'
+				StaticText 'Tr 987'
+			[2167] gridcell '1200m'
+		[2168] row ''
+			[2169] gridcell ''
+			[2171] gridcell '225. At the end of the road turn right onto Tr 987'
+				StaticText '225.'
+				StaticText 'Tr 987'
+			[2174] gridcell '1.7km'
+		[2175] row ''
+			[2176] gridcell ''
+			[2178] gridcell '226. At the end of the road turn right onto Midget Camp Road'
+				StaticText '226.'
+				StaticText 'Midget Camp Road'
+			[2181] gridcell '400m'
+		[2182] row ''
+			[2183] gridcell ''
+			[2185] gridcell '227. Turn left onto Ligonier Street (PA 711)'
+				StaticText '227.'
+				StaticText 'Ligonier Street (PA 711)'
+			[2188] gridcell '1100m'
+		[2189] row ''
+			[2190] gridcell ''
+			[2192] gridcell '228. Turn left onto Beaufords'
+				StaticText '228.'
+				StaticText 'Beaufords'
+			[2195] gridcell '30m'
+		[2196] row ''
+			[2197] gridcell ''
+			[2199] gridcell '229. Turn right onto unnamed road'
+				StaticText '229.'
+			[2201] gridcell '600m'
+		[2202] row ''
+			[2203] gridcell ''
+			[2205] gridcell '230. Turn left onto Ligonier Street (PA 711)'
+				StaticText '230.'
+				StaticText 'Ligonier Street (PA 711)'
+			[2208] gridcell '3.1km'
+		[2209] row ''
+			[2210] gridcell ''
+			[2212] gridcell '231. Turn right onto Shannon Creek Road'
+				StaticText '231.'
+				StaticText 'Shannon Creek Road'
+			[2215] gridcell '2.1km'
+		[2216] row ''
+			[2217] gridcell ''
+			[2219] gridcell '232. Continue on Goat Hill Road'
+				StaticText '232.'
+				StaticText 'Goat Hill Road'
+			[2222] gridcell '1100m'
+		[2223] row ''
+			[2224] gridcell ''
+			[2226] gridcell '233. Turn right onto Furnace Lane'
+				StaticText '233.'
+				StaticText 'Furnace Lane'
+			[2229] gridcell '400m'
+		[2230] row ''
+			[2231] gridcell ''
+			[2233] gridcell '234. Continue on Sugar Run Road'
+				StaticText '234.'
+				StaticText 'Sugar Run Road'
+			[2236] gridcell '2.9km'
+		[2237] row ''
+			[2238] gridcell ''
+			[2240] gridcell '235. Turn right onto unnamed road'
+				StaticText '235.'
+			[2242] gridcell '3.7km'
+		[2243] row ''
+			[2244] gridcell ''
+			[2246] gridcell '236. Slight left onto unnamed road'
+				StaticText '236.'
+			[2248] gridcell '600m'
+		[2249] row ''
+			[2250] gridcell ''
+			[2252] gridcell '237. Turn left onto unnamed road'
+				StaticText '237.'
+			[2254] gridcell '700m'
+		[2255] row ''
+			[2256] gridcell ''
+			[2258] gridcell '238. Slight left onto unnamed road'
+				StaticText '238.'
+			[2260] gridcell '90m'
+		[2261] row ''
+			[2262] gridcell ''
+			[2264] gridcell '239. Sharp right onto unnamed road'
+				StaticText '239.'
+			[2266] gridcell '1300m'
+		[2267] row ''
+			[2268] gridcell ''
+			[2270] gridcell '240. Continue on Decker Avenue'
+				StaticText '240.'
+				StaticText 'Decker Avenue'
+			[2273] gridcell '2.3km'
+		[2274] row ''
+			[2275] gridcell ''
+			[2277] gridcell '241. Slight right onto Decker Avenue'
+				StaticText '241.'
+				StaticText 'Decker Avenue'
+			[2280] gridcell '700m'
+		[2281] row ''
+			[2282] gridcell ''
+			[2284] gridcell '242. Turn left onto Laurel Avenue'
+				StaticText '242.'
+				StaticText 'Laurel Avenue'
+			[2287] gridcell '500m'
+		[2288] row ''
+			[2289] gridcell ''
+			[2291] gridcell '243. Turn right onto Broad Street (PA 403)'
+				StaticText '243.'
+				StaticText 'Broad Street (PA 403)'
+			[2294] gridcell '400m'
+		[2295] row ''
+			[2296] gridcell ''
+			[2298] gridcell '244. Reach destination'
+				StaticText '244.'
+			[2300] gridcell ''
+	[2301] paragraph ''
+		StaticText 'Directions courtesy of'
+		[2302] link 'OSRM (FOSSGIS)'
+	[2304] image ''
+	[2305] image ''
+	[2306] image ''
+	[2307] image ''
+	[2308] image ''
+	[2309] image ''
+	[2310] image ''
+	[2311] image ''
+	[2312] image ''
+	[2313] image ''
+	[2314] image ''
+	[2315] image ''
+	[2316] image ''
+	[2317] image ''
+	[2318] image ''
+	[2319] image ''
+	[666] image ''
+	[675] image ''
+	[2320] image ''
+	[676] button 'Marker'
+	[2321] button 'Marker'
+	[394] link 'Zoom In'
+	[396] link 'Zoom Out'
+	[399] button 'Show My Location'
+	[402] link 'Layers'
+	[405] link ''
+	[408] link 'Share'
+	[411] link ''
+	[414] link ''
+	StaticText '20 km'
+	StaticText '10 mi'
+	StaticText '©'
+	[422] link 'OpenStreetMap contributors'
+	StaticText '♥'
+	[423] link 'Make a Donation'
+	StaticText '.'
+	[424] link 'Website and API terms'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+<think>
+The task is to provide the name of a Hilton hotel near Pittsburgh Airport and then compute the walking distance to the nearest locally owned supermarket. We’re already on the OpenStreetMap page for “Hilton Garden Inn Pittsburgh Airport South-Robinson Mall,” and the directions panel is open with “From” and “To” fields plus a routing mode selector defaulted to Car (OSRM). To get walking distance, we need to set up a route from the hotel to a local supermarket (e.g., Giant Eagle) using Foot (OSRM). The next step is to populate the “From” field with the hotel as the starting point so we can then search for the nearest Giant Eagle as the destination and switch the routing mode to walking.
+</think>
+<action>
+```fill('158', 'Hilton Garden Inn Pittsburgh Airport South-Robinson Mall')```
+</action>
+
+
+<think>
+We have the Hilton hotel identified and set as the starting point in the directions panel: “Hilton Garden Inn Pittsburgh Airport South-Robinson Mall” is already in the From field [158]. To compute the walking distance to the nearest locally owned supermarket, I should set the destination to a local Pittsburgh supermarket chain. Giant Eagle is a local company. The next step is to enter “Giant Eagle” into the To field [163], then I will switch the mode to Foot (OSRM) and click Go to get the walking distance.
+</think>
+<action>
+```fill('163', 'Giant Eagle')```
+</action>
+
+
+<think>
+The user needs the name of a Hilton hotel near Pittsburgh Airport and then the walking distance from that hotel to the nearest locally owned supermarket. We’re already on the OSM directions panel with:
+- From: Hilton Garden Inn Pittsburgh Airport South-Robinson Mall (pre-filled with full address)
+- To: Giant Eagle (a local Pittsburgh supermarket chain)
+The routing mode is currently “Car (OSRM)”. To get walking distance, I must switch the mode to “Foot (OSRM)” before running the route. The combobox [166] shows options including Foot (OSRM). The optimal next step is to change the routing mode to Foot.
+</think>
+<action>
+```select_option('166', 'Foot (OSRM)')```
+</action>
+
+
+<think>
+The goal requires providing a Hilton hotel near Pittsburgh Airport and then the walking distance to the nearest locally owned supermarket. We’re already on an OpenStreetMap page centered on “Hilton Garden Inn Pittsburgh Airport South-Robinson Mall,” which satisfies the Hilton requirement. The directions panel is open with:
+- From: the hotel’s full address (already filled)
+- To: “Giant Eagle” (a local Pittsburgh supermarket chain)
+- Mode: Foot (OSRM) is selected
+
+To obtain the walking distance, the next step is to execute the route calculation by pressing the “Go” button. This should display the walking route and distance to the nearest Giant Eagle. I will click the Go button [171].
+</think>
+<action>
+```click('171')```
+</action>
+
+
+<think>
+The current route shows a walking distance of 132km to a “Giant Eagle” in Johnstown, which is clearly not the nearest local supermarket to the Hilton Garden Inn Pittsburgh Airport South–Robinson Mall. To fix this, I should refine the destination search to a nearby Giant Eagle in Robinson Township (the hotel’s area), ensuring the routing engine picks a close store. The “To” textbox [163] is visible, so the next step is to replace its value with a more specific query like “Giant Eagle Robinson Township” and then I will click Go to recalculate the walking distance.
+</think>
+<action>
+```fill('163', 'Giant Eagle Robinson Township')```</action>
+
+# Progress Summary
+✅ Current Progress:
+- Identified Hilton hotel: “Hilton Garden Inn Pittsburgh Airport South–Robinson Mall.”
+- Directions tool opened; “From” is set to the hotel.
+- Routing mode is set to Foot (OSRM).
+- “To” field updated to “Giant Eagle Robinson Township,” but the displayed route still shows an outdated, incorrect distance (132 km).
+
+🔍 Current State Analysis:
+- Page is relevant and on the critical path; only the route needs recalculation to the nearby Giant Eagle.
+- Relevant elements:
+  - [158] textbox “From” — filled with the hotel’s full address; visible.
+  - [163] textbox “To” — value “Giant Eagle Robinson Township”; focused and editable.
+  - [166] combobox — “Foot (OSRM)” selected; enabled.
+  - [171] button “Go” — enabled.
+  - Directions summary [681] — “Distance: 132km. Time: 29:28.” indicates the route hasn’t been recalculated yet.
+
+➡️ Next-step Guidance:
+- Click [171] button “Go” to recalculate walking directions from the hotel to “Giant Eagle Robinson Township.”
+- If the result is still not local, refine [163] to a specific nearby store name like “Giant Eagle Market District Robinson” and click [171] “Go” again.

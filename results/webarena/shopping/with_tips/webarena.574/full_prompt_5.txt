@@ -1,0 +1,894 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. This website provides very detailed category of products. You can hover categories on the top menu to see subcategories.
+2. If you need to find information about your previous purchases, you can go My Account > My Orders, and find order by date, order number, or any other available information
+3. An order is considered out of delivery if it is marked as "processing" in the order status
+4. When the task asks you to draft and email. DO NOT send the email. Just draft it and provide the content in the last message
+5. For questions ONLY about **Nintendo Switch game cards** please navigate back to the url of the product you end up choosing. This is because the benchmark evalautes using the page you are on for the Nintendo task. If you are own the wrong product page it will assume you selected that product.
+6. When asked to "show me products under a price" the benchmark evaluates based on the url. so just ensure the price is under the price asked for in the url.
+7. When asked about product type don't return the acutal product name but rather the type of product it is. Ex: If the most common products are "harry potter" and "twilight" the product type is "books".
+8. **For SHOPPING/BROWSING tasks**: When asked to browse products in a particular category, navigate using the dropdown menus (not search) when possible. This may require hovering over nested dropdowns (e.g., hover over "Electronics" → hover over "Computers" → click "Laptops"). Use the hover tool to reveal these nested menus before clicking.
+9. Task wording can contain typos or singular/plural mismatches. Treat singular terms like "order" or "transaction" as potentially plural. If multiple entries match the described criteria, summarize all of them, list each matching item with its key details, make the quantity explicit, and when the question asks for an amount/total, include the combined sum alongside the itemized numbers. Never assume "the most recent one" unless the instructions explicitly say so.
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+I recently moved, my address is 111 Magnolia Path, Atlanta, GA, 30303, update my information on OneStopShopping accordingly
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Edit Address
+  URL: http://localhost:7770/customer/address/edit/id/26/
+
+# Current page Accessibility Tree
+
+RootWebArea 'Edit Address', focused
+	[218] banner ''
+		[221] list ''
+			[222] listitem ''
+				[223] link 'My Account'
+			[224] listitem ''
+				[225] link 'My Wish List'
+			[226] listitem ''
+				[227] link 'Sign Out'
+			[228] listitem ''
+			[231] listitem ''
+				StaticText 'Welcome, Emma Lopez!'
+		[233] link 'Skip to Content'
+			StaticText 'Skip to Content'
+		[238] link 'store logo'
+			[239] image 'one_stop_market_logo'
+		[241] link '\ue611 My Cart 3 3items'
+			StaticText '\ue611'
+			StaticText 'My Cart'
+			StaticText '3'
+			StaticText '3'
+			StaticText 'items'
+		[377] Section ''
+			[379] LabelText ''
+				StaticText '\ue615'
+				StaticText 'Search'
+			[382] combobox '\ue615 Search', autocomplete='both', hasPopup='listbox', expanded=False
+			[385] link 'Advanced Search'
+			[387] button 'Search', disabled=True
+				StaticText '\ue615'
+				StaticText 'Search'
+	[390] tablist '', multiselectable=False, orientation='horizontal'
+		[393] tabpanel ''
+			[394] navigation ''
+				[395] menu '', orientation='vertical'
+					[397] menuitem '\ue622 Beauty & Personal Care', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Beauty & Personal Care'
+					[614] menuitem '\ue622 Sports & Outdoors', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Sports & Outdoors'
+					[652] menuitem '\ue622 Clothing, Shoes & Jewelry', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Clothing, Shoes & Jewelry'
+					[704] menuitem '\ue622 Home & Kitchen', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Home & Kitchen'
+					[831] menuitem '\ue622 Office Products', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Office Products'
+					[863] menuitem '\ue622 Tools & Home Improvement', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Tools & Home Improvement'
+					[882] menuitem '\ue622 Health & Household', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Health & Household'
+					[906] menuitem '\ue622 Patio, Lawn & Garden', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Patio, Lawn & Garden'
+					[925] menuitem '\ue622 Electronics', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Electronics'
+					[1134] menuitem '\ue622 Cell Phones & Accessories', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Cell Phones & Accessories'
+					[1185] menuitem '\ue622 Video Games', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Video Games'
+					[1234] menuitem '\ue622 Grocery & Gourmet Food', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Grocery & Gourmet Food'
+	[1462] main ''
+		[1470] heading 'Edit Address'
+			StaticText 'Edit Address'
+		[1475] Section ''
+			[1476] group 'Contact Information'
+				[1477] Legend ''
+					StaticText 'Contact Information'
+				[1484] LabelText ''
+					StaticText 'First Name'
+					StaticText ''
+					StaticText '*'
+				[1487] textbox 'First Name *' value='Emma', required
+					StaticText 'Emma'
+				[1489] LabelText ''
+					StaticText 'Last Name'
+					StaticText ''
+					StaticText '*'
+				[1492] textbox 'Last Name *' value='Lopez', required
+					StaticText 'Lopez'
+				[1494] LabelText ''
+					StaticText 'Company'
+				[1497] textbox 'Company'
+				[1499] LabelText ''
+					StaticText 'Phone Number'
+					StaticText '*'
+				[1502] textbox 'Phone Number *' value='6505551212', required
+					StaticText '6505551212'
+			[1503] group 'Address'
+				[1504] Legend ''
+					StaticText 'Address'
+				[1508] LabelText ''
+					StaticText 'Street Address'
+					StaticText '*'
+				[1512] LabelText ''
+					StaticText 'Street Address: Line 1'
+				[1514] textbox 'Street Address* Street Address: Line 1' value='111 Magnolia Path', focused, required
+					StaticText '111 Magnolia Path'
+				[1517] LabelText ''
+					StaticText 'Street Address: Line 2'
+				[1520] textbox 'Street Address: Line 2', required
+				[1522] LabelText ''
+					StaticText 'Country'
+					StaticText ''
+					StaticText '*'
+				[1525] combobox 'Country *' value='United States', hasPopup='menu', expanded=False
+					[1526] option '', selected=False
+					[1527] option 'Afghanistan', selected=False
+					[1528] option 'Albania', selected=False
+					[1529] option 'Algeria', selected=False
+					[1530] option 'American Samoa', selected=False
+					[1531] option 'Andorra', selected=False
+					[1532] option 'Angola', selected=False
+					[1533] option 'Anguilla', selected=False
+					[1534] option 'Antarctica', selected=False
+					[1535] option 'Antigua & Barbuda', selected=False
+					[1536] option 'Argentina', selected=False
+					[1537] option 'Armenia', selected=False
+					[1538] option 'Aruba', selected=False
+					[1539] option 'Australia', selected=False
+					[1540] option 'Austria', selected=False
+					[1541] option 'Azerbaijan', selected=False
+					[1542] option 'Bahamas', selected=False
+					[1543] option 'Bahrain', selected=False
+					[1544] option 'Bangladesh', selected=False
+					[1545] option 'Barbados', selected=False
+					[1546] option 'Belarus', selected=False
+					[1547] option 'Belgium', selected=False
+					[1548] option 'Belize', selected=False
+					[1549] option 'Benin', selected=False
+					[1550] option 'Bermuda', selected=False
+					[1551] option 'Bhutan', selected=False
+					[1552] option 'Bolivia', selected=False
+					[1553] option 'Bosnia & Herzegovina', selected=False
+					[1554] option 'Botswana', selected=False
+					[1555] option 'Bouvet Island', selected=False
+					[1556] option 'Brazil', selected=False
+					[1557] option 'British Indian Ocean Territory', selected=False
+					[1558] option 'British Virgin Islands', selected=False
+					[1559] option 'Brunei', selected=False
+					[1560] option 'Bulgaria', selected=False
+					[1561] option 'Burkina Faso', selected=False
+					[1562] option 'Burundi', selected=False
+					[1563] option 'Cambodia', selected=False
+					[1564] option 'Cameroon', selected=False
+					[1565] option 'Canada', selected=False
+					[1566] option 'Cape Verde', selected=False
+					[1567] option 'Caribbean Netherlands', selected=False
+					[1568] option 'Cayman Islands', selected=False
+					[1569] option 'Central African Republic', selected=False
+					[1570] option 'Chad', selected=False
+					[1571] option 'Chile', selected=False
+					[1572] option 'China', selected=False
+					[1573] option 'Christmas Island', selected=False
+					[1574] option 'Cocos (Keeling) Islands', selected=False
+					[1575] option 'Colombia', selected=False
+					[1576] option 'Comoros', selected=False
+					[1577] option 'Congo - Brazzaville', selected=False
+					[1578] option 'Congo - Kinshasa', selected=False
+					[1579] option 'Cook Islands', selected=False
+					[1580] option 'Costa Rica', selected=False
+					[1581] option 'Croatia', selected=False
+					[1582] option 'Cuba', selected=False
+					[1583] option 'Curaçao', selected=False
+					[1584] option 'Cyprus', selected=False
+					[1585] option 'Czechia', selected=False
+					[1586] option 'Côte d’Ivoire', selected=False
+					[1587] option 'Denmark', selected=False
+					[1588] option 'Djibouti', selected=False
+					[1589] option 'Dominica', selected=False
+					[1590] option 'Dominican Republic', selected=False
+					[1591] option 'Ecuador', selected=False
+					[1592] option 'Egypt', selected=False
+					[1593] option 'El Salvador', selected=False
+					[1594] option 'Equatorial Guinea', selected=False
+					[1595] option 'Eritrea', selected=False
+					[1596] option 'Estonia', selected=False
+					[1597] option 'Eswatini', selected=False
+					[1598] option 'Ethiopia', selected=False
+					[1599] option 'Falkland Islands', selected=False
+					[1600] option 'Faroe Islands', selected=False
+					[1601] option 'Fiji', selected=False
+					[1602] option 'Finland', selected=False
+					[1603] option 'France', selected=False
+					[1604] option 'French Guiana', selected=False
+					[1605] option 'French Polynesia', selected=False
+					[1606] option 'French Southern Territories', selected=False
+					[1607] option 'Gabon', selected=False
+					[1608] option 'Gambia', selected=False
+					[1609] option 'Georgia', selected=False
+					[1610] option 'Germany', selected=False
+					[1611] option 'Ghana', selected=False
+					[1612] option 'Gibraltar', selected=False
+					[1613] option 'Greece', selected=False
+					[1614] option 'Greenland', selected=False
+					[1615] option 'Grenada', selected=False
+					[1616] option 'Guadeloupe', selected=False
+					[1617] option 'Guam', selected=False
+					[1618] option 'Guatemala', selected=False
+					[1619] option 'Guernsey', selected=False
+					[1620] option 'Guinea', selected=False
+					[1621] option 'Guinea-Bissau', selected=False
+					[1622] option 'Guyana', selected=False
+					[1623] option 'Haiti', selected=False
+					[1624] option 'Heard & McDonald Islands', selected=False
+					[1625] option 'Honduras', selected=False
+					[1626] option 'Hong Kong SAR China', selected=False
+					[1627] option 'Hungary', selected=False
+					[1628] option 'Iceland', selected=False
+					[1629] option 'India', selected=False
+					[1630] option 'Indonesia', selected=False
+					[1631] option 'Iran', selected=False
+					[1632] option 'Iraq', selected=False
+					[1633] option 'Ireland', selected=False
+					[1634] option 'Isle of Man', selected=False
+					[1635] option 'Israel', selected=False
+					[1636] option 'Italy', selected=False
+					[1637] option 'Jamaica', selected=False
+					[1638] option 'Japan', selected=False
+					[1639] option 'Jersey', selected=False
+					[1640] option 'Jordan', selected=False
+					[1641] option 'Kazakhstan', selected=False
+					[1642] option 'Kenya', selected=False
+					[1643] option 'Kiribati', selected=False
+					[1644] option 'Kosovo', selected=False
+					[1645] option 'Kuwait', selected=False
+					[1646] option 'Kyrgyzstan', selected=False
+					[1647] option 'Laos', selected=False
+					[1648] option 'Latvia', selected=False
+					[1649] option 'Lebanon', selected=False
+					[1650] option 'Lesotho', selected=False
+					[1651] option 'Liberia', selected=False
+					[1652] option 'Libya', selected=False
+					[1653] option 'Liechtenstein', selected=False
+					[1654] option 'Lithuania', selected=False
+					[1655] option 'Luxembourg', selected=False
+					[1656] option 'Macao SAR China', selected=False
+					[1657] option 'Madagascar', selected=False
+					[1658] option 'Malawi', selected=False
+					[1659] option 'Malaysia', selected=False
+					[1660] option 'Maldives', selected=False
+					[1661] option 'Mali', selected=False
+					[1662] option 'Malta', selected=False
+					[1663] option 'Marshall Islands', selected=False
+					[1664] option 'Martinique', selected=False
+					[1665] option 'Mauritania', selected=False
+					[1666] option 'Mauritius', selected=False
+					[1667] option 'Mayotte', selected=False
+					[1668] option 'Mexico', selected=False
+					[1669] option 'Micronesia', selected=False
+					[1670] option 'Moldova', selected=False
+					[1671] option 'Monaco', selected=False
+					[1672] option 'Mongolia', selected=False
+					[1673] option 'Montenegro', selected=False
+					[1674] option 'Montserrat', selected=False
+					[1675] option 'Morocco', selected=False
+					[1676] option 'Mozambique', selected=False
+					[1677] option 'Myanmar (Burma)', selected=False
+					[1678] option 'Namibia', selected=False
+					[1679] option 'Nauru', selected=False
+					[1680] option 'Nepal', selected=False
+					[1681] option 'Netherlands', selected=False
+					[1682] option 'New Caledonia', selected=False
+					[1683] option 'New Zealand', selected=False
+					[1684] option 'Nicaragua', selected=False
+					[1685] option 'Niger', selected=False
+					[1686] option 'Nigeria', selected=False
+					[1687] option 'Niue', selected=False
+					[1688] option 'Norfolk Island', selected=False
+					[1689] option 'North Korea', selected=False
+					[1690] option 'North Macedonia', selected=False
+					[1691] option 'Northern Mariana Islands', selected=False
+					[1692] option 'Norway', selected=False
+					[1693] option 'Oman', selected=False
+					[1694] option 'Pakistan', selected=False
+					[1695] option 'Palau', selected=False
+					[1696] option 'Palestinian Territories', selected=False
+					[1697] option 'Panama', selected=False
+					[1698] option 'Papua New Guinea', selected=False
+					[1699] option 'Paraguay', selected=False
+					[1700] option 'Peru', selected=False
+					[1701] option 'Philippines', selected=False
+					[1702] option 'Pitcairn Islands', selected=False
+					[1703] option 'Poland', selected=False
+					[1704] option 'Portugal', selected=False
+					[1705] option 'Qatar', selected=False
+					[1706] option 'Romania', selected=False
+					[1707] option 'Russia', selected=False
+					[1708] option 'Rwanda', selected=False
+					[1709] option 'Réunion', selected=False
+					[1710] option 'Samoa', selected=False
+					[1711] option 'San Marino', selected=False
+					[1712] option 'Saudi Arabia', selected=False
+					[1713] option 'Senegal', selected=False
+					[1714] option 'Serbia', selected=False
+					[1715] option 'Seychelles', selected=False
+					[1716] option 'Sierra Leone', selected=False
+					[1717] option 'Singapore', selected=False
+					[1718] option 'Sint Maarten', selected=False
+					[1719] option 'Slovakia', selected=False
+					[1720] option 'Slovenia', selected=False
+					[1721] option 'Solomon Islands', selected=False
+					[1722] option 'Somalia', selected=False
+					[1723] option 'South Africa', selected=False
+					[1724] option 'South Georgia & South Sandwich Islands', selected=False
+					[1725] option 'South Korea', selected=False
+					[1726] option 'Spain', selected=False
+					[1727] option 'Sri Lanka', selected=False
+					[1728] option 'St. Barthélemy', selected=False
+					[1729] option 'St. Helena', selected=False
+					[1730] option 'St. Kitts & Nevis', selected=False
+					[1731] option 'St. Lucia', selected=False
+					[1732] option 'St. Martin', selected=False
+					[1733] option 'St. Pierre & Miquelon', selected=False
+					[1734] option 'St. Vincent & Grenadines', selected=False
+					[1735] option 'Sudan', selected=False
+					[1736] option 'Suriname', selected=False
+					[1737] option 'Svalbard & Jan Mayen', selected=False
+					[1738] option 'Sweden', selected=False
+					[1739] option 'Switzerland', selected=False
+					[1740] option 'Syria', selected=False
+					[1741] option 'São Tomé & Príncipe', selected=False
+					[1742] option 'Taiwan, Province of China', selected=False
+					[1743] option 'Tajikistan', selected=False
+					[1744] option 'Tanzania', selected=False
+					[1745] option 'Thailand', selected=False
+					[1746] option 'Timor-Leste', selected=False
+					[1747] option 'Togo', selected=False
+					[1748] option 'Tokelau', selected=False
+					[1749] option 'Tonga', selected=False
+					[1750] option 'Trinidad & Tobago', selected=False
+					[1751] option 'Tunisia', selected=False
+					[1752] option 'Turkey', selected=False
+					[1753] option 'Turkmenistan', selected=False
+					[1754] option 'Turks & Caicos Islands', selected=False
+					[1755] option 'Tuvalu', selected=False
+					[1756] option 'U.S. Outlying Islands', selected=False
+					[1757] option 'U.S. Virgin Islands', selected=False
+					[1758] option 'Uganda', selected=False
+					[1759] option 'Ukraine', selected=False
+					[1760] option 'United Arab Emirates', selected=False
+					[1761] option 'United Kingdom', selected=False
+					[1762] option 'United States', selected=True
+					[1763] option 'Uruguay', selected=False
+					[1764] option 'Uzbekistan', selected=False
+					[1765] option 'Vanuatu', selected=False
+					[1766] option 'Vatican City', selected=False
+					[1767] option 'Venezuela', selected=False
+					[1768] option 'Vietnam', selected=False
+					[1769] option 'Wallis & Futuna', selected=False
+					[1770] option 'Western Sahara', selected=False
+					[1771] option 'Yemen', selected=False
+					[1772] option 'Zambia', selected=False
+					[1773] option 'Zimbabwe', selected=False
+					[1774] option 'Åland Islands', selected=False
+				[1776] LabelText ''
+					StaticText 'State/Province'
+					StaticText ''
+					StaticText '*'
+				[1779] combobox 'State/Province *' value='Georgia', hasPopup='menu', expanded=False
+					[1780] option 'Please select a region, state or province.', selected=False
+					[1781] option 'Alabama', selected=False
+					[1782] option 'Alaska', selected=False
+					[1783] option 'American Samoa', selected=False
+					[1784] option 'Arizona', selected=False
+					[1785] option 'Arkansas', selected=False
+					[1786] option 'Armed Forces Africa', selected=False
+					[1787] option 'Armed Forces Americas', selected=False
+					[1788] option 'Armed Forces Canada', selected=False
+					[1789] option 'Armed Forces Europe', selected=False
+					[1790] option 'Armed Forces Middle East', selected=False
+					[1791] option 'Armed Forces Pacific', selected=False
+					[1792] option 'California', selected=False
+					[1793] option 'Colorado', selected=False
+					[1794] option 'Connecticut', selected=False
+					[1795] option 'Delaware', selected=False
+					[1796] option 'District of Columbia', selected=False
+					[1797] option 'Federated States Of Micronesia', selected=False
+					[1798] option 'Florida', selected=False
+					[1799] option 'Georgia', selected=True
+					[1800] option 'Guam', selected=False
+					[1801] option 'Hawaii', selected=False
+					[1802] option 'Idaho', selected=False
+					[1803] option 'Illinois', selected=False
+					[1804] option 'Indiana', selected=False
+					[1805] option 'Iowa', selected=False
+					[1806] option 'Kansas', selected=False
+					[1807] option 'Kentucky', selected=False
+					[1808] option 'Louisiana', selected=False
+					[1809] option 'Maine', selected=False
+					[1810] option 'Marshall Islands', selected=False
+					[1811] option 'Maryland', selected=False
+					[1812] option 'Massachusetts', selected=False
+					[1813] option 'Michigan', selected=False
+					[1814] option 'Minnesota', selected=False
+					[1815] option 'Mississippi', selected=False
+					[1816] option 'Missouri', selected=False
+					[1817] option 'Montana', selected=False
+					[1818] option 'Nebraska', selected=False
+					[1819] option 'Nevada', selected=False
+					[1820] option 'New Hampshire', selected=False
+					[1821] option 'New Jersey', selected=False
+					[1822] option 'New Mexico', selected=False
+					[1823] option 'New York', selected=False
+					[1824] option 'North Carolina', selected=False
+					[1825] option 'North Dakota', selected=False
+					[1826] option 'Northern Mariana Islands', selected=False
+					[1827] option 'Ohio', selected=False
+					[1828] option 'Oklahoma', selected=False
+					[1829] option 'Oregon', selected=False
+					[1830] option 'Palau', selected=False
+					[1831] option 'Pennsylvania', selected=False
+					[1832] option 'Puerto Rico', selected=False
+					[1833] option 'Rhode Island', selected=False
+					[1834] option 'South Carolina', selected=False
+					[1835] option 'South Dakota', selected=False
+					[1836] option 'Tennessee', selected=False
+					[1837] option 'Texas', selected=False
+					[1838] option 'Utah', selected=False
+					[1839] option 'Vermont', selected=False
+					[1840] option 'Virgin Islands', selected=False
+					[1841] option 'Virginia', selected=False
+					[1842] option 'Washington', selected=False
+					[1843] option 'West Virginia', selected=False
+					[1844] option 'Wisconsin', selected=False
+					[1845] option 'Wyoming', selected=False
+				[1848] LabelText ''
+					StaticText 'City'
+					StaticText ''
+					StaticText '*'
+				[1851] textbox 'City *' value='San Mateo', required
+					StaticText 'San Mateo'
+				[1853] LabelText ''
+					StaticText 'Zip/Postal Code'
+					StaticText ''
+					StaticText '*'
+				[1856] textbox 'Zip/Postal Code *' value='94010', required
+					StaticText '94010'
+				StaticText '\ue602'
+				StaticText "It's a default billing address."
+				StaticText '\ue602'
+				StaticText "It's a default shipping address."
+			[1866] button 'Save Address'
+				StaticText 'Save Address'
+		[1874] strong ''
+			StaticText 'My Account'
+		[1876] list ''
+			[1877] listitem ''
+				[1878] link 'My Account'
+			[1879] listitem ''
+				[1880] link 'My Orders'
+			[1881] listitem ''
+				[1882] link 'My Downloadable Products'
+			[1883] listitem ''
+				[1884] link 'My Wish List'
+			[1885] listitem ''
+			[1887] listitem ''
+				[1888] strong ''
+					StaticText 'Address Book'
+			[1889] listitem ''
+				[1890] link 'Account Information'
+			[1891] listitem ''
+				[1892] link 'Stored Payment Methods'
+			[1893] listitem ''
+			[1895] listitem ''
+				[1896] link 'My Product Reviews'
+			[1897] listitem ''
+				[1898] link 'Newsletter Subscriptions'
+		[1902] heading 'Compare Products'
+		StaticText 'You have no items to compare.'
+		[1907] heading 'Recently Ordered'
+		[1909] Section ''
+			[1911] list ''
+				[1912] listitem ''
+					[1914] LabelText ''
+						StaticText 'Add to Cart'
+					[1917] checkbox 'Add to Cart', checked='false'
+					[1918] strong ''
+						[1919] link 'NOZE Rustic Coat Rack Wall Mounted Shelf with 4 Hooks, Hanging Entryway Organizer for Mug Coffee Cup, Holding Solid Wooden Shelf with 2 Baskets for Kitchen Living Room, Bathroom and Bedroom'
+							StaticText 'NOZE Rustic Coat Rack Wall Mounted Shelf with 4 Hooks, Hanging Entryway Organizer for Mug Coffee Cup, Holding Solid Wooden Shelf with 2 Baskets for Kitchen Living Room, Bathroom and Bedroom'
+				[1921] listitem ''
+					[1923] LabelText ''
+						StaticText 'Add to Cart'
+					[1926] checkbox 'Add to Cart', checked='false'
+					[1927] strong ''
+						[1928] link 'Plus Size Lingerie for Women Sexy for Sex Naughty Eyelash Lace Bodysuit Naughty Mesh One Piece Teddy Bodysuit Outfits'
+							StaticText 'Plus Size Lingerie for Women Sexy for Sex Naughty Eyelash Lace Bodysuit Naughty Mesh One Piece Teddy Bodysuit Outfits'
+				[1930] listitem ''
+					[1932] LabelText ''
+						StaticText 'Add to Cart'
+					[1935] checkbox 'Add to Cart', checked='false'
+					[1936] strong ''
+						[1937] link 'Uttermost Volterra Crackled Taupe-Gray Ceramic Table Lamp'
+							StaticText 'Uttermost Volterra Crackled Taupe-Gray Ceramic Table Lamp'
+			[1942] button 'Add to Cart'
+				StaticText 'Add to Cart'
+			[1945] link 'View All'
+				StaticText 'View All'
+		[1950] heading 'My Wish List'
+		StaticText 'You have no items in your wish list.'
+	[1954] contentinfo ''
+		[1960] Section ''
+			StaticText '\ue61d'
+			[1963] LabelText ''
+				StaticText 'Sign Up for Our Newsletter:'
+				[1965] textbox 'Sign Up for Our Newsletter:'
+			[1967] button 'Subscribe'
+				StaticText 'Subscribe'
+		[1969] list ''
+			[1970] listitem ''
+				[1971] link 'Privacy and Cookie Policy'
+			[1972] listitem ''
+				[1973] link 'Search Terms'
+			[1974] listitem ''
+				[1975] link 'Advanced Search'
+			[1976] listitem ''
+				[1977] link 'Contact Us'
+		StaticText 'Copyright © 2013-present Magento, Inc. All rights reserved.'
+		StaticText 'Help Us Keep Magento Healthy'
+		StaticText ''
+		[1982] link 'Report All Bugs'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+<think>
+The user wants to update their address in their One Stop Market account. From the homepage, the top banner shows a "My Account" link (bid 227). To change address details, I should first navigate to the account area, where options like Address Book are typically available. The best next step is to click "My Account".
+</think>
+<action>
+```click("227")```
+</action>
+
+
+<think>
+The user wants to update their address to 111 Magnolia Path, Atlanta, GA, 30303. On the My Account page, I see the Address Book section with links: "Manage Addresses" [1498], and separate "Edit Address" links for Default Billing [1512] and Default Shipping [1525]. The most efficient path to update both default addresses is to go through "Manage Addresses," which typically provides a consolidated interface to edit billing/shipping and set defaults. I will click "Manage Addresses" to reach the address editing page, where I can change the street, city, state (Georgia), and ZIP to 30303, keeping the country as United States and the name the same. This is the correct next step before filling any form fields.
+</think>
+<action>
+```click("1498")```
+</action>
+
+
+<think>
+The user wants to update their address to 111 Magnolia Path, Atlanta, GA, 30303. On the Address Book page, I see links to change the default addresses: "Change Billing Address" [1488] and "Change Shipping Address" [1501]. To begin updating, I should open the edit form. I'll start with the billing address by clicking "Change Billing Address," which should navigate to an address edit form where I can enter the new street, city, state (Georgia), and ZIP. After updating billing, I can repeat for shipping if needed.
+</think>
+<action>
+```click("1488")```
+</action>
+
+
+<think>
+The user wants their address updated to 111 Magnolia Path, Atlanta, GA, 30303. I’m on the Edit Address form with the current address set to a California address. I will start by updating the Street Address: Line 1 field, which currently reads “101 S San Mateo Dr.” After this, I will proceed to update City, State (to Georgia), Zip, and finally click Save Address in subsequent steps. The next best single action is to replace the value in the Street Address Line 1 textbox.
+</think>
+<action>
+```fill('1514', '111 Magnolia Path')```
+</action>
+
+
+<think>
+The user wants their address updated to 111 Magnolia Path, Atlanta, GA 30303. I’m currently on the Edit Address form (likely for the default billing address). Street Address Line 1 is already set correctly. I still need to update State/Province from California to Georgia, City to Atlanta, and Zip to 30303. The next logical step is to change the State/Province combobox to "Georgia" using the select_option action on the 'State/Province *' field (bid 1779). After that, I will update City and Zip and then save.
+</think>
+<action>
+```select_option('1779', 'Georgia')```
+</action>
+
+# Progress Summary
+✅ Current Progress: Navigated to Edit Address (via My Account → Manage Addresses → Change Billing Address). Updated Street Address: Line 1 to “111 Magnolia Path” and set State/Province to “Georgia”.
+
+🔍 Current State Analysis: On the critical path to update the address. The form shows this address is the default for both billing and shipping (yellow notices), so saving will update both.
+- Textbox 'Street Address: Line 1' [1514] — required, filled: “111 Magnolia Path”.
+- Textbox 'Street Address: Line 2' [1520] — marked required; currently empty.
+- Combobox 'Country *' [1525] — value: “United States”.
+- Combobox 'State/Province *' [1772] — value: “Georgia” (correct).
+- Textbox 'City' [1851] — currently “San Mateo” (needs “Atlanta”).
+- Textbox 'Zip/Postal Code' [1858] — currently “94010” (needs “30303”).
+- Button 'Save Address' [1868] — visible/enabled.
