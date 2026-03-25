@@ -1,0 +1,1079 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. when the task mentions subreddit, it is referring to ‘forum'
+2. if you need find a relevant subreddit or forum, you can find the name after clicking "alphabetical" in the "Forum" tab.
+3. if you have to find submissions (posts) or comments by a particular user, visit user profile to see the list
+4. if you want to view a post detail, click the "comments" link attached to the post, **do not click the title hyperlink**, as it will redirect you to an external website.
+5. When creating a post/submission, put all content including URLs in the Body field. Leave the URL field empty. Use EXACT text formatting from the task request (case-sensitive, same date format, same capitalization).
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Thumbs down the top 1 post ever in gadgets.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: gadgets
+  URL: http://localhost:9999/f/gadgets/top?t=all
+
+# Current page Accessibility Tree
+
+RootWebArea 'gadgets', focused
+	[27] navigation ''
+		[28] link 'Jump to main content'
+		[29] link 'Jump to sidebar'
+	[30] navigation ''
+		[33] link 'Home'
+			StaticText 'Postmill'
+		[43] list ''
+			[44] listitem ''
+				[45] link 'Forums'
+			[46] listitem ''
+				[47] link 'Wiki'
+		[48] Section ''
+			[57] searchbox 'Search query'
+		[58] list ''
+			[59] listitem ''
+				[60] link 'Notifications (0)'
+					[63] image ''
+			[64] listitem ''
+				[65] link 'Submit'
+					[68] image ''
+					StaticText 'Submit'
+			[70] listitem ''
+				[71] button 'MarvelsGrantMan136', hasPopup='menu', expanded=False
+					[74] image ''
+					[75] strong ''
+						StaticText 'MarvelsGrantMan136'
+	[116] main ''
+		[117] heading '/f/gadgets'
+			StaticText '/f/'
+			[119] strong ''
+				StaticText 'gadgets'
+		[120] navigation ''
+			[121] list ''
+				[122] listitem ''
+					[123] link 'Submissions'
+				[124] listitem ''
+					[125] link 'Comments'
+			[126] list ''
+				[127] listitem ''
+					[128] button 'Sort by: Top', hasPopup='menu', expanded=False
+						[130] image ''
+						StaticText 'Top'
+				[146] listitem ''
+					[147] button 'From: All time', hasPopup='menu', expanded=False
+						[149] image ''
+						StaticText 'All time'
+		[163] article ''
+			[168] heading 'NASA aces test of robot balloon that could one day explore Venus'
+				[169] link 'NASA aces test of robot balloon that could one day explore Venus'
+			StaticText ''
+			[170] link 'digitaltrends.com'
+			[171] paragraph ''
+				StaticText 'Submitted by'
+				[173] link 'MicroSofty88', expanded=False
+					[174] strong ''
+						StaticText 'MicroSofty88'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_y5lz23'
+				StaticText ']'
+				StaticText ''
+				[176] time 'October 16, 2022 at 1:05:15 PM EDT'
+					StaticText '3 years ago'
+			[177] navigation ''
+				[178] list ''
+					[179] listitem ''
+						[180] link '149 comments'
+							[181] strong ''
+								StaticText '149 comments'
+			[184] Section ''
+				[186] button 'Upvote'
+				StaticText '7737'
+				[196] button 'Downvote'
+		[201] article ''
+			[206] heading 'Open-source tool from MIT’s Senseable City Lab lets people check air quality, cheaply.'
+				[207] link 'Open-source tool from MIT’s Senseable City Lab lets people check air quality, cheaply.'
+			StaticText ''
+			[208] link 'news.mit.edu'
+			[209] paragraph ''
+				StaticText 'Submitted by'
+				[211] link 'chrisdh79', expanded=False
+					[212] strong ''
+						StaticText 'chrisdh79'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11st06o'
+				StaticText ']'
+				StaticText ''
+				[214] time 'March 16, 2023 at 8:39:36 AM EDT'
+					StaticText '3 years ago'
+			[215] navigation ''
+				[216] list ''
+					[217] listitem ''
+						[218] link '187 comments'
+							[219] strong ''
+								StaticText '187 comments'
+			[222] Section ''
+				[224] button 'Upvote'
+				StaticText '7666'
+				[234] button 'Downvote'
+		[239] article ''
+			[244] heading 'Blu-ray player gathering dust? Turn it into a laser-scanning microscope | Not as powerful as a commerical one, but thousands cheaper.'
+				[245] link 'Blu-ray player gathering dust? Turn it into a laser-scanning microscope | Not as powerful as a commerical one, but thousands cheaper.'
+			StaticText ''
+			[246] link 'arstechnica.com'
+			[247] paragraph ''
+				StaticText 'Submitted by'
+				[249] link 'chrisdh79', expanded=False
+					[250] strong ''
+						StaticText 'chrisdh79'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zsvmry'
+				StaticText ']'
+				StaticText ''
+				[252] time 'December 22, 2022 at 3:13:54 PM EST'
+					StaticText '3 years ago'
+			[253] navigation ''
+				[254] list ''
+					[255] listitem ''
+						[256] link '169 comments'
+							[257] strong ''
+								StaticText '169 comments'
+			[260] Section ''
+				[262] button 'Upvote'
+				StaticText '6758'
+				[272] button 'Downvote'
+		[277] article ''
+			[282] heading 'New type of surgical robot used to remove throat tumour'
+				[283] link 'New type of surgical robot used to remove throat tumour'
+			StaticText ''
+			[284] link 'bbc.co.uk'
+			[285] paragraph ''
+				StaticText 'Submitted by'
+				[287] link 'diacewrb', expanded=False
+					[288] strong ''
+						StaticText 'diacewrb'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zd7j40'
+				StaticText ']'
+				StaticText ''
+				[290] time 'December 5, 2022 at 9:02:06 AM EST'
+					StaticText '3 years ago'
+			[291] navigation ''
+				[292] list ''
+					[293] listitem ''
+						[294] link '178 comments'
+							[295] strong ''
+								StaticText '178 comments'
+			[298] Section ''
+				[300] button 'Upvote'
+				StaticText '5677'
+				[310] button 'Downvote'
+		[315] article ''
+			[320] heading "Hobbyist adds a hinge to the Game Boy Pocket, delighting everyone | No, it's not a Game Boy Advance SP. This is the monochrome Pocket with hinge."
+				[321] link "Hobbyist adds a hinge to the Game Boy Pocket, delighting everyone | No, it's not a Game Boy Advance SP. This is the monochrome Pocket with hinge."
+			StaticText ''
+			[322] link 'arstechnica.com'
+			[323] paragraph ''
+				StaticText 'Submitted by'
+				[325] link 'chrisdh79', expanded=False
+					[326] strong ''
+						StaticText 'chrisdh79'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_ywe0m4'
+				StaticText ']'
+				StaticText ''
+				[328] time 'November 15, 2022 at 7:07:25 PM EST'
+					StaticText '3 years ago'
+			[329] navigation ''
+				[330] list ''
+					[331] listitem ''
+						[332] link '170 comments'
+							[333] strong ''
+								StaticText '170 comments'
+			[336] Section ''
+				[338] button 'Upvote'
+				StaticText '4359'
+				[348] button 'Downvote'
+		[353] article ''
+			[358] heading 'New York breaks the right to repair bill as it’s signed into law | The bill was signed by NY governor Kathy Hochul on December 28th, making New York the first US state to broadly protect a consumer’s right to repair their own tech.'
+				[359] link 'New York breaks the right to repair bill as it’s signed into law | The bill was signed by NY governor Kathy Hochul on December 28th, making New York the first US state to broadly protect a consumer’s right to repair their own tech.'
+			StaticText ''
+			[360] link 'theverge.com'
+			[361] paragraph ''
+				StaticText 'Submitted by'
+				[363] link 'chrisdh79', expanded=False
+					[364] strong ''
+						StaticText 'chrisdh79'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zy9con'
+				StaticText ']'
+				StaticText ''
+				[366] time 'December 29, 2022 at 11:24:05 AM EST'
+					StaticText '3 years ago'
+			[367] navigation ''
+				[368] list ''
+					[369] listitem ''
+						[370] link '169 comments'
+							[371] strong ''
+								StaticText '169 comments'
+			[374] Section ''
+				[376] button 'Upvote'
+				StaticText '4280'
+				[386] button 'Downvote'
+		[391] article ''
+			[396] heading 'Volkswagen built a Star Trek captain’s chair that goes 12mph'
+				[397] link 'Volkswagen built a Star Trek captain’s chair that goes 12mph'
+			StaticText ''
+			[398] link 'theverge.com'
+			[399] paragraph ''
+				StaticText 'Submitted by'
+				[401] link 'Genevieves_bitch', expanded=False
+					[402] strong ''
+						StaticText 'Genevieves_bitch'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yt6m6i'
+				StaticText ']'
+				StaticText ''
+				[404] time 'November 12, 2022 at 8:08:32 AM EST'
+					StaticText '3 years ago'
+			[405] navigation ''
+				[406] list ''
+					[407] listitem ''
+						[408] link '197 comments'
+							[409] strong ''
+								StaticText '197 comments'
+			[412] Section ''
+				[414] button 'Upvote'
+				StaticText '4244'
+				[424] button 'Downvote'
+		[429] article ''
+			[434] heading 'LG Display’s ‘invisible’ speaker brings sound to any surface in your car'
+				[435] link 'LG Display’s ‘invisible’ speaker brings sound to any surface in your car'
+			StaticText ''
+			[436] link 'digitaltrends.com'
+			[437] paragraph ''
+				StaticText 'Submitted by'
+				[439] link 'MicroSofty88', expanded=False
+					[440] strong ''
+						StaticText 'MicroSofty88'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z6smkl'
+				StaticText ']'
+				StaticText ''
+				[442] time 'November 28, 2022 at 5:00:22 AM EST'
+					StaticText '3 years ago'
+			[443] navigation ''
+				[444] list ''
+					[445] listitem ''
+						[446] link '202 comments'
+							[447] strong ''
+								StaticText '202 comments'
+			[450] Section ''
+				[452] button 'Upvote'
+				StaticText '4039'
+				[462] button 'Downvote'
+		[467] article ''
+			[472] heading 'USB-C will be mandatory for all smart devices sold in India'
+				[473] link 'USB-C will be mandatory for all smart devices sold in India'
+			StaticText ''
+			[474] link 'livemint.com'
+			[475] paragraph ''
+				StaticText 'Submitted by'
+				[477] link 'Sam1515024', expanded=False
+					[478] strong ''
+						StaticText 'Sam1515024'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yyageb'
+				StaticText ']'
+				StaticText ''
+				[480] time 'November 17, 2022 at 10:57:48 PM EST'
+					StaticText '3 years ago'
+			[481] navigation ''
+				[482] list ''
+					[483] listitem ''
+						[484] link '181 comments'
+							[485] strong ''
+								StaticText '181 comments'
+			[488] Section ''
+				[490] button 'Upvote'
+				StaticText '3589'
+				[500] button 'Downvote'
+		[505] article ''
+			[510] heading 'Steam Deck now shipping across Asia, plus a new Steam Deck Stable Client update'
+				[511] link 'Steam Deck now shipping across Asia, plus a new Steam Deck Stable Client update'
+			StaticText ''
+			[512] link 'gamingonlinux.com'
+			[513] paragraph ''
+				StaticText 'Submitted by'
+				[515] link 'thebelsnickle1991', expanded=False
+					[516] strong ''
+						StaticText 'thebelsnickle1991'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zoxk37'
+				StaticText ']'
+				StaticText ''
+				[518] time 'December 18, 2022 at 7:29:38 AM EST'
+					StaticText '3 years ago'
+			[519] navigation ''
+				[520] list ''
+					[521] listitem ''
+						[522] link '156 comments'
+							[523] strong ''
+								StaticText '156 comments'
+			[526] Section ''
+				[528] button 'Upvote'
+				StaticText '3535'
+				[538] button 'Downvote'
+		[543] article ''
+			[548] heading 'Last Boeing 747 rolls off line after half a century of production'
+				[549] link 'Last Boeing 747 rolls off line after half a century of production'
+			StaticText ''
+			[550] link 'theguardian.com'
+			[551] paragraph ''
+				StaticText 'Submitted by'
+				[553] link 'diacewrb', expanded=False
+					[554] strong ''
+						StaticText 'diacewrb'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zfwe7c'
+				StaticText ']'
+				StaticText ''
+				[556] time 'December 8, 2022 at 6:33:43 AM EST'
+					StaticText '3 years ago'
+			[557] navigation ''
+				[558] list ''
+					[559] listitem ''
+						[560] link '160 comments'
+							[561] strong ''
+								StaticText '160 comments'
+			[564] Section ''
+				[566] button 'Upvote'
+				StaticText '3478'
+				[576] button 'Downvote'
+		[581] article ''
+			[586] heading "Two unreleased and 'never digitized' NES games are up for auction on eBay"
+				[587] link "Two unreleased and 'never digitized' NES games are up for auction on eBay"
+			StaticText ''
+			[588] link 'engadget.com'
+			[589] paragraph ''
+				StaticText 'Submitted by'
+				[591] link 'thebelsnickle1991', expanded=False
+					[592] strong ''
+						StaticText 'thebelsnickle1991'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_y2w79b'
+				StaticText ']'
+				StaticText ''
+				[594] time 'October 13, 2022 at 7:25:44 AM EDT'
+					StaticText '3 years ago'
+			[595] navigation ''
+				[596] list ''
+					[597] listitem ''
+						[598] link '197 comments'
+							[599] strong ''
+								StaticText '197 comments'
+			[602] Section ''
+				[604] button 'Upvote'
+				StaticText '3432'
+				[614] button 'Downvote'
+		[619] article ''
+			[624] heading 'News Release: NREL Creates Highest Efficiency 1-Sun Solar Cell - 39.5% efficiency'
+				[625] link 'News Release: NREL Creates Highest Efficiency 1-Sun Solar Cell - 39.5% efficiency'
+			StaticText ''
+			[626] link 'nrel.gov'
+			[627] paragraph ''
+				StaticText 'Submitted by'
+				[629] link 'TimeSpentWasting', expanded=False
+					[630] strong ''
+						StaticText 'TimeSpentWasting'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z60rfh'
+				StaticText ']'
+				StaticText ''
+				[632] time 'November 27, 2022 at 8:04:54 AM EST'
+					StaticText '3 years ago'
+			[633] navigation ''
+				[634] list ''
+					[635] listitem ''
+						[636] link '184 comments'
+							[637] strong ''
+								StaticText '184 comments'
+			[640] Section ''
+				[642] button 'Upvote'
+				StaticText '3405'
+				[652] button 'Downvote'
+		[657] article ''
+			[662] heading "iPhone 14 Crash Detection gets man to wife's accident before ambulance"
+				[663] link "iPhone 14 Crash Detection gets man to wife's accident before ambulance"
+			StaticText ''
+			[664] link 'appleinsider.com'
+			[665] paragraph ''
+				StaticText 'Submitted by'
+				[667] link 'chrisdh79', expanded=False
+					[668] strong ''
+						StaticText 'chrisdh79'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zkwn81'
+				StaticText ']'
+				StaticText ''
+				[670] time 'December 13, 2022 at 9:09:28 AM EST'
+					StaticText '3 years ago'
+			[671] navigation ''
+				[672] list ''
+					[673] listitem ''
+						[674] link '178 comments'
+							[675] strong ''
+								StaticText '178 comments'
+			[678] Section ''
+				[680] button 'Upvote'
+				StaticText '3382'
+				[690] button 'Downvote'
+		[695] article ''
+			[700] heading 'Japan to Manufacture 2nm Chips With a Little Help From IBM'
+				[701] link 'Japan to Manufacture 2nm Chips With a Little Help From IBM'
+			StaticText ''
+			[702] link 'pcmag.com'
+			[703] paragraph ''
+				StaticText 'Submitted by'
+				[705] link 'Avieshek', expanded=False
+					[706] strong ''
+						StaticText 'Avieshek'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zlw4sz'
+				StaticText ']'
+				StaticText ''
+				[708] time 'December 14, 2022 at 11:58:47 AM EST'
+					StaticText '3 years ago'
+			[709] navigation ''
+				[710] list ''
+					[711] listitem ''
+						[712] link '127 comments'
+							[713] strong ''
+								StaticText '127 comments'
+			[716] Section ''
+				[718] button 'Upvote'
+				StaticText '3338'
+				[728] button 'Downvote'
+		[733] article ''
+			[738] heading "Audio-Technica resurrects its Sound Burger portable turntable from the '80s"
+				[739] link "Audio-Technica resurrects its Sound Burger portable turntable from the '80s"
+			StaticText ''
+			[740] link 'engadget.com'
+			[741] paragraph ''
+				StaticText 'Submitted by'
+				[743] link 'thebelsnickle1991', expanded=False
+					[744] strong ''
+						StaticText 'thebelsnickle1991'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yjlrwz'
+				StaticText ']'
+				StaticText ''
+				[746] time 'November 1, 2022 at 5:21:39 PM EDT'
+					StaticText '3 years ago'
+			[747] navigation ''
+				[748] list ''
+					[749] listitem ''
+						[750] link '165 comments'
+							[751] strong ''
+								StaticText '165 comments'
+			[754] Section ''
+				[756] button 'Upvote'
+				StaticText '3283'
+				[766] button 'Downvote'
+		[771] article ''
+			[776] heading 'New medical device can detect and analyze cancer cells from blood samples, allowing doctors to avoid invasive biopsy surgeries, and to monitor treatment progress.'
+				[777] link 'New medical device can detect and analyze cancer cells from blood samples, allowing doctors to avoid invasive biopsy surgeries, and to monitor treatment progress.'
+			StaticText ''
+			[778] link 'newatlas.com'
+			[779] paragraph ''
+				StaticText 'Submitted by'
+				[781] link 'chrisdh79', expanded=False
+					[782] strong ''
+						StaticText 'chrisdh79'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11e9adh'
+				StaticText ']'
+				StaticText ''
+				[784] time 'February 28, 2023 at 9:50:27 AM EST'
+					StaticText '3 years ago'
+			[785] navigation ''
+				[786] list ''
+					[787] listitem ''
+						[788] link '37 comments'
+							[789] strong ''
+								StaticText '37 comments'
+			[792] Section ''
+				[794] button 'Upvote'
+				StaticText '3174'
+				[804] button 'Downvote'
+		[809] article ''
+			[814] heading 'Framework now sells 2TB Steam Deck upgrade drives.'
+				[815] link 'Framework now sells 2TB Steam Deck upgrade drives.'
+			StaticText ''
+			[816] link 'theverge.com'
+			[817] paragraph ''
+				StaticText 'Submitted by'
+				[819] link 'SUPRVLLAN', expanded=False
+					[820] strong ''
+						StaticText 'SUPRVLLAN'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_10yw9sd'
+				StaticText ']'
+				StaticText ''
+				[822] time 'February 10, 2023 at 11:29:18 AM EST'
+					StaticText '3 years ago'
+			[823] navigation ''
+				[824] list ''
+					[825] listitem ''
+						[826] link '101 comments'
+							[827] strong ''
+								StaticText '101 comments'
+			[830] Section ''
+				[832] button 'Upvote'
+				StaticText '3121'
+				[842] button 'Downvote'
+		[847] article ''
+			[852] heading 'Samsung develops industry’s first 12nm-Class DDR5 DRAM'
+				[853] link 'Samsung develops industry’s first 12nm-Class DDR5 DRAM'
+			StaticText ''
+			[854] link 'news.samsung.com'
+			[855] paragraph ''
+				StaticText 'Submitted by'
+				[857] link 'thebelsnickle1991', expanded=False
+					[858] strong ''
+						StaticText 'thebelsnickle1991'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zv14ci'
+				StaticText ']'
+				StaticText ''
+				[860] time 'December 25, 2022 at 11:21:56 AM EST'
+					StaticText '3 years ago'
+			[861] navigation ''
+				[862] list ''
+					[863] listitem ''
+						[864] link '125 comments'
+							[865] strong ''
+								StaticText '125 comments'
+			[868] Section ''
+				[870] button 'Upvote'
+				StaticText '3120'
+				[880] button 'Downvote'
+		[885] article ''
+			[890] heading "Android phones offered early US quake warning, beating iPhones to the punch | Google's earthquake detection network turns Android phones into seismometers, and it paid off yesterday."
+				[891] link "Android phones offered early US quake warning, beating iPhones to the punch | Google's earthquake detection network turns Android phones into seismometers, and it paid off yesterday."
+			StaticText ''
+			[892] link 'androidauthority.com'
+			[893] paragraph ''
+				StaticText 'Submitted by'
+				[895] link 'chrisdh79', expanded=False
+					[896] strong ''
+						StaticText 'chrisdh79'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_ydupbt'
+				StaticText ']'
+				StaticText ''
+				[898] time 'October 26, 2022 at 6:34:57 AM EDT'
+					StaticText '3 years ago'
+			[899] navigation ''
+				[900] list ''
+					[901] listitem ''
+						[902] link '198 comments'
+							[903] strong ''
+								StaticText '198 comments'
+			[906] Section ''
+				[908] button 'Upvote'
+				StaticText '3092'
+				[918] button 'Downvote'
+		[923] article ''
+			[928] heading "AMD Now Powers 101 of the World's Fastest Supercomputers"
+				[929] link "AMD Now Powers 101 of the World's Fastest Supercomputers"
+			StaticText ''
+			[930] link 'tomshardware.com'
+			[931] paragraph ''
+				StaticText 'Submitted by'
+				[933] link 'Avieshek', expanded=False
+					[934] strong ''
+						StaticText 'Avieshek'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yvp77t'
+				StaticText ']'
+				StaticText ''
+				[936] time 'November 15, 2022 at 1:39:08 AM EST'
+					StaticText '3 years ago'
+			[937] navigation ''
+				[938] list ''
+					[939] listitem ''
+						[940] link '159 comments'
+							[941] strong ''
+								StaticText '159 comments'
+			[944] Section ''
+				[946] button 'Upvote'
+				StaticText '3089'
+				[956] button 'Downvote'
+		[961] article ''
+			[966] heading 'These prosthetics break the mold with third thumbs, spikes, and superhero skins'
+				[967] link 'These prosthetics break the mold with third thumbs, spikes, and superhero skins'
+			StaticText ''
+			[968] link 'technologyreview.com'
+			[969] paragraph ''
+				StaticText 'Submitted by'
+				[971] link 'ChickenTeriyakiBoy1', expanded=False
+					[972] strong ''
+						StaticText 'ChickenTeriyakiBoy1'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_110qca9'
+				StaticText ']'
+				StaticText ''
+				[974] time 'February 12, 2023 at 4:08:31 PM EST'
+					StaticText '3 years ago'
+			[975] navigation ''
+				[976] list ''
+					[977] listitem ''
+						[978] link '154 comments'
+							[979] strong ''
+								StaticText '154 comments'
+			[982] Section ''
+				[984] button 'Upvote'
+				StaticText '2999'
+				[994] button 'Downvote'
+		[999] article ''
+			[1004] heading 'PotatoP Laptop Aims for Two Years of Battery Life'
+				[1005] link 'PotatoP Laptop Aims for Two Years of Battery Life'
+			StaticText ''
+			[1006] link 'tomshardware.com'
+			[1007] paragraph ''
+				StaticText 'Submitted by'
+				[1009] link 'diacewrb', expanded=False
+					[1010] strong ''
+						StaticText 'diacewrb'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11qm8ok'
+				StaticText ']'
+				StaticText ''
+				[1012] time 'March 13, 2023 at 5:23:45 PM EDT'
+					StaticText '3 years ago'
+			[1013] navigation ''
+				[1014] list ''
+					[1015] listitem ''
+						[1016] link '183 comments'
+							[1017] strong ''
+								StaticText '183 comments'
+			[1020] Section ''
+				[1022] button 'Upvote'
+				StaticText '2944'
+				[1032] button 'Downvote'
+		[1037] article ''
+			[1042] heading '‘iPhones are made in hell’: 3 months inside China’s iPhone city - Workers describe a peak production season marred by labor protests and Covid-19 chaos, right as Apple reconsiders its China supply chain.'
+				[1043] link '‘iPhones are made in hell’: 3 months inside China’s iPhone city - Workers describe a peak production season marred by labor protests and Covid-19 chaos, right as Apple reconsiders its China supply chain.'
+			StaticText ''
+			[1044] link 'restofworld.org'
+			[1045] paragraph ''
+				StaticText 'Submitted by'
+				[1047] link 'speckz', expanded=False
+					[1048] strong ''
+						StaticText 'speckz'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_10sk2st'
+				StaticText ']'
+				StaticText ''
+				[1050] time 'February 3, 2023 at 8:16:37 AM EST'
+					StaticText '3 years ago'
+			[1051] navigation ''
+				[1052] list ''
+					[1053] listitem ''
+						[1054] link '162 comments'
+							[1055] strong ''
+								StaticText '162 comments'
+			[1058] Section ''
+				[1060] button 'Upvote'
+				StaticText '2873'
+				[1070] button 'Downvote'
+		[1075] article ''
+			[1080] heading 'Alexa-Powered Side Table Mixes Drinks on Command'
+				[1081] link 'Alexa-Powered Side Table Mixes Drinks on Command'
+			StaticText ''
+			[1082] link 'gizmodo.com'
+			[1083] paragraph ''
+				StaticText 'Submitted by'
+				[1085] link 'shakhawat0410', expanded=False
+					[1086] strong ''
+						StaticText 'shakhawat0410'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_ytjaif'
+				StaticText ']'
+				StaticText ''
+				[1088] time 'November 12, 2022 at 4:45:34 PM EST'
+					StaticText '3 years ago'
+			[1089] navigation ''
+				[1090] list ''
+					[1091] listitem ''
+						[1092] link '203 comments'
+							[1093] strong ''
+								StaticText '203 comments'
+			[1096] Section ''
+				[1098] button 'Upvote'
+				StaticText '2468'
+				[1108] button 'Downvote'
+		[1113] navigation ''
+			[1114] list ''
+				[1116] listitem ''
+					[1117] link 'More'
+	[1119] complementary ''
+		[1120] Section ''
+			[1121] heading 'gadgets'
+				[1122] link 'gadgets'
+			[1123] Section ''
+				[1126] button 'Subscribe No subscribers'
+					StaticText 'Subscribe'
+					StaticText '0'
+			[1133] paragraph ''
+				StaticText 't5_2qgzt'
+			[1134] separator '', orientation='horizontal'
+			[1135] list ''
+				[1136] listitem ''
+					StaticText 'Created'
+					[1137] time 'September 30, 2022 at 11:39:27 PM EDT'
+						StaticText '3 years ago'
+				[1138] listitem ''
+					[1139] link 'Subscribe via RSS'
+						[1141] image ''
+						StaticText 'Subscribe via RSS'
+		[1143] group ''
+			[1144] DisclosureTriangle 'Hide this forum', expanded=False
+		[1150] Section ''
+			[1151] heading 'Toolbox'
+			[1152] list ''
+				[1153] listitem ''
+					[1154] link 'Bans'
+				[1155] listitem ''
+					[1156] link 'Moderation log'
+	[1157] contentinfo ''
+		[1158] paragraph ''
+			StaticText 'Running'
+			[1160] link 'Postmill'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```goto('http://localhost:9999/f/gadgets/top?t=all')```
+</action>
+
+# Progress Summary
+✅ Current Progress: Navigated to the /f/gadgets forum sorted by "Top" with "All time" filter. The top post is "NASA aces test of robot balloon that could one day explore Venus" with 7737 votes.
+
+🔍 Current State Analysis: The page is on the critical path toward the goal. The top post (article [163]) has a "Downvote" button with element ID `[196]` that is currently enabled and ready to be clicked. This is the correct element to thumbs down the #1 top post of all time in gadgets.
+
+➡️ Next-step Guidance: Click the "Downvote" button with id `[196]` to thumbs down the top post "NASA aces test of robot balloon that could one day explore Venus".

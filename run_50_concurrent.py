@@ -18,7 +18,7 @@ tasks_by_domain = {
     'map': [32, 89, 99, 220, 223, 250, 367, 758, 311, 467]
 }
 
-experiment_name = "sonnet46_concurrent"
+experiment_name = "sonnet_rerun"
 
 def run_task(domain, tid):
     cmd = [

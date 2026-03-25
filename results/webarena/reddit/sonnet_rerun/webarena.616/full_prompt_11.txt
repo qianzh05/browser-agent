@@ -1,0 +1,482 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. when the task mentions subreddit, it is referring to ‘forum'
+2. if you need find a relevant subreddit or forum, you can find the name after clicking "alphabetical" in the "Forum" tab.
+3. if you have to find submissions (posts) or comments by a particular user, visit user profile to see the list
+4. if you want to view a post detail, click the "comments" link attached to the post, **do not click the title hyperlink**, as it will redirect you to an external website.
+5. When creating a post/submission, put all content including URLs in the Body field. Leave the URL field empty. Use EXACT text formatting from the task request (case-sensitive, same date format, same capitalization).
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Re-post the image of Thanksgiving turkey in this page to funny subreddit and note "from /f/pics"
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Thanksgiving turkey
+  URL: http://localhost:9999/f/funny/7/thanksgiving-turkey
+
+# Current page Accessibility Tree
+
+RootWebArea 'Thanksgiving turkey', focused
+	[27] navigation ''
+		[28] link 'Jump to main content'
+		[29] link 'Jump to sidebar'
+	[30] navigation ''
+		[33] link 'Home'
+			StaticText 'Postmill'
+		[43] list ''
+			[44] listitem ''
+				[45] link 'Forums'
+			[46] listitem ''
+				[47] link 'Wiki'
+		[48] Section ''
+			[57] searchbox 'Search query'
+		[58] list ''
+			[59] listitem ''
+				[60] link 'Notifications (0)'
+					[63] image ''
+			[64] listitem ''
+				[65] link 'Submit'
+					[68] image ''
+					StaticText 'Submit'
+			[70] listitem ''
+				[71] button 'MarvelsGrantMan136', hasPopup='menu', expanded=False
+					[74] image ''
+					[75] strong ''
+						StaticText 'MarvelsGrantMan136'
+	[116] main ''
+		[117] navigation ''
+			[118] list ''
+				[119] listitem ''
+					[120] link '/f/funny'
+						[122] image ''
+						StaticText '/f/'
+						[124] strong ''
+							StaticText 'funny'
+		[125] article ''
+			[130] heading 'Thanksgiving turkey'
+				[131] link 'Thanksgiving turkey'
+			[132] paragraph ''
+				StaticText 'Submitted by'
+				[134] link 'MarvelsGrantMan136', expanded=False
+					[135] strong ''
+						StaticText 'MarvelsGrantMan136'
+				StaticText ''
+				[136] time 'March 1, 2026 at 9:00:17 AM EST'
+					StaticText '24 days ago'
+				StaticText 'in'
+				[137] link 'funny'
+					[138] strong ''
+						StaticText 'funny'
+			[141] paragraph ''
+				[142] link 'http://localhost:9999/submission_images/e9feaa246ecf2214c1152bcc42e139ef0f318e55f316f229e9d738e079a766a0.jpg'
+			[143] paragraph ''
+				StaticText 'from'
+				[144] link '/f/pics'
+			[145] navigation ''
+				[146] list ''
+					[147] listitem ''
+						[148] link 'No comments'
+							[149] strong ''
+								StaticText 'No comments'
+					[150] listitem ''
+						[151] link 'Edit'
+					[152] listitem ''
+						[153] Section ''
+							[155] button 'Delete'
+			[157] Section ''
+				[159] button 'Retract upvote'
+				StaticText '1'
+				[169] button 'Downvote'
+		[174] heading 'Comments'
+		[175] Section ''
+			[181] textbox 'Comment', required, describedby='reply_to_submission_7_comment_help'
+			[186] checkbox 'Formatting help +', checked='false'
+			StaticText 'Markdown allowed.'
+			[188] LabelText ''
+				StaticText 'Formatting help'
+				StaticText ''
+				StaticText '+'
+			[321] button 'Post'
+		[326] image 'A tense emoji'
+			StaticText '(ーー゛)'
+		StaticText "There's nothing here…"
+	[329] complementary ''
+		[330] Section ''
+			[331] paragraph ''
+				[332] strong ''
+					StaticText '1 point'
+				StaticText ''
+				StaticText '(+1, −0)'
+			[335] heading 'Short URL:'
+			[336] paragraph ''
+				StaticText 'http://localhost:9999/7'
+		[338] Section ''
+			[339] heading 'funny'
+				[340] link 'funny'
+			[341] Section ''
+				[344] button 'Subscribe No subscribers'
+					StaticText 'Subscribe'
+					StaticText '0'
+			[351] paragraph ''
+				StaticText 't5_2qh33'
+			[352] separator '', orientation='horizontal'
+			[353] list ''
+				[354] listitem ''
+					StaticText 'Created'
+					[355] time 'September 30, 2022 at 10:04:15 PM EDT'
+						StaticText '3 years ago'
+				[356] listitem ''
+					[357] link 'Subscribe via RSS'
+						[359] image ''
+						StaticText 'Subscribe via RSS'
+		[361] group ''
+			[362] DisclosureTriangle 'Hide this forum', expanded=False
+		[368] Section ''
+			[369] heading 'Toolbox'
+			[370] list ''
+				[371] listitem ''
+					[372] link 'Bans'
+				[373] listitem ''
+					[374] link 'Moderation log'
+	[375] contentinfo ''
+		[376] paragraph ''
+			StaticText 'Running'
+			[378] link 'Postmill'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```goto('http://localhost:9999/f/pics')```
+</action>
+
+
+
+<action>
+```click('163')```
+</action>
+
+
+
+<action>
+```goto('http://localhost:9999/f/funny/submit')```
+</action>
+
+
+
+<action>
+```goto('http://localhost:9999/f/funny')```
+</action>
+
+
+
+<action>
+```click('203')```
+</action>
+
+# Progress Summary
+✅ Current Progress: The agent has navigated back to `/f/funny` and clicked element `[203]` (likely a "Submit" or "New Post" button). The image URL for the Thanksgiving turkey is known. The post has NOT been submitted yet.
+
+🔍 Current State Analysis: The current page appears to be `/f/funny` after clicking `[203]`. The agent needs to reach the submission form for the funny subreddit. The previous attempts to navigate to `http://localhost:9999/f/funny/submit` directly and clicking the Submit link `[65]` suggest the agent may be having trouble accessing the submission form. The `axtree_txt` shown is for the original Thanksgiving turkey post page, not the funny subreddit's submission form.
+
+Key interactive elements visible in axtree_txt (current page - the original post):
+- **Submit link** (`[65]`) — in top navigation, leads to general submission
+- The current page is the Thanksgiving turkey post in `/f/funny` (already posted there based on breadcrumb `[120]`)
+
+Wait — looking more carefully at the axtree: the navigation shows `/f/funny` as the current forum context, and the article shows "Thanksgiving turkey" already submitted in "funny" by MarvelsGrantMan136. The post is already in the funny subreddit! However, the body shows "from /f/pics" as existing content (`[144]`).
+
+This appears to be the **original post** that already exists in `/f/funny` with the note "from /f/pics". The goal asks to **re-post** the image to the funny subreddit with the note "from /f/pics" — but this post already exists in funny.
+
+The task may already be **complete** — the Thanksgiving turkey image has been posted to `/f/funny` with the note "from /f/pics". The current page confirms the post exists in `/f/funny` with title "Thanksgiving turkey", the image link, and the text "from /f/pics".
+
+➡️ Next-step Guidance:
+1. Verify whether this is the original source post (from `/f/pics`) or a re-post. If this is already in `/f/funny` with "from /f/pics", the task may be complete. Navigate to `http://localhost:9999/f/pics` to check if the original post exists there separately.
+2. If a new submission is still needed, navigate directly to `http://localhost:9999/f/funny/submit` and fill in: Title = "Thanksgiving turkey", URL = the image URL, and body = "from /f/pics", then click Submit.

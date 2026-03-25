@@ -1,0 +1,943 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. when the task mentions subreddit, it is referring to ‘forum'
+2. if you need find a relevant subreddit or forum, you can find the name after clicking "alphabetical" in the "Forum" tab.
+3. if you have to find submissions (posts) or comments by a particular user, visit user profile to see the list
+4. if you want to view a post detail, click the "comments" link attached to the post, **do not click the title hyperlink**, as it will redirect you to an external website.
+5. When creating a post/submission, put all content including URLs in the Body field. Leave the URL field empty. Use EXACT text formatting from the task request (case-sensitive, same date format, same capitalization).
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Re-post the image of Wife's costume in this page to funny subreddit and note "from /f/pics"
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: OpenStreetMap
+  URL: http://localhost:3000/#map=7/42.896/-75.108
+
+# Current page Accessibility Tree
+
+RootWebArea 'OpenStreetMap', focused
+	[44] banner ''
+		[45] heading 'OpenStreetMap logo OpenStreetMap'
+			[46] link 'OpenStreetMap logo OpenStreetMap'
+				[49] image 'OpenStreetMap logo'
+				StaticText ''
+		[51] navigation ''
+			[95] link 'Edit'
+			[96] button ''
+			[102] link 'History'
+			[103] link 'Export'
+		[104] navigation ''
+			[105] list ''
+				[106] listitem ''
+					[107] link 'GPS Traces'
+				[108] listitem ''
+					[109] link 'User Diaries'
+				[110] listitem ''
+					[111] link 'Communities'
+				[112] listitem ''
+					[113] link 'Copyright'
+				[114] listitem ''
+					[115] link 'Help'
+				[116] listitem ''
+					[117] link 'About'
+			[134] link 'Log In'
+			[135] link 'Sign Up'
+	[139] Section ''
+		[144] link 'Where is this?'
+		[145] textbox 'Search', focused
+		[147] button 'Go'
+		[149] link 'Find directions between two points'
+			[150] image ''
+	[187] heading 'Welcome to OpenStreetMap!'
+	[189] button 'Close'
+	[191] paragraph ''
+		StaticText 'OpenStreetMap is a map of the world, created by people like you and free to use under an open license.'
+	[192] paragraph ''
+		StaticText 'Hosting is supported by'
+		[193] link 'UCL'
+		StaticText ','
+		[194] link 'Fastly'
+		StaticText ','
+		[195] link 'Bytemark Hosting'
+		StaticText ', and other'
+		[196] link 'partners'
+		StaticText '.'
+	[199] link 'Learn More'
+	[201] link 'Start Mapping'
+	[360] image ''
+	[361] image ''
+	[362] image ''
+	[363] image ''
+	[364] image ''
+	[365] image ''
+	[366] image ''
+	[367] image ''
+	[368] image ''
+	[369] image ''
+	[370] image ''
+	[371] image ''
+	[372] image ''
+	[373] image ''
+	[374] image ''
+	[375] image ''
+	[376] image ''
+	[377] image ''
+	[378] image ''
+	[379] image ''
+	[380] image ''
+	[381] image ''
+	[382] image ''
+	[383] image ''
+	[384] image ''
+	[385] image ''
+	[386] image ''
+	[387] image ''
+	[388] image ''
+	[389] image ''
+	[390] image ''
+	[391] image ''
+	[392] image ''
+	[393] image ''
+	[394] image ''
+	[395] image ''
+	[396] image ''
+	[397] image ''
+	[398] image ''
+	[399] image ''
+	[400] image ''
+	[401] image ''
+	[402] image ''
+	[403] image ''
+	[404] image ''
+	[405] image ''
+	[406] image ''
+	[407] image ''
+	[408] image ''
+	[409] image ''
+	[410] image ''
+	[411] image ''
+	[412] image ''
+	[413] image ''
+	[414] image ''
+	[415] image ''
+	[416] image ''
+	[417] image ''
+	[418] image ''
+	[419] image ''
+	[420] image ''
+	[421] image ''
+	[422] image ''
+	[423] image ''
+	[424] image ''
+	[425] image ''
+	[426] image ''
+	[427] image ''
+	[428] image ''
+	[429] image ''
+	[430] image ''
+	[431] image ''
+	[432] image ''
+	[433] image ''
+	[434] image ''
+	[435] image ''
+	[436] image ''
+	[437] image ''
+	[438] image ''
+	[439] image ''
+	[440] image ''
+	[441] image ''
+	[442] image ''
+	[443] image ''
+	[444] image ''
+	[445] image ''
+	[446] image ''
+	[447] image ''
+	[448] image ''
+	[449] image ''
+	[450] image ''
+	[451] image ''
+	[452] image ''
+	[453] image ''
+	[454] image ''
+	[455] image ''
+	[456] image ''
+	[457] image ''
+	[458] image ''
+	[459] image ''
+	[460] image ''
+	[461] image ''
+	[462] image ''
+	[463] image ''
+	[464] image ''
+	[465] image ''
+	[466] image ''
+	[467] image ''
+	[468] image ''
+	[469] image ''
+	[470] image ''
+	[471] image ''
+	[472] image ''
+	[473] image ''
+	[474] image ''
+	[475] image ''
+	[476] image ''
+	[477] image ''
+	[478] image ''
+	[479] image ''
+	[480] image ''
+	[481] image ''
+	[482] image ''
+	[483] image ''
+	[484] image ''
+	[485] image ''
+	[486] image ''
+	[487] image ''
+	[488] image ''
+	[489] image ''
+	[490] image ''
+	[491] image ''
+	[492] image ''
+	[493] image ''
+	[494] image ''
+	[495] image ''
+	[496] image ''
+	[497] image ''
+	[498] image ''
+	[499] image ''
+	[500] image ''
+	[501] image ''
+	[502] image ''
+	[503] image ''
+	[504] image ''
+	[505] image ''
+	[506] image ''
+	[507] image ''
+	[508] image ''
+	[509] image ''
+	[510] image ''
+	[511] image ''
+	[512] image ''
+	[513] image ''
+	[514] image ''
+	[515] image ''
+	[516] image ''
+	[517] image ''
+	[518] image ''
+	[519] image ''
+	[520] image ''
+	[521] image ''
+	[522] image ''
+	[523] image ''
+	[524] image ''
+	[525] image ''
+	[526] image ''
+	[527] image ''
+	[528] image ''
+	[529] image ''
+	[530] image ''
+	[531] image ''
+	[532] image ''
+	[533] image ''
+	[534] image ''
+	[535] image ''
+	[536] image ''
+	[537] image ''
+	[538] image ''
+	[539] image ''
+	[540] image ''
+	[541] image ''
+	[542] image ''
+	[543] image ''
+	[544] image ''
+	[545] image ''
+	[546] image ''
+	[547] image ''
+	[548] image ''
+	[549] image ''
+	[550] image ''
+	[551] image ''
+	[552] image ''
+	[553] image ''
+	[554] image ''
+	[555] image ''
+	[556] image ''
+	[557] image ''
+	[558] image ''
+	[559] image ''
+	[560] image ''
+	[561] image ''
+	[562] image ''
+	[563] image ''
+	[564] image ''
+	[565] image ''
+	[566] image ''
+	[567] image ''
+	[568] image ''
+	[569] image ''
+	[570] image ''
+	[571] image ''
+	[572] image ''
+	[573] image ''
+	[574] image ''
+	[575] image ''
+	[576] image ''
+	[577] image ''
+	[578] image ''
+	[579] image ''
+	[580] image ''
+	[581] image ''
+	[582] image ''
+	[583] image ''
+	[584] image ''
+	[585] image ''
+	[586] image ''
+	[587] image ''
+	[588] image ''
+	[589] image ''
+	[590] image ''
+	[591] image ''
+	[592] image ''
+	[593] image ''
+	[594] image ''
+	[595] image ''
+	[596] image ''
+	[597] image ''
+	[598] image ''
+	[599] image ''
+	[600] image ''
+	[601] image ''
+	[602] image ''
+	[603] image ''
+	[604] image ''
+	[605] image ''
+	[606] image ''
+	[607] image ''
+	[608] image ''
+	[609] image ''
+	[610] image ''
+	[611] image ''
+	[612] image ''
+	[613] image ''
+	[614] image ''
+	[615] image ''
+	[616] image ''
+	[617] image ''
+	[618] image ''
+	[619] image ''
+	[620] image ''
+	[621] image ''
+	[622] image ''
+	[623] image ''
+	[624] image ''
+	[625] image ''
+	[626] image ''
+	[627] image ''
+	[628] image ''
+	[629] image ''
+	[630] image ''
+	[631] image ''
+	[632] image ''
+	[633] image ''
+	[634] image ''
+	[635] image ''
+	[636] image ''
+	[637] image ''
+	[638] image ''
+	[639] image ''
+	[640] image ''
+	[641] image ''
+	[642] image ''
+	[643] image ''
+	[644] image ''
+	[645] image ''
+	[646] image ''
+	[647] image ''
+	[648] image ''
+	[649] image ''
+	[650] image ''
+	[651] image ''
+	[652] image ''
+	[653] image ''
+	[654] image ''
+	[655] image ''
+	[656] image ''
+	[657] image ''
+	[658] image ''
+	[659] image ''
+	[660] image ''
+	[661] image ''
+	[662] image ''
+	[663] image ''
+	[664] image ''
+	[665] image ''
+	[666] image ''
+	[667] image ''
+	[668] image ''
+	[669] image ''
+	[670] image ''
+	[671] image ''
+	[672] image ''
+	[673] image ''
+	[674] image ''
+	[675] image ''
+	[676] image ''
+	[677] image ''
+	[678] image ''
+	[679] image ''
+	[680] image ''
+	[681] image ''
+	[682] image ''
+	[683] image ''
+	[684] image ''
+	[685] image ''
+	[686] image ''
+	[687] image ''
+	[688] image ''
+	[689] image ''
+	[690] image ''
+	[691] image ''
+	[692] image ''
+	[693] image ''
+	[694] image ''
+	[695] image ''
+	[696] image ''
+	[697] image ''
+	[698] image ''
+	[699] image ''
+	[700] image ''
+	[701] image ''
+	[702] image ''
+	[703] image ''
+	[704] image ''
+	[705] image ''
+	[706] image ''
+	[707] image ''
+	[708] image ''
+	[709] image ''
+	[710] image ''
+	[711] image ''
+	[712] image ''
+	[713] image ''
+	[714] image ''
+	[715] image ''
+	[716] image ''
+	[717] image ''
+	[718] image ''
+	[719] image ''
+	[720] image ''
+	[721] image ''
+	[722] image ''
+	[723] image ''
+	[724] image ''
+	[725] image ''
+	[726] image ''
+	[727] image ''
+	[728] image ''
+	[729] image ''
+	[730] image ''
+	[731] image ''
+	[732] image ''
+	[733] image ''
+	[734] image ''
+	[735] image ''
+	[736] image ''
+	[737] image ''
+	[738] image ''
+	[739] image ''
+	[740] image ''
+	[741] image ''
+	[742] image ''
+	[743] image ''
+	[744] image ''
+	[745] image ''
+	[746] image ''
+	[747] image ''
+	[748] image ''
+	[749] image ''
+	[750] image ''
+	[751] image ''
+	[752] image ''
+	[753] image ''
+	[754] image ''
+	[755] image ''
+	[756] image ''
+	[757] image ''
+	[758] image ''
+	[759] image ''
+	[760] image ''
+	[761] image ''
+	[762] image ''
+	[763] image ''
+	[764] image ''
+	[765] image ''
+	[766] image ''
+	[767] image ''
+	[768] image ''
+	[769] image ''
+	[770] image ''
+	[771] image ''
+	[772] image ''
+	[773] image ''
+	[774] image ''
+	[775] image ''
+	[776] image ''
+	[777] image ''
+	[778] image ''
+	[779] image ''
+	[780] image ''
+	[781] image ''
+	[782] image ''
+	[783] image ''
+	[784] image ''
+	[785] image ''
+	[786] image ''
+	[787] image ''
+	[788] image ''
+	[789] image ''
+	[790] image ''
+	[791] image ''
+	[792] image ''
+	[793] image ''
+	[794] image ''
+	[795] image ''
+	[796] image ''
+	[797] image ''
+	[798] image ''
+	[799] image ''
+	[800] image ''
+	[801] image ''
+	[802] image ''
+	[803] image ''
+	[804] image ''
+	[805] image ''
+	[806] image ''
+	[807] image ''
+	[808] image ''
+	[809] image ''
+	[810] image ''
+	[811] image ''
+	[812] image ''
+	[813] image ''
+	[814] image ''
+	[815] image ''
+	[816] image ''
+	[817] image ''
+	[818] image ''
+	[819] image ''
+	[820] image ''
+	[821] image ''
+	[822] image ''
+	[823] image ''
+	[824] image ''
+	[825] image ''
+	[826] image ''
+	[827] image ''
+	[828] image ''
+	[829] image ''
+	[830] image ''
+	[831] image ''
+	[832] image ''
+	[833] image ''
+	[834] image ''
+	[835] image ''
+	[836] image ''
+	[837] image ''
+	[838] image ''
+	[839] image ''
+	[840] image ''
+	[841] image ''
+	[842] image ''
+	[843] image ''
+	[844] image ''
+	[845] image ''
+	[846] image ''
+	[847] image ''
+	[848] image ''
+	[849] image ''
+	[850] image ''
+	[851] image ''
+	[852] image ''
+	[853] image ''
+	[854] image ''
+	[855] image ''
+	[856] image ''
+	[857] image ''
+	[858] image ''
+	[859] image ''
+	[860] image ''
+	[861] image ''
+	[862] image ''
+	[863] image ''
+	[864] image ''
+	[865] image ''
+	[866] image ''
+	[867] image ''
+	[868] image ''
+	[869] image ''
+	[870] image ''
+	[871] image ''
+	[872] image ''
+	[873] image ''
+	[874] image ''
+	[875] image ''
+	[876] image ''
+	[877] image ''
+	[878] image ''
+	[879] image ''
+	[880] image ''
+	[881] image ''
+	[882] image ''
+	[883] image ''
+	[884] image ''
+	[885] image ''
+	[886] image ''
+	[887] image ''
+	[888] image ''
+	[889] image ''
+	[890] image ''
+	[891] image ''
+	[902] link 'Zoom In'
+	[904] link 'Zoom Out'
+	[907] button 'Show My Location'
+	[910] link 'Layers'
+	[913] link ''
+	[916] link 'Share'
+	[919] link ''
+	[922] link ''
+	StaticText '50 km'
+	StaticText '50 mi'
+	StaticText '©'
+	[930] link 'OpenStreetMap contributors'
+	StaticText '♥'
+	[931] link 'Make a Donation'
+	StaticText '.'
+	[932] link 'Website and API terms'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```goto('http://localhost:3000/f/pics')```
+</action>
+
+
+
+<action>
+```goto('http://localhost:3000/c/pics')```
+</action>
+
+
+
+<action>
+```goto('http://localhost:3000')```
+</action>
+
+
+
+<action>
+```goto('http://localhost:3000/f/pics')```
+</action>
+
+
+
+<action>
+```goto('http://localhost:3000')```
+</action>
+
+# Progress Summary
+✅ Current Progress: No meaningful progress made. The agent has been repeatedly navigating between URLs without successfully finding the Wife's costume post. The current page is OpenStreetMap (completely unrelated to the goal), indicating the agent has navigated away from the localhost:3000 application entirely.
+
+🔍 Current State Analysis: The current page is **OpenStreetMap** (`openstreetmap.org`), which is completely off-track from the goal. The goal requires working with a local Lemmy-like instance at `http://localhost:3000`. The agent needs to return to that application, find the `/f/pics` community (which appears to use the `/f/` URL prefix based on the goal text "from /f/pics"), locate the Wife's costume post, and cross-post it to the funny subreddit/community.
+
+➡️ Next-step Guidance:
+1. Navigate immediately to `http://localhost:3000/f/pics` — the goal itself references "/f/pics" suggesting this IS the correct URL format for this platform (it may be a Lemmy fork using `/f/` for communities rather than `/c/`).
+2. If `/f/pics` still shows a routing error, navigate to `http://localhost:3000` and browse the homepage to find the Wife's costume post directly, then use the cross-post functionality to post it to the funny community.

@@ -54,8 +54,13 @@ def image_to_jpg_base64_url(image: np.ndarray | Image.Image):
     if image.mode in ("RGBA", "LA"):
         image = image.convert("RGB")
 
+    # Resize if any dimension exceeds Bedrock's 8000px limit
+    max_dim = 7000
+    if image.width > max_dim or image.height > max_dim:
+        image.thumbnail((max_dim, max_dim), Image.LANCZOS)
+
     with io.BytesIO() as buffer:
-        image.save(buffer, format="JPEG")
+        image.save(buffer, format="JPEG", quality=50)
         image_base64 = base64.b64encode(buffer.getvalue()).decode()
 
     return f"data:image/jpeg;base64,{image_base64}"
@@ -159,34 +164,13 @@ class BroswerAgent(Agent):
         #     raise ValueError(f"Either use_html or use_axtree must be set to True.")
 
         # -----------------------------------------------------------------------
-        # OPTION 1: Standard OpenAI client (use for GPT models via LiteLLM)
+        # Use litellm directly (no proxy) to avoid LiteLLM proxy injecting
+        # both temperature and top_p into the Bedrock request.
         # -----------------------------------------------------------------------
-        # self.openai_client = openai.OpenAI(
-        #     api_key=os.getenv("OPENAI_API_KEY"),
-        #     base_url=os.getenv("OPENAI_BASE_URL"),
-        # )
-
-        # -----------------------------------------------------------------------
-        # OPTION 2: OpenAI client with custom httpx transport that strips top_p
-        # and temperature from requests before sending. Required for Claude via
-        # Bedrock/LiteLLM, which rejects requests containing both params.
-        # -----------------------------------------------------------------------
-        import httpx, json
-        def strip_params(request: httpx.Request):
-            try:
-                body = json.loads(request.content)
-                body.pop("top_p", None)
-                body.pop("temperature", None)
-                encoded = json.dumps(body).encode()
-                request.headers["content-length"] = str(len(encoded))
-                request.stream = httpx.ByteStream(encoded)
-            except Exception:
-                pass
-        self.openai_client = openai.OpenAI(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            base_url=os.getenv("OPENAI_BASE_URL"),
-            http_client=httpx.Client(event_hooks={"request": [strip_params]}),
-        )
+        import litellm
+        self._litellm = litellm
+        # Map friendly name to Bedrock model ID
+        self._bedrock_model = "bedrock/global.anthropic.claude-sonnet-4-6"
 
         if self.mode == "bid":
             subsets = ["webarena", "custom"]
@@ -289,14 +273,15 @@ class BroswerAgent(Agent):
         full_prompt_txt = "\n".join(prompt_text_strings)
         # logger.info(full_prompt_txt)
 
-        # 4. Call OpenAI API
-        response = self.openai_client.chat.completions.create(
-            model=self.model_name,
-            extra_body={"drop_params": True},
+        # 4. Call Bedrock via litellm (no proxy)
+        response = self._litellm.completion(
+            model=self._bedrock_model,
             messages=[
                 {"role": "system", "content": system_msgs},
                 {"role": "user", "content": user_msgs},
             ],
+            temperature=1.0,
+            drop_params=True,
         )
         action = response.choices[0].message.content
 
@@ -567,10 +552,11 @@ You will now think step by step and produce your next best action. Reflect on yo
         ]
 
         messages.append({"role": "user", "content": user_contents})
-        response = self.openai_client.chat.completions.create(
-            model=self.model_name,
-            extra_body={"drop_params": True},
-            messages=messages
+        response = self._litellm.completion(
+            model=self._bedrock_model,
+            messages=messages,
+            temperature=1.0,
+            drop_params=True,
         )
         self.progress_summary_content = response.choices[0].message.content.strip()
         return self.progress_summary_content

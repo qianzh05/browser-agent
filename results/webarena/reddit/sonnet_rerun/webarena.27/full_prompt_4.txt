@@ -1,0 +1,1043 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. when the task mentions subreddit, it is referring to ‘forum'
+2. if you need find a relevant subreddit or forum, you can find the name after clicking "alphabetical" in the "Forum" tab.
+3. if you have to find submissions (posts) or comments by a particular user, visit user profile to see the list
+4. if you want to view a post detail, click the "comments" link attached to the post, **do not click the title hyperlink**, as it will redirect you to an external website.
+5. When creating a post/submission, put all content including URLs in the Body field. Leave the URL field empty. Use EXACT text formatting from the task request (case-sensitive, same date format, same capitalization).
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Tell me the count of comments that have received more downvotes than upvotes for the user who made the latest post on the Showerthoughts forum.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Showerthoughts
+  URL: http://localhost:9999/f/Showerthoughts/new
+
+# Current page Accessibility Tree
+
+RootWebArea 'Showerthoughts', focused
+	[27] navigation ''
+		[28] link 'Jump to main content'
+		[29] link 'Jump to sidebar'
+	[30] navigation ''
+		[33] link 'Home'
+			StaticText 'Postmill'
+		[43] list ''
+			[44] listitem ''
+				[45] link 'Forums'
+			[46] listitem ''
+				[47] link 'Wiki'
+		[48] Section ''
+			[57] searchbox 'Search query'
+		[58] list ''
+			[59] listitem ''
+				[60] link 'Notifications (0)'
+					[63] image ''
+			[64] listitem ''
+				[65] link 'Submit'
+					[68] image ''
+					StaticText 'Submit'
+			[70] listitem ''
+				[71] button 'MarvelsGrantMan136', hasPopup='menu', expanded=False
+					[74] image ''
+					[75] strong ''
+						StaticText 'MarvelsGrantMan136'
+	[116] main ''
+		[117] heading '/f/Showerthoughts'
+			StaticText '/f/'
+			[119] strong ''
+				StaticText 'Showerthoughts'
+		[120] navigation ''
+			[121] list ''
+				[122] listitem ''
+					[123] link 'Submissions'
+				[124] listitem ''
+					[125] link 'Comments'
+			[126] list ''
+				[127] listitem ''
+					[128] button 'Sort by: New', hasPopup='menu', expanded=False
+						[130] image ''
+						StaticText 'New'
+		[146] article ''
+			[151] heading 'It is more acceptable for men to walk around the house with only pants on than it is for women, on the other hand it is more acceptable for women to walk around the house with only a shirt and underpants on than it is for men'
+				[152] link 'It is more acceptable for men to walk around the house with only pants on than it is for women, on the other hand it is more acceptable for women to walk around the house with only a shirt and underpants on than it is for men'
+			[153] paragraph ''
+				StaticText 'Submitted by'
+				[155] link 'nirinaron', expanded=False
+					[156] strong ''
+						StaticText 'nirinaron'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_1280jbl'
+				StaticText ']'
+				StaticText ''
+				[158] time 'March 31, 2023 at 5:42:01 PM EDT'
+					StaticText '3 years ago'
+			[159] navigation ''
+				[160] list ''
+					[161] listitem ''
+						[162] link 'No comments'
+							[163] strong ''
+								StaticText 'No comments'
+			[166] Section ''
+				[168] button 'Upvote'
+				StaticText '4'
+				[178] button 'Downvote'
+		[183] article ''
+			[188] heading 'All of the Neanderthals were uncircumcised'
+				[189] link 'All of the Neanderthals were uncircumcised'
+			[190] paragraph ''
+				StaticText 'Submitted by'
+				[192] link 'poster74', expanded=False
+					[193] strong ''
+						StaticText 'poster74'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_127mnd6'
+				StaticText ']'
+				StaticText ''
+				[195] time 'March 31, 2023 at 10:08:55 AM EDT'
+					StaticText '3 years ago'
+			[196] navigation ''
+				[197] list ''
+					[198] listitem ''
+						[199] link 'No comments'
+							[200] strong ''
+								StaticText 'No comments'
+			[203] Section ''
+				[205] button 'Upvote'
+				StaticText '3'
+				[215] button 'Downvote'
+		[220] article ''
+			[225] heading 'It must be hard to be blind and r acist.'
+				[226] link 'It must be hard to be blind and r acist.'
+			[227] paragraph ''
+				StaticText 'Submitted by'
+				[229] link 'Oohbunnies', expanded=False
+					[230] strong ''
+						StaticText 'Oohbunnies'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_127lj3c'
+				StaticText ']'
+				StaticText ''
+				[232] time 'March 31, 2023 at 9:29:26 AM EDT'
+					StaticText '3 years ago'
+			[233] navigation ''
+				[234] list ''
+					[235] listitem ''
+						[236] link 'No comments'
+							[237] strong ''
+								StaticText 'No comments'
+			[240] Section ''
+				[242] button 'Upvote'
+				StaticText '3'
+				[252] button 'Downvote'
+		[257] article ''
+			[262] heading "It's hard to believe that Generation Z are actually adults in their early 20s, not teenagers."
+				[263] link "It's hard to believe that Generation Z are actually adults in their early 20s, not teenagers."
+			[264] paragraph ''
+				StaticText 'Submitted by'
+				[266] link 'fixxxer_99', expanded=False
+					[267] strong ''
+						StaticText 'fixxxer_99'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_127fv4h'
+				StaticText ']'
+				StaticText ''
+				[269] time 'March 31, 2023 at 5:30:14 AM EDT'
+					StaticText '3 years ago'
+			[270] navigation ''
+				[271] list ''
+					[272] listitem ''
+						[273] link 'No comments'
+							[274] strong ''
+								StaticText 'No comments'
+			[277] Section ''
+				[279] button 'Upvote'
+				StaticText '2'
+				[289] button 'Downvote'
+		[294] article ''
+			[299] heading "98% of the things we see or read about on the news actually doesn't matter for our daily lives"
+				[300] link "98% of the things we see or read about on the news actually doesn't matter for our daily lives"
+			[301] paragraph ''
+				StaticText 'Submitted by'
+				[303] link 'ikingrpg', expanded=False
+					[304] strong ''
+						StaticText 'ikingrpg'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_1277nak'
+				StaticText ']'
+				StaticText ''
+				[306] time 'March 30, 2023 at 10:47:28 PM EDT'
+					StaticText '3 years ago'
+			[307] navigation ''
+				[308] list ''
+					[309] listitem ''
+						[310] link 'No comments'
+							[311] strong ''
+								StaticText 'No comments'
+			[314] Section ''
+				[316] button 'Upvote'
+				StaticText '1'
+				[326] button 'Downvote'
+		[331] article ''
+			[336] heading 'It’s not that expensive to get fat'
+				[337] link 'It’s not that expensive to get fat'
+			[338] paragraph ''
+				StaticText 'Submitted by'
+				[340] link '[deleted]', expanded=False
+					[341] strong ''
+						StaticText '[deleted]'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_1275ej0'
+				StaticText ']'
+				StaticText ''
+				[343] time 'March 30, 2023 at 9:09:25 PM EDT'
+					StaticText '3 years ago'
+			[344] navigation ''
+				[345] list ''
+					[346] listitem ''
+						[347] link 'No comments'
+							[348] strong ''
+								StaticText 'No comments'
+			[351] Section ''
+				[353] button 'Upvote'
+				StaticText '2'
+				[363] button 'Downvote'
+		[368] article ''
+			[373] heading 'Your brain rembembers you forgot something but forgets what that something is.'
+				[374] link 'Your brain rembembers you forgot something but forgets what that something is.'
+			[375] paragraph ''
+				StaticText 'Submitted by'
+				[377] link 'misswallflowerr', expanded=False
+					[378] strong ''
+						StaticText 'misswallflowerr'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_12755qq'
+				StaticText ']'
+				StaticText ''
+				[380] time 'March 30, 2023 at 8:59:05 PM EDT'
+					StaticText '3 years ago'
+			[381] navigation ''
+				[382] list ''
+					[383] listitem ''
+						[384] link 'No comments'
+							[385] strong ''
+								StaticText 'No comments'
+			[388] Section ''
+				[390] button 'Upvote'
+				StaticText '2'
+				[400] button 'Downvote'
+		[405] article ''
+			[410] heading 'Prisoners get free meals each day, but children can’t even get a free lunch.'
+				[411] link 'Prisoners get free meals each day, but children can’t even get a free lunch.'
+			[412] paragraph ''
+				StaticText 'Submitted by'
+				[414] link 'Virta15', expanded=False
+					[415] strong ''
+						StaticText 'Virta15'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_126v9zo'
+				StaticText ']'
+				StaticText ''
+				[417] time 'March 30, 2023 at 2:29:56 PM EDT'
+					StaticText '3 years ago'
+			[418] navigation ''
+				[419] list ''
+					[420] listitem ''
+						[421] link 'No comments'
+							[422] strong ''
+								StaticText 'No comments'
+			[425] Section ''
+				[427] button 'Upvote'
+				StaticText '2'
+				[437] button 'Downvote'
+		[442] article ''
+			[447] heading 'It’s way too easy to steal at an airport luggage terminal'
+				[448] link 'It’s way too easy to steal at an airport luggage terminal'
+			[449] paragraph ''
+				StaticText 'Submitted by'
+				[451] link 'bigbonds210', expanded=False
+					[452] strong ''
+						StaticText 'bigbonds210'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_126r49b'
+				StaticText ']'
+				StaticText ''
+				[454] time 'March 30, 2023 at 11:56:45 AM EDT'
+					StaticText '3 years ago'
+			[455] navigation ''
+				[456] list ''
+					[457] listitem ''
+						[458] link 'No comments'
+							[459] strong ''
+								StaticText 'No comments'
+			[462] Section ''
+				[464] button 'Upvote'
+				StaticText '0'
+				[474] button 'Downvote'
+		[479] article ''
+			[484] heading 'People are afraid of AI treating humans like humans treat humans and other species.'
+				[485] link 'People are afraid of AI treating humans like humans treat humans and other species.'
+			[486] paragraph ''
+				StaticText 'Submitted by'
+				[488] link 'radarmy', expanded=False
+					[489] strong ''
+						StaticText 'radarmy'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_126jpeo'
+				StaticText ']'
+				StaticText ''
+				[491] time 'March 30, 2023 at 7:06:08 AM EDT'
+					StaticText '3 years ago'
+			[492] navigation ''
+				[493] list ''
+					[494] listitem ''
+						[495] link 'No comments'
+							[496] strong ''
+								StaticText 'No comments'
+			[499] Section ''
+				[501] button 'Upvote'
+				StaticText '0'
+				[511] button 'Downvote'
+		[516] article ''
+			[521] heading 'It’s crazy that we still haven’t figured out the healthy way to get high.'
+				[522] link 'It’s crazy that we still haven’t figured out the healthy way to get high.'
+			[523] paragraph ''
+				StaticText 'Submitted by'
+				[525] link 'blumzzz', expanded=False
+					[526] strong ''
+						StaticText 'blumzzz'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_126hnpy'
+				StaticText ']'
+				StaticText ''
+				[528] time 'March 30, 2023 at 5:28:44 AM EDT'
+					StaticText '3 years ago'
+			[529] navigation ''
+				[530] list ''
+					[531] listitem ''
+						[532] link 'No comments'
+							[533] strong ''
+								StaticText 'No comments'
+			[536] Section ''
+				[538] button 'Upvote'
+				StaticText '1'
+				[548] button 'Downvote'
+		[553] article ''
+			[558] heading 'Humans at one point had to worry about getting captured by another animal, dragged and then eaten alive...'
+				[559] link 'Humans at one point had to worry about getting captured by another animal, dragged and then eaten alive...'
+			[560] paragraph ''
+				StaticText 'Submitted by'
+				[562] link 'NodsInApprovalx3', expanded=False
+					[563] strong ''
+						StaticText 'NodsInApprovalx3'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_12694hd'
+				StaticText ']'
+				StaticText ''
+				[565] time 'March 29, 2023 at 10:46:37 PM EDT'
+					StaticText '3 years ago'
+			[566] navigation ''
+				[567] list ''
+					[568] listitem ''
+						[569] link 'No comments'
+							[570] strong ''
+								StaticText 'No comments'
+			[573] Section ''
+				[575] button 'Upvote'
+				StaticText '2'
+				[585] button 'Downvote'
+		[590] article ''
+			[595] heading 'Video games were harder because we were children'
+				[596] link 'Video games were harder because we were children'
+			[597] paragraph ''
+				StaticText 'Submitted by'
+				[599] link 'Ghost3080', expanded=False
+					[600] strong ''
+						StaticText 'Ghost3080'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_1267vei'
+				StaticText ']'
+				StaticText ''
+				[602] time 'March 29, 2023 at 9:52:56 PM EDT'
+					StaticText '3 years ago'
+			[603] navigation ''
+				[604] list ''
+					[605] listitem ''
+						[606] link 'No comments'
+							[607] strong ''
+								StaticText 'No comments'
+			[610] Section ''
+				[612] button 'Upvote'
+				StaticText '4'
+				[622] button 'Downvote'
+		[627] article ''
+			[632] heading 'One day, someone will think the last thought of you, and your entire existence will disappear from the universe forever'
+				[633] link 'One day, someone will think the last thought of you, and your entire existence will disappear from the universe forever'
+			[634] paragraph ''
+				StaticText 'Submitted by'
+				[636] link 'Anubyss88', expanded=False
+					[637] strong ''
+						StaticText 'Anubyss88'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_1263z91'
+				StaticText ']'
+				StaticText ''
+				[639] time 'March 29, 2023 at 7:10:10 PM EDT'
+					StaticText '3 years ago'
+			[640] navigation ''
+				[641] list ''
+					[642] listitem ''
+						[643] link 'No comments'
+							[644] strong ''
+								StaticText 'No comments'
+			[647] Section ''
+				[649] button 'Upvote'
+				StaticText '1'
+				[659] button 'Downvote'
+		[664] article ''
+			[669] heading 'Outlawing bullets is a easy way to circumvent the 2nd Ammendment'
+				[670] link 'Outlawing bullets is a easy way to circumvent the 2nd Ammendment'
+			[671] paragraph ''
+				StaticText 'Submitted by'
+				[673] link '[deleted]', expanded=False
+					[674] strong ''
+						StaticText '[deleted]'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_125w3j7'
+				StaticText ']'
+				StaticText ''
+				[676] time 'March 29, 2023 at 2:13:54 PM EDT'
+					StaticText '3 years ago'
+			[677] navigation ''
+				[678] list ''
+					[679] listitem ''
+						[680] link 'No comments'
+							[681] strong ''
+								StaticText 'No comments'
+			[684] Section ''
+				[686] button 'Upvote'
+				StaticText '4'
+				[696] button 'Downvote'
+		[701] article ''
+			[706] heading 'In some countries, as the retirement age keeps going up and the life expectancy keeps going down, most people will die before they receive a pension.'
+				[707] link 'In some countries, as the retirement age keeps going up and the life expectancy keeps going down, most people will die before they receive a pension.'
+			[708] paragraph ''
+				StaticText 'Submitted by'
+				[710] link 'donnygel', expanded=False
+					[711] strong ''
+						StaticText 'donnygel'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_125k3bd'
+				StaticText ']'
+				StaticText ''
+				[713] time 'March 29, 2023 at 6:44:31 AM EDT'
+					StaticText '3 years ago'
+			[714] navigation ''
+				[715] list ''
+					[716] listitem ''
+						[717] link 'No comments'
+							[718] strong ''
+								StaticText 'No comments'
+			[721] Section ''
+				[723] button 'Upvote'
+				StaticText '2'
+				[733] button 'Downvote'
+		[738] article ''
+			[743] heading 'Society is all about inclusion at the moment, yet not a single effort has been made to fit people who are not morning people.'
+				[744] link 'Society is all about inclusion at the moment, yet not a single effort has been made to fit people who are not morning people.'
+			[745] paragraph ''
+				StaticText 'Submitted by'
+				[747] link '-TheDerpinator-', expanded=False
+					[748] strong ''
+						StaticText '-TheDerpinator-'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_125fp9k'
+				StaticText ']'
+				StaticText ''
+				[750] time 'March 29, 2023 at 2:52:34 AM EDT'
+					StaticText '3 years ago'
+			[751] navigation ''
+				[752] list ''
+					[753] listitem ''
+						[754] link 'No comments'
+							[755] strong ''
+								StaticText 'No comments'
+			[758] Section ''
+				[760] button 'Upvote'
+				StaticText '3'
+				[770] button 'Downvote'
+		[775] article ''
+			[780] heading 'Gaming is the only hobby where people spend thousands of hours in a game and still complain about how terrible it is'
+				[781] link 'Gaming is the only hobby where people spend thousands of hours in a game and still complain about how terrible it is'
+			[782] paragraph ''
+				StaticText 'Submitted by'
+				[784] link 'trudlymadlydeeplyme', expanded=False
+					[785] strong ''
+						StaticText 'trudlymadlydeeplyme'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_12570dt'
+				StaticText ']'
+				StaticText ''
+				[787] time 'March 28, 2023 at 8:02:20 PM EDT'
+					StaticText '3 years ago'
+			[788] navigation ''
+				[789] list ''
+					[790] listitem ''
+						[791] link 'No comments'
+							[792] strong ''
+								StaticText 'No comments'
+			[795] Section ''
+				[797] button 'Upvote'
+				StaticText '2'
+				[807] button 'Downvote'
+		[812] article ''
+			[817] heading 'Mr. Fantastic can make his penis as long as he wants.'
+				[818] link 'Mr. Fantastic can make his penis as long as he wants.'
+			[819] paragraph ''
+				StaticText 'Submitted by'
+				[821] link 'ThePhantom0p69', expanded=False
+					[822] strong ''
+						StaticText 'ThePhantom0p69'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_1253msz'
+				StaticText ']'
+				StaticText ''
+				[824] time 'March 28, 2023 at 5:51:49 PM EDT'
+					StaticText '3 years ago'
+			[825] navigation ''
+				[826] list ''
+					[827] listitem ''
+						[828] link 'No comments'
+							[829] strong ''
+								StaticText 'No comments'
+			[832] Section ''
+				[834] button 'Upvote'
+				StaticText '4'
+				[844] button 'Downvote'
+		[849] article ''
+			[854] heading 'Most dogs die virgins.'
+				[855] link 'Most dogs die virgins.'
+			[856] paragraph ''
+				StaticText 'Submitted by'
+				[858] link 'ilikeapplesaucebread', expanded=False
+					[859] strong ''
+						StaticText 'ilikeapplesaucebread'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_124tzof'
+				StaticText ']'
+				StaticText ''
+				[861] time 'March 28, 2023 at 12:16:31 PM EDT'
+					StaticText '3 years ago'
+			[862] navigation ''
+				[863] list ''
+					[864] listitem ''
+						[865] link 'No comments'
+							[866] strong ''
+								StaticText 'No comments'
+			[869] Section ''
+				[871] button 'Upvote'
+				StaticText '2'
+				[881] button 'Downvote'
+		[886] article ''
+			[891] heading "Cars record how far they've travelled but not how long they've idled for, both affect the engine."
+				[892] link "Cars record how far they've travelled but not how long they've idled for, both affect the engine."
+			[893] paragraph ''
+				StaticText 'Submitted by'
+				[895] link 'Critwhoris', expanded=False
+					[896] strong ''
+						StaticText 'Critwhoris'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_124mw5k'
+				StaticText ']'
+				StaticText ''
+				[898] time 'March 28, 2023 at 8:15:46 AM EDT'
+					StaticText '3 years ago'
+			[899] navigation ''
+				[900] list ''
+					[901] listitem ''
+						[902] link 'No comments'
+							[903] strong ''
+								StaticText 'No comments'
+			[906] Section ''
+				[908] button 'Upvote'
+				StaticText '0'
+				[918] button 'Downvote'
+		[923] article ''
+			[928] heading "It's hard to agree with people who complain about the price of streaming services when one single DVD can still cost around twenty dollars."
+				[929] link "It's hard to agree with people who complain about the price of streaming services when one single DVD can still cost around twenty dollars."
+			[930] paragraph ''
+				StaticText 'Submitted by'
+				[932] link 'chuckiechap33', expanded=False
+					[933] strong ''
+						StaticText 'chuckiechap33'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_124hi2o'
+				StaticText ']'
+				StaticText ''
+				[935] time 'March 28, 2023 at 4:04:22 AM EDT'
+					StaticText '3 years ago'
+			[936] navigation ''
+				[937] list ''
+					[938] listitem ''
+						[939] link 'No comments'
+							[940] strong ''
+								StaticText 'No comments'
+			[943] Section ''
+				[945] button 'Upvote'
+				StaticText '0'
+				[955] button 'Downvote'
+		[960] article ''
+			[965] heading 'For a movie that supposedly broke new records, Avatar 2 is nowhere to be found in social media after its release.'
+				[966] link 'For a movie that supposedly broke new records, Avatar 2 is nowhere to be found in social media after its release.'
+			[967] paragraph ''
+				StaticText 'Submitted by'
+				[969] link 'Adderbox76', expanded=False
+					[970] strong ''
+						StaticText 'Adderbox76'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_12433cw'
+				StaticText ']'
+				StaticText ''
+				[972] time 'March 27, 2023 at 6:28:40 PM EDT'
+					StaticText '3 years ago'
+			[973] navigation ''
+				[974] list ''
+					[975] listitem ''
+						[976] link 'No comments'
+							[977] strong ''
+								StaticText 'No comments'
+			[980] Section ''
+				[982] button 'Upvote'
+				StaticText '2'
+				[992] button 'Downvote'
+		[997] article ''
+			[1002] heading "Only believable thing about Avatar movie is that future US wouldn't fix Jake Scully's legs because of money"
+				[1003] link "Only believable thing about Avatar movie is that future US wouldn't fix Jake Scully's legs because of money"
+			[1004] paragraph ''
+				StaticText 'Submitted by'
+				[1006] link 'i_am_replaceable', expanded=False
+					[1007] strong ''
+						StaticText 'i_am_replaceable'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_123u8kd'
+				StaticText ']'
+				StaticText ''
+				[1009] time 'March 27, 2023 at 1:36:31 PM EDT'
+					StaticText '3 years ago'
+			[1010] navigation ''
+				[1011] list ''
+					[1012] listitem ''
+						[1013] link 'No comments'
+							[1014] strong ''
+								StaticText 'No comments'
+			[1017] Section ''
+				[1019] button 'Upvote'
+				StaticText '2'
+				[1029] button 'Downvote'
+		[1034] article ''
+			[1039] heading 'None of your ancestors was a virgin.'
+				[1040] link 'None of your ancestors was a virgin.'
+			[1041] paragraph ''
+				StaticText 'Submitted by'
+				[1043] link '[deleted]', expanded=False
+					[1044] strong ''
+						StaticText '[deleted]'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_123ovz7'
+				StaticText ']'
+				StaticText ''
+				[1046] time 'March 27, 2023 at 10:42:09 AM EDT'
+					StaticText '3 years ago'
+			[1047] navigation ''
+				[1048] list ''
+					[1049] listitem ''
+						[1050] link 'No comments'
+							[1051] strong ''
+								StaticText 'No comments'
+			[1054] Section ''
+				[1056] button 'Upvote'
+				StaticText '0'
+				[1066] button 'Downvote'
+		[1071] navigation ''
+			[1072] list ''
+				[1074] listitem ''
+					[1075] link 'More'
+	[1077] complementary ''
+		[1078] Section ''
+			[1079] heading 'Showerthoughts'
+				[1080] link 'Showerthoughts'
+			[1081] Section ''
+				[1084] button 'Subscribe No subscribers'
+					StaticText 'Subscribe'
+					StaticText '0'
+			[1091] paragraph ''
+				StaticText 't5_2szyo'
+			[1092] separator '', orientation='horizontal'
+			[1093] list ''
+				[1094] listitem ''
+					StaticText 'Created'
+					[1095] time 'October 1, 2022 at 12:37:34 AM EDT'
+						StaticText '3 years ago'
+				[1096] listitem ''
+					[1097] link 'Subscribe via RSS'
+						[1099] image ''
+						StaticText 'Subscribe via RSS'
+		[1101] group ''
+			[1102] DisclosureTriangle 'Hide this forum', expanded=False
+		[1108] Section ''
+			[1109] heading 'Toolbox'
+			[1110] list ''
+				[1111] listitem ''
+					[1112] link 'Bans'
+				[1113] listitem ''
+					[1114] link 'Moderation log'
+	[1115] contentinfo ''
+		[1116] paragraph ''
+			StaticText 'Running'
+			[1118] link 'Postmill'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```click('42')```
+</action>
+
+
+
+<action>
+```click('404')```
+</action>
+
+
+
+<action>
+```click('128')```
+</action>
+
+
+
+<action>
+```click('137')```
+</action>
+
+# Progress Summary
+✅ Current Progress: Successfully navigated to the Showerthoughts forum and sorted posts by "New." The latest post is "It is more acceptable for men to walk around the house with only pants on..." submitted by user **nirinaron** (March 31, 2023 at 5:42:01 PM EDT). This is the most recent post. Now need to visit nirinaron's profile to find their comments and count those with more downvotes than upvotes.
+
+🔍 Current State Analysis: The page is on the critical path. The posts are now sorted by "New" and the latest post author is `nirinaron` (link `[155]`). The next step is to click on nirinaron's profile link to access their comment history and evaluate vote counts. The link to nirinaron's profile is `[155]` (link text: 'nirinaron').
+
+➡️ Next-step Guidance: Click the link `[155]` labeled 'nirinaron' to navigate to nirinaron's user profile page, where their comments and vote tallies can be reviewed.

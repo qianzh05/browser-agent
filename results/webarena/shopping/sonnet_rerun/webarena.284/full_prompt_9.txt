@@ -1,0 +1,545 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. This website provides very detailed category of products. You can hover categories on the top menu to see subcategories.
+2. If you need to find information about your previous purchases, you can go My Account > My Orders, and find order by date, order number, or any other available information
+3. An order is considered out of delivery if it is marked as "processing" in the order status
+4. When the task asks you to draft and email. DO NOT send the email. Just draft it and provide the content in the last message
+5. For questions ONLY about **Nintendo Switch game cards** please navigate back to the url of the product you end up choosing. This is because the benchmark evalautes using the page you are on for the Nintendo task. If you are own the wrong product page it will assume you selected that product.
+6. When asked to "show me products under a price" the benchmark evaluates based on the url. so just ensure the price is under the price asked for in the url.
+7. When asked about product type don't return the acutal product name but rather the type of product it is. Ex: If the most common products are "harry potter" and "twilight" the product type is "books".
+8. **For SHOPPING/BROWSING tasks**: When asked to browse products in a particular category, navigate using the dropdown menus (not search) when possible. This may require hovering over nested dropdowns (e.g., hover over "Electronics" → hover over "Computers" → click "Laptops"). Use the hover tool to reveal these nested menus before clicking.
+9. Task wording can contain typos or singular/plural mismatches. Treat singular terms like "order" or "transaction" as potentially plural. If multiple entries match the described criteria, summarize all of them, list each matching item with its key details, make the quantity explicit, and when the question asks for an amount/total, include the combined sum alongside the itemized numbers. Never assume "the most recent one" unless the instructions explicitly say so.
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Show the least expensive shoe storage with a minimum storage capacity of 12 pairs.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Zings & Thingz 57073953 Simply White Shoe Organizer
+  URL: http://localhost:7770/zings-thingz-57073953-simply-white-shoe-organizer.html
+
+# Current page Accessibility Tree
+
+RootWebArea 'Zings & Thingz 57073953 Simply White Shoe Organizer', focused
+	[255] banner ''
+		[258] list ''
+			[259] listitem ''
+				[260] link 'My Account'
+			[261] listitem ''
+				[262] link 'My Wish List 1 item'
+					StaticText '1 item'
+			[264] listitem ''
+				[265] link 'Sign Out'
+			[266] listitem ''
+			[269] listitem ''
+				StaticText 'Welcome, Emma Lopez!'
+		[271] link 'Skip to Content'
+			StaticText 'Skip to Content'
+		[276] link 'store logo'
+			[277] image 'one_stop_market_logo'
+		[279] link '\ue611 My Cart 4 4items'
+			StaticText '\ue611'
+			StaticText 'My Cart'
+			StaticText '4'
+			StaticText '4'
+			StaticText 'items'
+		[442] Section ''
+			[444] LabelText ''
+				StaticText '\ue615'
+				StaticText 'Search'
+			[447] combobox '\ue615 Search' value='shoe organizer 12 pairs', focused, autocomplete='both', hasPopup='listbox', expanded=True
+				StaticText 'shoe organizer 12 pairs'
+			[450] link 'Advanced Search'
+			[452] button 'Search'
+				StaticText '\ue615'
+				StaticText 'Search'
+	[455] tablist '', multiselectable=False, orientation='horizontal'
+		[458] tabpanel ''
+			[459] navigation ''
+				[460] menu '', orientation='vertical'
+					[462] menuitem '\ue622 Beauty & Personal Care', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Beauty & Personal Care'
+					[679] menuitem '\ue622 Sports & Outdoors', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Sports & Outdoors'
+					[717] menuitem '\ue622 Clothing, Shoes & Jewelry', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Clothing, Shoes & Jewelry'
+					[769] menuitem '\ue622 Home & Kitchen', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Home & Kitchen'
+					[896] menuitem '\ue622 Office Products', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Office Products'
+					[928] menuitem '\ue622 Tools & Home Improvement', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Tools & Home Improvement'
+					[947] menuitem '\ue622 Health & Household', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Health & Household'
+					[971] menuitem '\ue622 Patio, Lawn & Garden', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Patio, Lawn & Garden'
+					[990] menuitem '\ue622 Electronics', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Electronics'
+					[1199] menuitem '\ue622 Cell Phones & Accessories', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Cell Phones & Accessories'
+					[1250] menuitem '\ue622 Video Games', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Video Games'
+					[1299] menuitem '\ue622 Grocery & Gourmet Food', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Grocery & Gourmet Food'
+	[1529] list ''
+		[1530] listitem ''
+			[1531] link 'Home'
+			StaticText '\ue608'
+		[1532] listitem ''
+			[1533] strong ''
+				StaticText 'Zings & Thingz 57073953 Simply White Shoe Organizer'
+	[1534] main ''
+		[1537] heading 'Zings & Thingz 57073953 Simply White Shoe Organizer'
+			StaticText 'Zings & Thingz 57073953 Simply White Shoe Organizer'
+		StaticText 'IN STOCK'
+		[1550] strong ''
+			StaticText 'SKU'
+		StaticText 'B0779MZKZV'
+		[1552] LayoutTable ''
+			[1554] link 'Be the first to review this product'
+		StaticText '$1.36'
+		[1562] Section ''
+			[1568] LayoutTable ''
+				[1571] LabelText ''
+					StaticText 'Qty'
+				[1574] spinbutton 'Qty' value=1, valuemin=0, valuemax=0, valuetext=''
+					StaticText '1'
+				[1576] button 'Add to Cart'
+					StaticText 'Add to Cart'
+		[1581] link 'Add to Wish List'
+			StaticText 'Add to Wish List'
+		[1583] link 'Add to Compare'
+			StaticText 'Add to Compare'
+		[1588] link 'Skip to the end of the images gallery'
+			StaticText 'Skip to the end of the images gallery'
+		[1598] button 'Previous'
+		[1604] image 'Image'
+		[1605] button 'Next'
+		[1613] button 'Previous'
+		[1617] button 'Image'
+			[1619] image 'Image'
+		[1620] button 'Image'
+			[1622] image 'Image'
+		[1623] button 'Next'
+		[1628] link 'Skip to the beginning of the images gallery'
+			StaticText 'Skip to the beginning of the images gallery'
+		[1632] tablist '', multiselectable=False, orientation='horizontal'
+			[1633] tab 'Details', expanded=True, selected=False, controls='description'
+				[1634] link 'Details'
+			[1635] tabpanel 'Details'
+				[1643] heading 'Product Quick Look'
+				[1646] list ''
+					[1647] listitem ''
+						ListMarker '•'
+						StaticText "Here's a surefire solution to your shoe woes! This slim, white shoe rack features two slanted drawers with two sections each to organize your footwear plus a drawer on top to help keep you organized."
+					[1649] listitem ''
+						ListMarker '•'
+						StaticText 'Nullify'
+					[1651] listitem ''
+						ListMarker '•'
+						StaticText 'Country Of Origin: China'
+					[1653] listitem ''
+						ListMarker '•'
+						StaticText 'Model Number: 10018185'
+					[1655] listitem ''
+						ListMarker '•'
+						StaticText 'Item Package Dimension: 38.749999960475" L x 15.899999983782" W x 7.699999992146" H'
+					[1657] listitem ''
+						ListMarker '•'
+						StaticText 'Item Package Weight: 43.0 lb'
+				[1660] table ''
+					[1661] rowgroup ''
+						[1662] row ''
+							[1663] rowheader 'Product Dimensions'
+							[1664] gridcell '36.25 x 9.88 x 27.5 inches'
+						[1665] row ''
+							[1666] rowheader 'Item Weight'
+							[1667] gridcell '42.9 pounds'
+						[1668] row ''
+							[1669] rowheader 'Manufacturer'
+							[1670] gridcell 'Zings & Thingz'
+						[1671] row ''
+							[1672] rowheader 'Item model number'
+							[1673] gridcell '57073953'
+						[1674] row ''
+							[1675] rowheader 'Is Discontinued By Manufacturer'
+							[1676] gridcell 'No'
+						[1677] row ''
+							[1678] rowheader 'Fabric Type'
+							[1679] gridcell 'Nullify'
+						[1680] row ''
+							[1681] rowheader 'Batteries Required?'
+							[1682] gridcell 'No'
+			[1683] tab 'Reviews', expanded=False, selected=False, controls='reviews'
+				[1684] link 'Reviews'
+	[1748] contentinfo ''
+		[1754] Section ''
+			StaticText '\ue61d'
+			[1757] LabelText ''
+				StaticText 'Sign Up for Our Newsletter:'
+				[1759] textbox 'Sign Up for Our Newsletter:'
+			[1761] button 'Subscribe'
+				StaticText 'Subscribe'
+		[1763] list ''
+			[1764] listitem ''
+				[1765] link 'Privacy and Cookie Policy'
+			[1766] listitem ''
+				[1767] link 'Search Terms'
+			[1768] listitem ''
+				[1769] link 'Advanced Search'
+			[1770] listitem ''
+				[1771] link 'Contact Us'
+		StaticText 'Copyright © 2013-present Magento, Inc. All rights reserved.'
+		StaticText 'Help Us Keep Magento Healthy'
+		StaticText ''
+		[1776] link 'Report All Bugs'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```click('1521')```
+</action>
+
+
+
+<action>
+```click('1919')```
+</action>
+
+
+
+<action>
+```click('1956')```
+</action>
+
+
+
+
+Looking at the search results sorted by price ascending, I need to find the cheapest shoe storage with at least 12 pairs capacity. Let me check the first shoe-specific organizer product at $1.36.
+<action>
+```click('1547')```
+</action>
+
+
+
+<action>
+```fill('447', 'shoe organizer 12 pairs')```
+</action>
+
+# Progress Summary
+✅ Current Progress: The agent has navigated to the product detail page for "Zings & Thingz 57073953 Simply White Shoe Organizer" at $1.36 and has typed "shoe organizer 12 pairs" in the search box (possibly attempting a more specific search). The agent is in the process of verifying whether this or another product meets the 12-pair minimum storage capacity requirement.
+
+🔍 Current State Analysis: The current page is the product detail page for the Zings & Thingz Simply White Shoe Organizer at **$1.36**. The search box (id=447) currently contains "shoe organizer 12 pairs" and appears expanded with autocomplete suggestions. The page is on the critical path, but the agent needs to decide whether to:
+1. Execute the new search (click Search button id=452) to find products specifically matching "12 pairs", OR
+2. Scroll down on the current page to verify this product's capacity
+
+Key interactive elements:
+- **Search box** (id=447): Currently filled with "shoe organizer 12 pairs", expanded with suggestions
+- **Search button** (id=452): Available to execute the new search
+- **Add to Cart** (id=1576): Should only be used after confirming 12-pair capacity
+- The product description section below (truncated in axtree) may contain capacity details for the current $1.36 product
+
+The agent appears to be attempting a refined search rather than verifying the current product — this could be a valid approach to find qualifying products directly.
+
+➡️ Next-step Guidance: The agent should press the Search button to execute the "shoe organizer 12 pairs" search, which will surface products explicitly matching the 12-pair capacity requirement. Then sort results by price ascending to find the least expensive qualifying option. Click button with id=452 to trigger the search.

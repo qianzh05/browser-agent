@@ -1,0 +1,525 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. When you add a new product in the CATALOG > Products tab, you can click the downwardarrow beside the "Add Product" button to select options like "Simple Product", "Configurable Product", etc.
+2. If you need to add new attribute values (e.g. size, color, etc) to a product, you can find the product at CATALOG > Products, search for the product, edit product with "Configurable Product" type, and use "Edit Configurations" to add the product with new attribute values. If the value that you want does not exist, you may need to add new values to the attribute.
+3. If you need to add new values to product attributes (e.g. size, color, etc), you can visit STORES > Attributes > Product, find the attribute and click, and add value after clicking "Add Swatch" button.
+4. You can generate various reports by using menus in the REPORTS tab. Select REPORTS > "report type", select options, and click "Show Report" to view report.
+5. In this website, there is a UI that looks like a dropdown, but is just a 1-of-n selection menu. For example in REPORTS > Orders, if you select "Specified" Order Status, you will choose one from many options (e.g. Canceled, Closed, ...), but it's not dropdown, so your click will just highlight your selection (1-of-n select UI will not disappear).
+6. Configurable products have some options that you can mark as "on" of "off". For example, the options may include "new", "sale", "eco collection", etc.
+7. You can find all reviews and their counts in the store in MARKETING > User Content > All Reviews. If you see all reviews grouped by product, go REPORTS > By Products and search by Product name.
+8. This website has been operating since 2022. So if you have to find a report for the entire history, you can select the date from Jan 1, 2022, to Today.
+9. Do not export or download files, or try to open files. It will not work.
+10. To retrieve a customer's historical order statistics: Navigate to the Reports menu. Select the Order Count page. Set the date range as "From 01/01/2022" and "To 01/01/2023". Under Show By, choose "Year".
+11. When querying recent orders, you must sort them in descending order by Purchase Date, regardless of any default sorting. This sorting operation must be performed at least once. Additionally, do not set a per-page limit; instead, directly retrieve the most recent k orders.
+12. For any calculation-related task—such as summing amounts, computing averages, applying discounts, or evaluating arithmetic expressions—you must use the calculate(expression) function. Do not perform mental math or inline reasoning to compute numerical results. Always construct a valid mathematical expression as a string and pass it to calculate() to ensure accuracy and reliability.
+13. When the task asks to return customers, return the FULL Customer name (only if you know the full name).
+14. When asked about how much is spent on a certain category or some description is given. Assume it is specifically about that categroy ONLY. An order might consist of several different categories of products. ONLY select ones that are specifically asked about.
+15. **THIS IS IMPORTANT**: When asked about how is spent on a category include the shipping & handling as part of the cost calculation. The ORDER TOTAL will include both the shipping and handling cost as well.
+    Ex: If there are two items in an order and the shipping & handling is $10.00 then each item would be charged $5. (Split the shipping and handling evenly amongst the number of orders.)
+16. When asked to "show me products under a price" the benchmark evaluates based on the url. so just ensure the price is under the price asked for in the url.
+17. When asked about product type don't return the acutal product name but rather the type of product it is. Ex: If the most common products are "harry potter" and "twilight" the product type is "books".
+18. **When asked about product names**, please strictly preserve all symbols and formatting—including ™, ®, ©, and other trademark indicators—and ensure the names in your response exactly match the original data.
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Telll me the grand total of invoice 000000002.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Invoices / Operations / Sales / Magento Admin
+  URL: http://localhost:7780/admin/sales/invoice/
+
+# Current page Accessibility Tree
+
+RootWebArea 'Invoices / Operations / Sales / Magento Admin', focused
+	[167] link 'Magento Admin Panel'
+		[168] image 'Magento Admin Panel'
+	[169] navigation ''
+		[170] menubar '', orientation='horizontal'
+			[172] link '\ue604 DASHBOARD'
+				StaticText '\ue604'
+				StaticText 'DASHBOARD'
+			[175] link '\ue60b SALES'
+				StaticText '\ue60b'
+				StaticText 'SALES'
+			[208] link '\ue608 CATALOG'
+				StaticText '\ue608'
+				StaticText 'CATALOG'
+			[226] link '\ue603 CUSTOMERS'
+				StaticText '\ue603'
+				StaticText 'CUSTOMERS'
+			[245] link '\ue609 MARKETING'
+				StaticText '\ue609'
+				StaticText 'MARKETING'
+			[312] link '\ue602 CONTENT'
+				StaticText '\ue602'
+				StaticText 'CONTENT'
+			[358] link '\ue60a REPORTS'
+				StaticText '\ue60a'
+				StaticText 'REPORTS'
+			[483] link '\ue60d STORES'
+				StaticText '\ue60d'
+				StaticText 'STORES'
+			[559] link '\ue610 SYSTEM'
+				StaticText '\ue610'
+				StaticText 'SYSTEM'
+			[642] link '\ue612 FIND PARTNERS & EXTENSIONS'
+				StaticText '\ue612'
+				StaticText 'FIND PARTNERS & EXTENSIONS'
+	[664] button 'System Messages: 1'
+		StaticText 'System Messages'
+		StaticText ':'
+		StaticText '1'
+	StaticText '\ue623'
+	StaticText 'Failed to synchronize data to the Magento Business Intelligence service.'
+	[670] link 'Retry Synchronization'
+	[680] banner ''
+		[683] heading 'Invoices'
+		[686] link '\ue600 admin'
+			StaticText '\ue600'
+			StaticText 'admin'
+		[698] link '\ue607'
+			StaticText '\ue607'
+		[700] Section ''
+			[702] LabelText ''
+				StaticText '\ue60c'
+			[706] textbox '\ue60c'
+	[712] main ''
+		[731] button '\ue60f Default View'
+			StaticText '\ue60f'
+			StaticText 'Default View'
+		[745] button '\ue610 Columns'
+			StaticText '\ue610'
+			StaticText 'Columns'
+		[813] button '\ue635 Export'
+			StaticText '\ue635'
+			StaticText 'Export'
+		[828] textbox 'Search by keyword'
+		[829] button 'Search'
+			StaticText '\ue60c'
+		[833] button '\ue605Filters'
+			StaticText '\ue605'
+		[1038] button 'Actions'
+		StaticText '2'
+		StaticText 'records found'
+		[1051] textbox 'per page' value='20'
+			StaticText '20'
+		[1052] button 'per page Select'
+			StaticText 'Select'
+		[1078] LabelText ''
+			StaticText 'per page'
+		[1080] button '\ue629', disabled=True
+			StaticText '\ue629'
+		[1081] spinbutton 'of 1' value=1, valuemin=0, valuemax=0, valuetext=''
+			StaticText '1'
+		[1082] LabelText ''
+			StaticText 'of 1'
+		[1083] button '\ue62a', disabled=True
+			StaticText '\ue62a'
+		[1085] table ''
+			[1086] rowgroup ''
+				[1087] row ''
+					[1088] columnheader 'Options'
+						[1090] checkbox '', checked='false'
+						[1091] LabelText ''
+						[1092] button 'Options'
+							StaticText 'Options'
+					[1103] columnheader '↓ Invoice'
+						StaticText '↓'
+						StaticText 'Invoice'
+					[1105] columnheader 'Invoice Date'
+						StaticText 'Invoice Date'
+					[1107] columnheader 'Order #'
+						StaticText 'Order #'
+					[1109] columnheader 'Order Date'
+						StaticText 'Order Date'
+					[1111] columnheader 'Bill-to Name'
+						StaticText 'Bill-to Name'
+					[1113] columnheader 'Status'
+						StaticText 'Status'
+					[1115] columnheader 'Grand Total (Base)'
+						StaticText 'Grand Total (Base)'
+					[1117] columnheader 'Grand Total (Purchased)'
+						StaticText 'Grand Total (Purchased)'
+					[1119] columnheader 'Action'
+						StaticText 'Action'
+			[1121] rowgroup ''
+				[1122] row ''
+					[1123] gridcell ''
+						[1124] LabelText ''
+							[1125] checkbox '', checked='false'
+							[1126] LabelText ''
+					[1127] gridcell '000000001'
+						StaticText '000000001'
+					[1129] gridcell 'Apr 19, 2023 12:15:45 PM'
+						StaticText 'Apr 19, 2023 12:15:45 PM'
+					[1131] gridcell '000000001'
+						StaticText '000000001'
+					[1133] gridcell 'Apr 19, 2023 12:15:45 PM'
+						StaticText 'Apr 19, 2023 12:15:45 PM'
+					[1135] gridcell 'Veronica Costello'
+						StaticText 'Veronica Costello'
+					[1137] gridcell 'Paid'
+						StaticText 'Paid'
+					[1139] gridcell '$36.39'
+						StaticText '$36.39'
+					[1141] gridcell '$36.39'
+						StaticText '$36.39'
+					[1143] gridcell 'View'
+						[1144] link 'View'
+				[1145] row ''
+					[1146] gridcell ''
+						[1147] LabelText ''
+							[1148] checkbox '', checked='false'
+							[1149] LabelText ''
+					[1150] gridcell '000000002'
+						StaticText '000000002'
+					[1152] gridcell 'Apr 19, 2023 12:15:47 PM'
+						StaticText 'Apr 19, 2023 12:15:47 PM'
+					[1154] gridcell '000000002'
+						StaticText '000000002'
+					[1156] gridcell 'Apr 19, 2023 12:15:46 PM'
+						StaticText 'Apr 19, 2023 12:15:46 PM'
+					[1158] gridcell 'Veronica Costello'
+						StaticText 'Veronica Costello'
+					[1160] gridcell 'Paid'
+						StaticText 'Paid'
+					[1162] gridcell '$39.64'
+						StaticText '$39.64'
+					[1164] gridcell '$39.64'
+						StaticText '$39.64'
+					[1166] gridcell 'View'
+						[1167] link 'View'
+	[1168] contentinfo ''
+		[1171] paragraph ''
+			[1172] link '\ue606'
+				StaticText '\ue606'
+			StaticText 'Copyright © 2026 Magento Commerce Inc. All rights reserved.'
+		[1174] paragraph ''
+			[1175] strong ''
+				StaticText 'Magento'
+			StaticText 'ver. 2.4.6'
+		[1176] link 'Privacy Policy'
+		StaticText '|'
+		[1177] link 'Account Activity'
+		StaticText '|'
+		[1178] link 'Report an Issue'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```goto('http://localhost:7780/admin/sales/invoices/')```
+</action>
+
+
+
+<action>
+```click('144')```
+</action>
+
+
+
+<action>
+```click('159')```
+</action>
+
+
+
+<action>
+```send_msg_to_user('The grand total of invoice 000000002 is $39.64.')```
+</action>
+
+# Progress Summary
+✅ Current Progress: The task is fully completed. The agent navigated to the Invoices listing page, located invoice 000000002, and sent the grand total to the user as **$39.64**.
+
+🔍 Current State Analysis: The current page is the Invoices listing at `http://localhost:7780/admin/sales/invoices/`. The action history shows the agent successfully completed all required steps: navigated to the invoices page, clicked on invoice 000000002, and used `send_msg_to_user` to report the grand total of $39.64. The task goal has been achieved.
+
+✅ Task completed. The grand total of invoice 000000002 is **$39.64**.

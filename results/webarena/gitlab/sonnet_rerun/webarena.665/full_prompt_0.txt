@@ -1,0 +1,717 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+
+# Task Tips
+Here are tips for using this website:
+1. your user name is byteblaze
+2. To add new members to the project, you can visit project information > members tab and click blue "invite members" button on top right
+3. To set your status, click profile button on top right corner of the page (it's next to the question mark button) and click edit status
+4. To edit your profile, click profile button on top right corner of the page (it's next to the question mark button) and click edit profile
+5. You can also access to your information e.g. access token, notifications, ssh keys and more from "edit profile" page
+6. Projects that you have contributed to are listed under Project / Yours / All tab of gitlab.site. You can sort repos using dropdown button on top right
+7. Projects's repository tab has menus like Commits, Branches, Contributors, and more. Contributors tab shows contributors and their number of commits
+8. If you want to see all the issues for you, you can either click button on the right of + icon on top right menu bar
+9. When the task mentions branch main, it often means master
+10. `dotfiles` is my one of repository
+11. Click the GitLab icon in the top-left corner to view all projects (Yours / Starred / Explore / Topics). In the Explore tab, you can browse All Explore, Most Stars, and Trending repository.
+12. When asked to make changes to a repository, commit changes to the main branch UNLESS the task specifically asks you to create a branch, make a merge request, or follow a different workflow.
+13. Do not use the global search bar(Search GitLab), it is currently not working. To search for a repository, go to the search URL instead: http://localhost:8023/search?search=<repository-name>&nav_source=navbar. Replace <repository-name> with the project name only (e.g., openapi-generator), without the group or namespace prefix (e.g., do not use OpenAPITools/openapi-generator). Example: goto('http://localhost:8023/search?search=openapi-generator&nav_source=navbar')
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Open an issue to request adding support for MT theme editor in a11y-syntax-highlighting.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Projects · Dashboard · GitLab
+  URL: http://localhost:8023/
+
+# Current page Accessibility Tree
+
+RootWebArea 'Projects · Dashboard · GitLab', focused
+	[51] banner ''
+		[52] link 'Skip to content'
+		StaticText 'GitLab'
+		[58] link 'Dashboard'
+			[59] image ''
+		[62] list ''
+			[63] listitem ''
+				[64] button '', hasPopup='menu', expanded=False
+		[124] list ''
+			[125] listitem ''
+				[127] Section ''
+					[129] image ''
+					[130] textbox 'Search GitLab'
+		[139] list ''
+			[140] listitem ''
+				[141] link 'Create new...'
+					[142] image ''
+					[143] image ''
+			[152] listitem ''
+				[153] link 'Issues'
+					[154] image ''
+			[156] listitem ''
+				[157] link 'Merge requests'
+					[158] image ''
+					[160] image ''
+			[170] listitem ''
+				[171] link 'To-Do List'
+					[172] image ''
+					StaticText '5'
+			[174] listitem ''
+				[175] link 'Help'
+					StaticText 'Help'
+					[177] image ''
+					[179] image ''
+			[200] listitem ''
+				[201] link 'Byte Blaze'
+					[202] image 'Byte Blaze'
+					[203] image ''
+	[243] main ''
+		[246] heading 'Projects'
+		[248] link 'New project'
+			StaticText 'New project'
+		[256] list ''
+			[257] listitem ''
+				[258] link 'Yours 15'
+					StaticText '15'
+			[260] listitem ''
+				[261] link 'Starred 3'
+					StaticText '3'
+			[263] listitem ''
+				[264] link 'Explore'
+			[265] listitem ''
+				[266] link 'Topics'
+		[268] Section ''
+			[269] searchbox 'Filter by name'
+			[273] button 'Name'
+				StaticText 'Name'
+				[275] image ''
+		[305] list ''
+			[306] listitem ''
+				[307] link 'All'
+			[308] listitem ''
+				[309] link 'Personal'
+		[311] list ''
+			[312] listitem ''
+				[314] link 'A'
+					StaticText 'A'
+				[319] heading 'Byte Blaze / a11y-syntax-highlighting'
+					[320] link 'Byte Blaze / a11y-syntax-highlighting'
+						StaticText 'Byte Blaze /'
+						StaticText 'a11y-syntax-highlighting'
+				[324] image ''
+				StaticText 'Owner'
+				[327] paragraph ''
+					StaticText '💄'
+					StaticText 'Accessible light and dark syntax highlighting themes'
+				[338] link '1'
+					[339] image ''
+				[340] link '0'
+					[341] image ''
+				[342] link '0'
+					[343] image ''
+				[344] link '3'
+					[345] image ''
+				StaticText 'Updated'
+				[348] time 'Mar 10, 2026 10:00pm UTC'
+					StaticText '2 weeks ago'
+			[349] listitem ''
+				[351] link 'A'
+					StaticText 'A'
+				[356] heading 'Byte Blaze / a11y-webring.club'
+					[357] link 'Byte Blaze / a11y-webring.club'
+						StaticText 'Byte Blaze /'
+						StaticText 'a11y-webring.club'
+				[361] image ''
+				StaticText 'Owner'
+				[364] paragraph ''
+					StaticText '🌐'
+					StaticText 'A webring for digital accessibility practitioners.'
+				[375] link '2'
+					[376] image ''
+				[377] link '0'
+					[378] image ''
+				[379] link '1'
+					[380] image ''
+				[381] link '4'
+					[382] image ''
+				StaticText 'Updated'
+				[385] time 'Mar 27, 2023 11:22pm UTC'
+					StaticText '2 years ago'
+			[386] listitem ''
+				[388] link 'A'
+					StaticText 'A'
+				[393] heading 'The A11Y Project / a11yproject.com'
+					[394] link 'The A11Y Project / a11yproject.com'
+						StaticText 'The A11Y Project /'
+						StaticText 'a11yproject.com'
+				[398] image ''
+				StaticText 'Maintainer'
+				[401] paragraph ''
+					StaticText 'The A11Y Project is a community-driven effort to make digital accessibility easier.'
+				[412] link '21'
+					[413] image ''
+				[414] link '0'
+					[415] image ''
+				[416] link '10'
+					[417] image ''
+				[418] link '40'
+					[419] image ''
+				StaticText 'Updated'
+				[422] time 'Mar 27, 2023 8:15pm UTC'
+					StaticText '2 years ago'
+			[423] listitem ''
+				[425] link 'A'
+					StaticText 'A'
+				[430] heading 'Byte Blaze / accessible-html-content-patterns'
+					[431] link 'Byte Blaze / accessible-html-content-patterns'
+						StaticText 'Byte Blaze /'
+						StaticText 'accessible-html-content-patterns'
+				[435] image ''
+				StaticText 'Owner'
+				[438] paragraph ''
+					StaticText '♿'
+					StaticText '️ The full HTML5 Doctor Element Index as well as common markup patterns for quick reference.'
+				[449] link '1'
+					[450] image ''
+				[451] link '0'
+					[452] image ''
+				[453] link '0'
+					[454] image ''
+				[455] link '0'
+					[456] image ''
+				StaticText 'Updated'
+				[459] time 'Mar 27, 2023 11:22pm UTC'
+					StaticText '2 years ago'
+			[460] listitem ''
+				[462] link ''
+					[463] image ''
+				[467] heading 'Byte Blaze / cloud-to-butt'
+					[468] link 'Byte Blaze / cloud-to-butt'
+						StaticText 'Byte Blaze /'
+						StaticText 'cloud-to-butt'
+				[472] image ''
+				StaticText 'Owner'
+				[475] paragraph ''
+					StaticText "Chrome extension that replaces occurrences of 'the cloud' with 'my butt'"
+				[486] link '0'
+					[487] image ''
+				[488] link '0'
+					[489] image ''
+				[490] link '0'
+					[491] image ''
+				[492] link '0'
+					[493] image ''
+				StaticText 'Updated'
+				[496] time 'Mar 27, 2023 11:22pm UTC'
+					StaticText '2 years ago'
+			[497] listitem ''
+				[499] link 'D'
+					StaticText 'D'
+				[504] heading 'Primer / design'
+					[505] link 'Primer / design'
+						StaticText 'Primer /'
+						StaticText 'design'
+				[509] image ''
+				StaticText 'Developer'
+				[512] paragraph ''
+					StaticText 'Primer Design Guidelines'
+				[523] link '21'
+					[524] image ''
+				[525] link '0'
+					[526] image ''
+				[527] link '16'
+					[528] image ''
+				[529] link '21'
+					[530] image ''
+				StaticText 'Updated'
+				[533] time 'Feb 19, 2026 9:53am UTC'
+					StaticText '1 month ago'
+			[534] listitem ''
+				[536] link 'D'
+					StaticText 'D'
+				[541] heading 'Byte Blaze / dotfiles'
+					[542] link 'Byte Blaze / dotfiles'
+						StaticText 'Byte Blaze /'
+						StaticText 'dotfiles'
+				[546] image ''
+				StaticText 'Owner'
+				[549] paragraph ''
+					StaticText '🤖'
+					StaticText 'Computer setup'
+				[560] link '0'
+					[561] image ''
+				[562] link '0'
+					[563] image ''
+				[564] link '0'
+					[565] image ''
+				[566] link '0'
+					[567] image ''
+				StaticText 'Updated'
+				[570] time 'Mar 27, 2023 11:22pm UTC'
+					StaticText '2 years ago'
+			[571] listitem ''
+				[573] link 'E'
+					StaticText 'E'
+				[578] heading 'Byte Blaze / empathy-prompts'
+					[579] link 'Byte Blaze / empathy-prompts'
+						StaticText 'Byte Blaze /'
+						StaticText 'empathy-prompts'
+				[583] image ''
+				StaticText 'Owner'
+				[586] paragraph ''
+					StaticText '💡'
+					StaticText 'Ideas to help consider Inclusive Design principles when making things for others to use.'
+				[597] link '6'
+					[598] image ''
+				[599] link '1'
+					[600] image ''
+				[601] link '2'
+					[602] image ''
+				[603] link '6'
+					[604] image ''
+				StaticText 'Updated'
+				[607] time 'Mar 27, 2023 11:22pm UTC'
+					StaticText '2 years ago'
+			[608] listitem ''
+				[610] link 'E'
+					StaticText 'E'
+				[615] heading 'Byte Blaze / ericwbailey.website'
+					[616] link 'Byte Blaze / ericwbailey.website'
+						StaticText 'Byte Blaze /'
+						StaticText 'ericwbailey.website'
+				[620] image ''
+				StaticText 'Owner'
+				[623] paragraph ''
+					StaticText '📐'
+					StaticText 'Repo for my personal website.'
+				[634] link '2'
+					[635] image ''
+				[636] link '0'
+					[637] image ''
+				[638] link '0'
+					[639] image ''
+				[640] link '0'
+					[641] image ''
+				StaticText 'Updated'
+				[644] time 'Mar 27, 2023 11:22pm UTC'
+					StaticText '2 years ago'
+			[645] listitem ''
+				[647] link 'G'
+					StaticText 'G'
+				[652] heading 'Byte Blaze / gimmiethat.space'
+					[653] link 'Byte Blaze / gimmiethat.space'
+						StaticText 'Byte Blaze /'
+						StaticText 'gimmiethat.space'
+				[657] image ''
+				StaticText 'Owner'
+				[660] paragraph ''
+					StaticText 'I need some space.'
+				[671] link '0'
+					[672] image ''
+				[673] link '0'
+					[674] image ''
+				[675] link '0'
+					[676] image ''
+				[677] link '0'
+					[678] image ''
+				StaticText 'Updated'
+				[681] time 'Apr 24, 2023 9:22pm UTC'
+					StaticText '2 years ago'
+			[682] listitem ''
+				[684] link 'M'
+					StaticText 'M'
+				[689] heading 'Byte Blaze / millennials-to-snake-people'
+					[690] link 'Byte Blaze / millennials-to-snake-people'
+						StaticText 'Byte Blaze /'
+						StaticText 'millennials-to-snake-people'
+				[694] image ''
+				StaticText 'Owner'
+				[697] paragraph ''
+					StaticText '🐍'
+					StaticText "Chrome extension that replaces occurrences of 'Millennials' with 'Snake People'"
+				[708] link '6'
+					[709] image ''
+				[710] link '0'
+					[711] image ''
+				[712] link '2'
+					[713] image ''
+				[714] link '4'
+					[715] image ''
+				StaticText 'Updated'
+				[718] time 'Mar 27, 2023 11:22pm UTC'
+					StaticText '2 years ago'
+			[719] listitem ''
+				[721] link 'R'
+					StaticText 'R'
+				[726] heading 'Byte Blaze / remove-board-movement-events-from-the-github-issue-timeline'
+					[727] link 'Byte Blaze / remove-board-movement-events-from-the-github-issue-timeline'
+						StaticText 'Byte Blaze /'
+						StaticText 'remove-board-movement-events-from-the-github-issue-timeline'
+				[731] image ''
+				StaticText 'Owner'
+				[734] paragraph ''
+					StaticText "This extension can remove and restore the presence of timeline items generated by a project board event from GitHub's timeline."
+				[745] link '0'
+					[746] image ''
+				[747] link '1'
+					[748] image ''
+				[749] link '0'
+					[750] image ''
+				[751] link '0'
+					[752] image ''
+				StaticText 'Updated'
+				[755] time 'Mar 27, 2023 11:22pm UTC'
+					StaticText '2 years ago'
+			[756] listitem ''
+				[758] link 'S'
+					StaticText 'S'
+				[763] heading 'Byte Blaze / solarized-prism-theme'
+					[764] link 'Byte Blaze / solarized-prism-theme'
+						StaticText 'Byte Blaze /'
+						StaticText 'solarized-prism-theme'
+				[768] image ''
+				StaticText 'Owner'
+				[771] paragraph ''
+					StaticText 'solarized theme for prism.js'
+				[782] link '0'
+					[783] image ''
+				[784] link '0'
+					[785] image ''
+				[786] link '0'
+					[787] image ''
+				[788] link '0'
+					[789] image ''
+				StaticText 'Updated'
+				[792] time 'Apr 24, 2023 9:23pm UTC'
+					StaticText '2 years ago'
+			[793] listitem ''
+				[795] link 'T'
+					StaticText 'T'
+				[800] heading 'Byte Blaze / timeit'
+					[801] link 'Byte Blaze / timeit'
+						StaticText 'Byte Blaze /'
+						StaticText 'timeit'
+				[805] image ''
+				StaticText 'Owner'
+				[808] paragraph ''
+					StaticText 'Rails implementation of time tracking tool timeit'
+				[819] link '0'
+					[820] image ''
+				[821] link '0'
+					[822] image ''
+				[823] link '0'
+					[824] image ''
+				[825] link '0'
+					[826] image ''
+				StaticText 'Updated'
+				[829] time 'Mar 27, 2023 11:22pm UTC'
+					StaticText '2 years ago'
+			[830] listitem ''
+				[832] link 'W'
+					StaticText 'W'
+				[837] heading 'Byte Blaze / web_agent_nodejs'
+					[838] link 'Byte Blaze / web_agent_nodejs'
+						StaticText 'Byte Blaze /'
+						StaticText 'web_agent_nodejs'
+				[842] image ''
+				StaticText 'Owner'
+				[854] link '0'
+					[855] image ''
+				[856] link '0'
+					[857] image ''
+				[858] link '0'
+					[859] image ''
+				[860] link '0'
+					[861] image ''
+				StaticText 'Updated'
+				[864] time 'Feb 19, 2026 9:55am UTC'
+					StaticText '1 month ago'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# Progress Summary
+No progress made yet.
