@@ -1,0 +1,547 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Add this product to my wishlist
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: My Wish List
+  URL: http://localhost:7770/wishlist/index/index/wishlist_id/5/
+
+# Current page Accessibility Tree
+
+RootWebArea 'My Wish List', focused
+	[217] banner ''
+		[220] list ''
+			[221] listitem ''
+				[222] link 'My Account'
+			[223] listitem ''
+				[224] link 'My Wish List 1 item'
+					StaticText '1 item'
+			[226] listitem ''
+				[227] link 'Sign Out'
+			[228] listitem ''
+			[231] listitem ''
+				StaticText 'Welcome, Emma Lopez!'
+		[233] link 'Skip to Content'
+			StaticText 'Skip to Content'
+		[238] link 'store logo'
+			[239] image 'one_stop_market_logo'
+		[241] link '\ue611 My Cart 4 4items'
+			StaticText '\ue611'
+			StaticText 'My Cart'
+			StaticText '4'
+			StaticText '4'
+			StaticText 'items'
+		[404] Section ''
+			[406] LabelText ''
+				StaticText '\ue615'
+				StaticText 'Search'
+			[409] combobox '\ue615 Search', autocomplete='both', hasPopup='listbox', expanded=False
+			[412] link 'Advanced Search'
+			[414] button 'Search', disabled=True
+				StaticText '\ue615'
+				StaticText 'Search'
+	[417] tablist '', multiselectable=False, orientation='horizontal'
+		[420] tabpanel ''
+			[421] navigation ''
+				[422] menu '', orientation='vertical'
+					[424] menuitem '\ue622 Beauty & Personal Care', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Beauty & Personal Care'
+					[641] menuitem '\ue622 Sports & Outdoors', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Sports & Outdoors'
+					[679] menuitem '\ue622 Clothing, Shoes & Jewelry', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Clothing, Shoes & Jewelry'
+					[731] menuitem '\ue622 Home & Kitchen', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Home & Kitchen'
+					[858] menuitem '\ue622 Office Products', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Office Products'
+					[890] menuitem '\ue622 Tools & Home Improvement', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Tools & Home Improvement'
+					[909] menuitem '\ue622 Health & Household', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Health & Household'
+					[933] menuitem '\ue622 Patio, Lawn & Garden', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Patio, Lawn & Garden'
+					[952] menuitem '\ue622 Electronics', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Electronics'
+					[1161] menuitem '\ue622 Cell Phones & Accessories', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Cell Phones & Accessories'
+					[1212] menuitem '\ue622 Video Games', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Video Games'
+					[1261] menuitem '\ue622 Grocery & Gourmet Food', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Grocery & Gourmet Food'
+	[1490] main ''
+		[1495] alert '', live='assertive', atomic, relevant='additions text'
+			StaticText '\ue610'
+			StaticText 'Skinit Decal Gaming Skin Compatible with Xbox One S Console and Controller Bundle - Officially Licensed NFL Baltimore Ravens Design has been added to your Wish List. Click'
+			[1498] link 'here'
+			StaticText 'to continue shopping.'
+		[1502] heading 'My Wish List'
+			StaticText 'My Wish List'
+		[1509] paragraph ''
+			StaticText '1 Item'
+		[1512] strong ''
+			StaticText 'Show'
+		[1513] combobox '' value='10', hasPopup='menu', expanded=False
+			[1514] option '10', selected=True
+			[1515] option '20', selected=False
+			[1516] option '50', selected=False
+		StaticText 'per page'
+		[1518] Section ''
+			[1521] list ''
+				[1522] listitem ''
+					[1524] link 'Image'
+						[1527] image 'Image'
+					[1530] strong ''
+						[1531] link 'Skinit Decal Gaming Skin Compatible with Xbox One S Console and Controller Bundle - Officially Licensed NFL Baltimore Ravens Design'
+					[1533] paragraph ''
+						StaticText '$39.99'
+					[1539] LabelText ''
+						StaticText 'Comment'
+					[1542] textbox 'Comment'
+					[1544] group ''
+						[1546] LabelText ''
+							StaticText 'Qty'
+						[1549] spinbutton 'Qty' value=5, valuemin=0, valuemax=0, valuetext=''
+							StaticText '5'
+						[1552] button 'Add to Cart'
+							StaticText 'Add to Cart'
+					[1555] link 'Edit'
+						StaticText 'Edit'
+					[1557] link 'Remove item'
+						StaticText 'Remove item'
+			[1561] button 'Update Wish List'
+				StaticText 'Update Wish List'
+			[1563] button 'Share Wish List'
+				StaticText 'Share Wish List'
+			[1565] button 'Add All to Cart'
+				StaticText 'Add All to Cart'
+		[1574] paragraph ''
+			StaticText '1 Item'
+		[1577] strong ''
+			StaticText 'Show'
+		[1578] combobox '' value='10', hasPopup='menu', expanded=False
+			[1579] option '10', selected=True
+			[1580] option '20', selected=False
+			[1581] option '50', selected=False
+		StaticText 'per page'
+		[1586] strong ''
+			StaticText 'My Account'
+		[1588] list ''
+			[1589] listitem ''
+				[1590] link 'My Account'
+			[1591] listitem ''
+				[1592] link 'My Orders'
+			[1593] listitem ''
+				[1594] link 'My Downloadable Products'
+			[1595] listitem ''
+				[1596] strong ''
+					StaticText 'My Wish List'
+			[1597] listitem ''
+			[1599] listitem ''
+				[1600] link 'Address Book'
+			[1601] listitem ''
+				[1602] link 'Account Information'
+			[1603] listitem ''
+				[1604] link 'Stored Payment Methods'
+			[1605] listitem ''
+			[1607] listitem ''
+				[1608] link 'My Product Reviews'
+			[1609] listitem ''
+				[1610] link 'Newsletter Subscriptions'
+		[1614] heading 'Compare Products'
+		StaticText 'You have no items to compare.'
+		[1619] heading 'Recently Ordered'
+		[1621] Section ''
+			[1623] list ''
+				[1624] listitem ''
+					[1626] LabelText ''
+						StaticText 'Add to Cart'
+					[1629] checkbox 'Add to Cart', checked='false'
+					[1630] strong ''
+						[1631] link 'Uttermost Volterra Crackled Taupe-Gray Ceramic Table Lamp'
+							StaticText 'Uttermost Volterra Crackled Taupe-Gray Ceramic Table Lamp'
+				[1633] listitem ''
+					[1635] LabelText ''
+						StaticText 'Add to Cart'
+					[1638] checkbox 'Add to Cart', checked='false'
+					[1639] strong ''
+						[1640] link 'Plus Size Lingerie for Women Sexy for Sex Naughty Eyelash Lace Bodysuit Naughty Mesh One Piece Teddy Bodysuit Outfits'
+							StaticText 'Plus Size Lingerie for Women Sexy for Sex Naughty Eyelash Lace Bodysuit Naughty Mesh One Piece Teddy Bodysuit Outfits'
+				[1642] listitem ''
+					[1644] LabelText ''
+						StaticText 'Add to Cart'
+					[1647] checkbox 'Add to Cart', checked='false'
+					[1648] strong ''
+						[1649] link 'NOZE Rustic Coat Rack Wall Mounted Shelf with 4 Hooks, Hanging Entryway Organizer for Mug Coffee Cup, Holding Solid Wooden Shelf with 2 Baskets for Kitchen Living Room, Bathroom and Bedroom'
+							StaticText 'NOZE Rustic Coat Rack Wall Mounted Shelf with 4 Hooks, Hanging Entryway Organizer for Mug Coffee Cup, Holding Solid Wooden Shelf with 2 Baskets for Kitchen Living Room, Bathroom and Bedroom'
+			[1654] button 'Add to Cart'
+				StaticText 'Add to Cart'
+			[1657] link 'View All'
+				StaticText 'View All'
+		[1662] heading 'My Wish List'
+		StaticText '1 item'
+		[1666] list ''
+			[1667] listitem ''
+				[1669] link 'Image'
+					[1672] image 'Image'
+				[1674] strong ''
+					[1675] link 'Skinit Decal Gaming Skin Compatible with Xbox One S Console and Controller Bundle - Officially Licensed NFL Baltimore Ravens Design'
+						StaticText 'Skinit Decal Gaming Skin Compatible with Xbox One S Console and Controller Bundle - Officially Licensed NFL Baltimore Ravens Design'
+				[1679] paragraph ''
+					StaticText '$39.99'
+				[1685] button 'Add to Cart'
+					StaticText 'Add to Cart'
+				[1688] link '\ue616 Remove This Item'
+					StaticText '\ue616'
+					StaticText 'Remove This Item'
+		[1692] link 'Go to Wish List'
+			StaticText 'Go to Wish List'
+	[1694] contentinfo ''
+		[1700] Section ''
+			StaticText '\ue61d'
+			[1703] LabelText ''
+				StaticText 'Sign Up for Our Newsletter:'
+				[1705] textbox 'Sign Up for Our Newsletter:'
+			[1707] button 'Subscribe'
+				StaticText 'Subscribe'
+		[1709] list ''
+			[1710] listitem ''
+				[1711] link 'Privacy and Cookie Policy'
+			[1712] listitem ''
+				[1713] link 'Search Terms'
+			[1714] listitem ''
+				[1715] link 'Advanced Search'
+			[1716] listitem ''
+				[1717] link 'Contact Us'
+		StaticText 'Copyright © 2013-present Magento, Inc. All rights reserved.'
+		StaticText 'Help Us Keep Magento Healthy'
+		StaticText ''
+		[1722] link 'Report All Bugs'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```click('1581')```
+</action>
+
+# Error message from last action
+
+TimeoutError: Locator.click: Timeout 500ms exceeded.
+Call log:
+waiting for get_by_test_id("1581")
+  -   locator resolved to <a href="#" bid="1581" class="action towishlist" br…>…</a>
+  - attempting click action
+  -   waiting for element to be visible, enabled and stable
+  -   element is visible, enabled and stable
+  -   scrolling into view if needed
+  -   done scrolling
+  -   performing click action
+  -   click action done
+  -   waiting for scheduled navigations to finish
+
+
+# Progress Summary
+✅ Current Progress: The product "Skinit Decal Gaming Skin Compatible with Xbox One S Console and Controller Bundle - Officially Licensed NFL Baltimore Ravens Design" has been successfully added to the wishlist. The page now shows "My Wish List" with 1 item, and a confirmation alert is displayed: "has been added to your Wish List."
+
+🔍 Current State Analysis: The current page is the "My Wish List" page, and the goal has been fully achieved. The alert confirms the product was added, and the wishlist shows "1 Item" with the product listed. The task is complete.
+
+✅ Task completed.

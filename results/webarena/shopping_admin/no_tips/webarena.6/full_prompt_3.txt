@@ -1,0 +1,466 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+What are the top-5 best-selling product in 2023
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Bestsellers Report / Products / Reports / Magento Admin
+  URL: http://localhost:7780/admin/reports/report_sales/bestsellers/
+
+# Current page Accessibility Tree
+
+RootWebArea 'Bestsellers Report / Products / Reports / Magento Admin', focused
+	[149] link 'Magento Admin Panel'
+		[150] image 'Magento Admin Panel'
+	[151] navigation ''
+		[152] menubar '', orientation='horizontal'
+			[154] link '\ue604 DASHBOARD'
+				StaticText '\ue604'
+				StaticText 'DASHBOARD'
+			[157] link '\ue60b SALES'
+				StaticText '\ue60b'
+				StaticText 'SALES'
+			[190] link '\ue608 CATALOG'
+				StaticText '\ue608'
+				StaticText 'CATALOG'
+			[208] link '\ue603 CUSTOMERS'
+				StaticText '\ue603'
+				StaticText 'CUSTOMERS'
+			[227] link '\ue609 MARKETING'
+				StaticText '\ue609'
+				StaticText 'MARKETING'
+			[294] link '\ue602 CONTENT'
+				StaticText '\ue602'
+				StaticText 'CONTENT'
+			[340] link '\ue60a REPORTS'
+				StaticText '\ue60a'
+				StaticText 'REPORTS'
+			[465] link '\ue60d STORES'
+				StaticText '\ue60d'
+				StaticText 'STORES'
+			[541] link '\ue610 SYSTEM'
+				StaticText '\ue610'
+				StaticText 'SYSTEM'
+			[624] link '\ue612 FIND PARTNERS & EXTENSIONS'
+				StaticText '\ue612'
+				StaticText 'FIND PARTNERS & EXTENSIONS'
+	[646] button 'System Messages: 1'
+		StaticText 'System Messages'
+		StaticText ':'
+		StaticText '1'
+	StaticText '\ue623'
+	StaticText 'Failed to synchronize data to the Magento Business Intelligence service.'
+	[652] link 'Retry Synchronization'
+	[662] banner ''
+		[665] heading 'Bestsellers Report'
+		[668] link '\ue600 admin'
+			StaticText '\ue600'
+			StaticText 'admin'
+		[680] link '\ue607'
+			StaticText '\ue607'
+		[682] Section ''
+			[684] LabelText ''
+				StaticText '\ue60c'
+			[688] textbox '\ue60c'
+	[694] main ''
+		StaticText 'Scope:'
+		[705] button 'All Websites', hasPopup='menu'
+		[716] link '\ue633 What is this?'
+			StaticText '\ue633'
+			StaticText 'What is this?'
+		[722] button 'Show Report'
+			StaticText 'Show Report'
+		StaticText '\ue61a'
+		StaticText 'For accurate reporting, be sure to refresh lifetime statistics whenever you change the time zone.'
+		StaticText '\ue61a'
+		StaticText "Last updated: Mar 25, 2026, 12:00:01 AM. To refresh last day's"
+		[730] link 'statistics'
+		StaticText ', click'
+		[731] link 'here'
+		StaticText '.'
+		[737] Section ''
+			[739] group 'Filter'
+				[740] Legend ''
+					StaticText 'Filter'
+				[746] LabelText ''
+					StaticText 'Period'
+				[749] combobox 'Period' value='Year', hasPopup='menu', expanded=False
+					[750] option 'Day', selected=False
+					[751] option 'Month', selected=False
+					[752] option 'Year', selected=True
+				[754] LabelText ''
+					StaticText 'From'
+					StaticText '*'
+				[757] textbox 'From *', required
+				[758] button 'undefined \ue627'
+					StaticText 'undefined'
+					StaticText '\ue627'
+				[761] LabelText ''
+					StaticText 'To'
+					StaticText '*'
+				[764] textbox 'To *', required
+				[765] button 'undefined \ue627'
+					StaticText 'undefined'
+					StaticText '\ue627'
+				[768] LabelText ''
+					StaticText 'Empty Rows'
+				[771] combobox 'Empty Rows' value='No', hasPopup='menu', expanded=False
+					[772] option 'Yes', selected=False
+					[773] option 'No', selected=True
+		[778] LabelText ''
+			StaticText 'Export to:'
+		[779] combobox 'Export to:' value='CSV', hasPopup='menu', expanded=False
+			[780] option 'CSV', selected=True
+			[781] option 'Excel XML', selected=False
+		[782] button 'Export'
+			StaticText 'Export'
+		StaticText '0'
+		StaticText 'records found'
+		[792] table ''
+			[793] rowgroup ''
+				[794] row ''
+					[795] columnheader 'Interval'
+						StaticText 'Interval'
+					[797] columnheader 'Product'
+						StaticText 'Product'
+					[799] columnheader 'Price'
+						StaticText 'Price'
+					[801] columnheader 'Order Quantity'
+						StaticText 'Order Quantity'
+			[803] rowgroup ''
+				[804] row ''
+					[805] gridcell "We couldn't find any records."
+	[808] contentinfo ''
+		[811] paragraph ''
+			[812] link '\ue606'
+				StaticText '\ue606'
+			StaticText 'Copyright © 2026 Magento Commerce Inc. All rights reserved.'
+		[814] paragraph ''
+			[815] strong ''
+				StaticText 'Magento'
+			StaticText 'ver. 2.4.6'
+		[816] link 'Privacy Policy'
+		StaticText '|'
+		[817] link 'Account Activity'
+		StaticText '|'
+		[818] link 'Report an Issue'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```click('339')```
+</action>
+
+
+
+<action>
+```click('431')```
+</action>
+
+
+
+<action>
+```select_option('749', 'Year')```
+</action>
+
+# Progress Summary
+✅ Current Progress: Navigated to the Bestsellers Report page and set the Period filter to "Year". The From and To date fields still need to be filled with 2023 values before the report can be generated.
+
+🔍 Current State Analysis: The current page is the Bestsellers Report — directly on the critical path. The filter section shows:
+- **Period** combobox (id=749): now set to "Year" ✓
+- **From** textbox (id=757): currently empty, needs "2023"
+- **To** textbox (id=764): currently empty, needs "2023"
+- **Show Report** button (id=722): enabled and ready
+
+The table still shows "0 records found" because the date range has not been submitted yet.
+
+➡️ Next-step Guidance:
+1. Click the **From** textbox (id=757) and type `2023`.
+2. Click the **To** textbox (id=764) and type `2023`, then click the **Show Report** button (id=722) to generate the 2023 bestsellers data.

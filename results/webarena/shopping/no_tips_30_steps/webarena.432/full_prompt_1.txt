@@ -1,0 +1,502 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Add the product with the lowest per unit price from my open tabs to the shopping cart
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Ciclon Energy Drink - Regular 24 cans (8.3oz)
+  URL: http://localhost:7770/ciclon-energy-drink-regular-24-cans-8-3oz.html
+
+Tab 1
+  Title: V8 +Energy, Healthy Energy Drink, Steady Energy from Black and Green Tea, Pomegranate Blueberry, 8 Ounce Can ,Pack of 24
+  URL: http://localhost:7770/v8-energy-healthy-energy-drink-steady-energy-from-black-and-green-tea-pomegranate-blueberry-8-ounce-can-pack-of-24.html
+
+# Current page Accessibility Tree
+
+RootWebArea 'Ciclon Energy Drink - Regular 24 cans (8.3oz)', focused
+	[255] banner ''
+		[258] list ''
+			[259] listitem ''
+				[260] link 'My Account'
+			[261] listitem ''
+				[262] link 'My Wish List 1 item'
+					StaticText '1 item'
+			[264] listitem ''
+				[265] link 'Sign Out'
+			[266] listitem ''
+			[269] listitem ''
+				StaticText 'Welcome, Emma Lopez!'
+		[271] link 'Skip to Content'
+			StaticText 'Skip to Content'
+		[276] link 'store logo'
+			[277] image 'one_stop_market_logo'
+		[279] link '\ue611 My Cart 4 4items'
+			StaticText '\ue611'
+			StaticText 'My Cart'
+			StaticText '4'
+			StaticText '4'
+			StaticText 'items'
+		[442] Section ''
+			[444] LabelText ''
+				StaticText '\ue615'
+				StaticText 'Search'
+			[447] combobox '\ue615 Search', autocomplete='both', hasPopup='listbox', expanded=False
+			[450] link 'Advanced Search'
+			[452] button 'Search', disabled=True
+				StaticText '\ue615'
+				StaticText 'Search'
+	[455] tablist '', multiselectable=False, orientation='horizontal'
+		[458] tabpanel ''
+			[459] navigation ''
+				[460] menu '', orientation='vertical'
+					[462] menuitem '\ue622 Beauty & Personal Care', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Beauty & Personal Care'
+					[679] menuitem '\ue622 Sports & Outdoors', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Sports & Outdoors'
+					[717] menuitem '\ue622 Clothing, Shoes & Jewelry', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Clothing, Shoes & Jewelry'
+					[769] menuitem '\ue622 Home & Kitchen', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Home & Kitchen'
+					[896] menuitem '\ue622 Office Products', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Office Products'
+					[928] menuitem '\ue622 Tools & Home Improvement', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Tools & Home Improvement'
+					[947] menuitem '\ue622 Health & Household', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Health & Household'
+					[971] menuitem '\ue622 Patio, Lawn & Garden', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Patio, Lawn & Garden'
+					[990] menuitem '\ue622 Electronics', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Electronics'
+					[1199] menuitem '\ue622 Cell Phones & Accessories', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Cell Phones & Accessories'
+					[1250] menuitem '\ue622 Video Games', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Video Games'
+					[1299] menuitem '\ue622 Grocery & Gourmet Food', hasPopup='menu'
+						StaticText '\ue622'
+						StaticText 'Grocery & Gourmet Food'
+	[1529] list ''
+		[1530] listitem ''
+			[1531] link 'Home'
+			StaticText '\ue608'
+		[1532] listitem ''
+			[1533] strong ''
+				StaticText 'Ciclon Energy Drink - Regular 24 cans (8.3oz)'
+	[1534] main ''
+		[1537] heading 'Ciclon Energy Drink - Regular 24 cans (8.3oz)'
+			StaticText 'Ciclon Energy Drink - Regular 24 cans (8.3oz)'
+		StaticText 'IN STOCK'
+		[1550] strong ''
+			StaticText 'SKU'
+		StaticText 'B0776XKVMM'
+		[1552] LayoutTable ''
+			StaticText 'Rating:'
+			StaticText '\ue605\ue605\ue605\ue605\ue605'
+			StaticText '\ue605\ue605\ue605\ue605\ue605'
+			StaticText '82'
+			StaticText '% of'
+			StaticText '100'
+			[1563] link '12\xa0 Reviews'
+				StaticText '12'
+				StaticText 'Reviews'
+			[1566] link 'Add Your Review'
+		StaticText '$36.99'
+		[1574] Section ''
+			[1580] LayoutTable ''
+				[1583] LabelText ''
+					StaticText 'Qty'
+				[1586] spinbutton 'Qty' value=1, valuemin=0, valuemax=0, valuetext=''
+					StaticText '1'
+				[1588] button 'Add to Cart'
+					StaticText 'Add to Cart'
+		[1593] link 'Add to Wish List'
+			StaticText 'Add to Wish List'
+		[1595] link 'Add to Compare'
+			StaticText 'Add to Compare'
+		[1600] link 'Skip to the end of the images gallery'
+			StaticText 'Skip to the end of the images gallery'
+		[1614] image 'Image'
+		[1632] link 'Skip to the beginning of the images gallery'
+			StaticText 'Skip to the beginning of the images gallery'
+		[1636] tablist '', multiselectable=False, orientation='horizontal'
+			[1637] tab 'Details', expanded=True, selected=False, controls='description'
+				[1638] link 'Details'
+			[1639] tabpanel 'Details'
+				[1647] heading 'Product Quick Look'
+				[1650] list ''
+					[1651] listitem ''
+						ListMarker '•'
+						StaticText 'Ciclón Energy Drink or C*Energy Drink, as known in the US market, is a functional carbonated drink with a formulation based on caffeine, B vitamin complex and taurine. An ideal energy drink for anyone who wants to feel physically and mentally alert. It increases endurance and improves concentration. Keeps you alert and fit at work, while studying or doing sports. Ciclón has 80 mg of caffeine in each 8.3oz can serving.'
+					[1653] listitem ''
+						ListMarker '•'
+						StaticText 'Ciclon International was founded in 1996.'
+					[1655] listitem ''
+						ListMarker '•'
+						StaticText 'The product is developed and manufacture in Austria, Europe, where it is produced.'
+					[1657] listitem ''
+						ListMarker '•'
+						StaticText 'Currently, Ciclón is sold in over 12 countries in the Caribbean, Central and South America, United States and Europe.'
+					[1659] listitem ''
+						ListMarker '•'
+						StaticText 'It’s a very high quality European manufactured, pasteurized energy drink with no preservatives and a smooth refreshing variety of flavors.'
+				[1662] table ''
+					[1663] rowgroup ''
+						[1664] row ''
+							[1665] rowheader 'Is Discontinued By Manufacturer \u200f'
+							[1666] gridcell '\u200e No'
+						[1667] row ''
+							[1668] rowheader 'Package Dimensions \u200f'
+							[1669] gridcell '\u200e 12.91 x 8.54 x 5.39 inches; 14.64 Pounds'
+						[1670] row ''
+							[1671] rowheader 'UPC \u200f'
+							[1672] gridcell '\u200e 830207000004'
+						[1673] row ''
+							[1674] rowheader 'Manufacturer \u200f'
+							[1675] gridcell '\u200e Ciclón Energy Drink'
+						[1676] row ''
+							[1677] rowheader 'ASIN \u200f'
+							[1678] gridcell '\u200e B0776XKVMM'
+						[1679] row ''
+							[1680] rowheader 'Country of Origin \u200f'
+							[1681] gridcell '\u200e USA'
+						[1682] row ''
+							[1683] rowheader '#607 in Energy Drinks'
+							[1684] gridcell ''
+			[1685] tab 'Reviews (12)', expanded=False, selected=False, controls='reviews'
+				[1686] link 'Reviews (12)'
+					StaticText '('
+					StaticText '12'
+					StaticText ')'
+	[1751] contentinfo ''
+		[1757] Section ''
+			StaticText '\ue61d'
+			[1760] LabelText ''
+				StaticText 'Sign Up for Our Newsletter:'
+				[1762] textbox 'Sign Up for Our Newsletter:'
+			[1764] button 'Subscribe'
+				StaticText 'Subscribe'
+		[1766] list ''
+			[1767] listitem ''
+				[1768] link 'Privacy and Cookie Policy'
+			[1769] listitem ''
+				[1770] link 'Search Terms'
+			[1771] listitem ''
+				[1772] link 'Advanced Search'
+			[1773] listitem ''
+				[1774] link 'Contact Us'
+		StaticText 'Copyright © 2013-present Magento, Inc. All rights reserved.'
+		StaticText 'Help Us Keep Magento Healthy'
+		StaticText ''
+		[1779] link 'Report All Bugs'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```tab_focus(0)```
+</action>
+
+# Progress Summary
+✅ **Current Progress:** The agent has focused on Tab 0, which shows the product "Ciclon Energy Drink - Regular 24 cans (8.3oz)" priced at **$36.99**. This is the first tab being reviewed to compare per-unit prices across open tabs.
+
+🔍 **Current State Analysis:** The current page is on the critical path — it shows one product with its price. The agent needs to check all open tabs to identify which product has the lowest per-unit price before adding it to the cart. Tab 0's product price is $36.99 for 24 cans = ~$1.54/can. The agent still needs to check the remaining open tabs to compare prices. Key elements visible:
+- Product: "Ciclon Energy Drink - Regular 24 cans (8.3oz)" at **$36.99**
+- `spinbutton 'Qty'` (value=1) and `button 'Add to Cart'` [id: 1588] are available if this turns out to be the lowest-priced product.
+
+The agent should now switch to the next tab to compare prices before making a decision.

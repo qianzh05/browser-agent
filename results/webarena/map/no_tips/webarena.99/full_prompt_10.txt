@@ -1,0 +1,608 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Where is the nearest Five Guys to 5700 Penn Ave, and what is the walking distance to it?
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: 5700 Penn Ave | OpenStreetMap
+  URL: http://localhost:3000/directions?engine=fossgis_osrm_foot&route=40.46253%2C-79.92871%3B40.48813%2C-79.88548#map=14/40.4780/-79.9069
+
+# Current page Accessibility Tree
+
+RootWebArea '5700 Penn Ave | OpenStreetMap', focused
+	[44] banner ''
+		[45] heading 'OpenStreetMap logo OpenStreetMap'
+			[46] link 'OpenStreetMap logo OpenStreetMap'
+				[49] image 'OpenStreetMap logo'
+				StaticText ''
+		[51] navigation ''
+			[95] link 'Edit'
+			[96] button ''
+			[102] link 'History'
+			[103] link 'Export'
+		[104] navigation ''
+			[105] list ''
+				[106] listitem ''
+					[107] link 'GPS Traces'
+				[108] listitem ''
+					[109] link 'User Diaries'
+				[110] listitem ''
+					[111] link 'Communities'
+				[112] listitem ''
+					[113] link 'Copyright'
+				[114] listitem ''
+					[115] link 'Help'
+				[116] listitem ''
+					[117] link 'About'
+			[134] link 'Log In'
+			[135] link 'Sign Up'
+	[151] Section ''
+		[153] button 'Close'
+		[156] image ''
+		[158] textbox 'From' value='Whole Foods Market, 5700, Penn Avenue, East Liberty, Pittsburgh, Allegheny County, 15206, United States'
+			StaticText 'Whole Foods Market, 5700, Penn Avenue, East Liberty, Pittsburgh, Allegheny County, 15206, United States'
+		[161] image ''
+		[163] textbox 'To' value='Five Guys, Freeport Road, Lincoln-Lemington-Belmar, Pittsburgh, Allegheny County, 15238, United States'
+			StaticText 'Five Guys, Freeport Road, Lincoln-Lemington-Belmar, Pittsburgh, Allegheny County, 15238, United States'
+		[166] combobox '' value='Foot (OSRM)', hasPopup='menu', expanded=False
+			[167] option 'Bicycle (OSRM)', selected=False
+			[168] option 'Car (OSRM)', selected=False
+			[169] option 'Foot (OSRM)', selected=True
+		[171] button 'Go', focused
+		[174] button 'Reverse Directions'
+	[515] heading 'Directions'
+	[517] button 'Close'
+	[518] paragraph ''
+		StaticText 'Distance: 7.4km. Time: 1:39.'
+	[519] table ''
+		[520] row ''
+			[521] gridcell ''
+			[523] gridcell '1. Start on Penn Avenue'
+				StaticText '1.'
+				StaticText 'Penn Avenue'
+			[526] gridcell '70m'
+		[527] row ''
+			[528] gridcell ''
+			[530] gridcell '2. Turn left onto North Euclid Avenue (PA 380)'
+				StaticText '2.'
+				StaticText 'North Euclid Avenue (PA 380)'
+			[533] gridcell '1.9km'
+		[534] row ''
+			[535] gridcell ''
+			[537] gridcell '3. Turn left onto Bowden Street'
+				StaticText '3.'
+				StaticText 'Bowden Street'
+			[540] gridcell '90m'
+		[541] row ''
+			[542] gridcell ''
+			[544] gridcell '4. Turn right onto North Saint Clair Street'
+				StaticText '4.'
+				StaticText 'North Saint Clair Street'
+			[547] gridcell '130m'
+		[548] row ''
+			[549] gridcell ''
+			[551] gridcell '5. Turn left onto Memorial Trail'
+				StaticText '5.'
+				StaticText 'Memorial Trail'
+			[554] gridcell '130m'
+		[555] row ''
+			[556] gridcell ''
+			[558] gridcell '6. Turn left onto unnamed road'
+				StaticText '6.'
+			[560] gridcell '90m'
+		[561] row ''
+			[562] gridcell ''
+			[564] gridcell '7. Turn left onto unnamed road'
+				StaticText '7.'
+			[566] gridcell '10m'
+		[567] row ''
+			[568] gridcell ''
+			[570] gridcell '8. Turn left onto One Wild Place'
+				StaticText '8.'
+				StaticText 'One Wild Place'
+			[573] gridcell '1000m'
+		[574] row ''
+			[575] gridcell ''
+			[577] gridcell '9. Turn right onto unnamed road'
+				StaticText '9.'
+			[579] gridcell '50m'
+		[580] row ''
+			[581] gridcell ''
+			[583] gridcell '10. At the end of the road turn right onto unnamed road'
+				StaticText '10.'
+			[585] gridcell '1300m'
+		[586] row ''
+			[587] gridcell ''
+			[589] gridcell '11. Turn left onto Freeport Road'
+				StaticText '11.'
+				StaticText 'Freeport Road'
+			[592] gridcell '400m'
+		[593] row ''
+			[594] gridcell ''
+			[596] gridcell '12. Turn left onto Western Avenue'
+				StaticText '12.'
+				StaticText 'Western Avenue'
+			[599] gridcell '40m'
+		[600] row ''
+			[601] gridcell ''
+			[603] gridcell '13. Turn right onto Alley A'
+				StaticText '13.'
+				StaticText 'Alley A'
+			[606] gridcell '190m'
+		[607] row ''
+			[608] gridcell ''
+			[610] gridcell '14. Turn right onto Center Avenue'
+				StaticText '14.'
+				StaticText 'Center Avenue'
+			[613] gridcell '10m'
+		[614] row ''
+			[615] gridcell ''
+			[617] gridcell '15. Turn left onto Commercial Avenue'
+				StaticText '15.'
+				StaticText 'Commercial Avenue'
+			[620] gridcell '170m'
+		[621] row ''
+			[622] gridcell ''
+			[624] gridcell '16. Turn left onto Eastern Avenue'
+				StaticText '16.'
+				StaticText 'Eastern Avenue'
+			[627] gridcell ''
+		[628] row ''
+			[629] gridcell ''
+			[631] gridcell '17. Turn right onto Alley A'
+				StaticText '17.'
+				StaticText 'Alley A'
+			[634] gridcell '200m'
+		[635] row ''
+			[636] gridcell ''
+			[638] gridcell '18. At the end of the road turn left onto Brilliant Avenue'
+				StaticText '18.'
+				StaticText 'Brilliant Avenue'
+			[641] gridcell '10m'
+		[642] row ''
+			[643] gridcell ''
+			[645] gridcell '19. Turn right onto Loop Street'
+				StaticText '19.'
+				StaticText 'Loop Street'
+			[648] gridcell '80m'
+		[649] row ''
+			[650] gridcell ''
+			[652] gridcell '20. Turn right onto Emerson Avenue'
+				StaticText '20.'
+				StaticText 'Emerson Avenue'
+			[655] gridcell '60m'
+		[656] row ''
+			[657] gridcell ''
+			[659] gridcell '21. Turn left onto Freeport Road'
+				StaticText '21.'
+				StaticText 'Freeport Road'
+			[662] gridcell '200m'
+		[663] row ''
+			[664] gridcell ''
+			[666] gridcell '22. Turn left onto Delafield Road'
+				StaticText '22.'
+				StaticText 'Delafield Road'
+			[669] gridcell '10m'
+		[670] row ''
+			[671] gridcell ''
+			[673] gridcell '23. Turn right onto unnamed road'
+				StaticText '23.'
+			[675] gridcell '190m'
+		[676] row ''
+			[677] gridcell ''
+			[679] gridcell '24. Turn right onto unnamed road'
+				StaticText '24.'
+			[681] gridcell '10m'
+		[682] row ''
+			[683] gridcell ''
+			[685] gridcell '25. Turn left onto Freeport Road'
+				StaticText '25.'
+				StaticText 'Freeport Road'
+			[688] gridcell '10m'
+		[689] row ''
+			[690] gridcell ''
+			[692] gridcell '26. Turn left onto unnamed road'
+				StaticText '26.'
+			[694] gridcell '70m'
+		[695] row ''
+			[696] gridcell ''
+			[698] gridcell '27. Turn right onto unnamed road'
+				StaticText '27.'
+			[700] gridcell '700m'
+		[701] row ''
+			[702] gridcell ''
+			[704] gridcell '28. At the end of the road turn left onto unnamed road'
+				StaticText '28.'
+			[706] gridcell '40m'
+		[707] row ''
+			[708] gridcell ''
+			[710] gridcell '29. Turn right onto unnamed road'
+				StaticText '29.'
+			[712] gridcell '120m'
+		[713] row ''
+			[714] gridcell ''
+			[716] gridcell '30. Turn left onto unnamed road'
+				StaticText '30.'
+			[718] gridcell '30m'
+		[719] row ''
+			[720] gridcell ''
+			[722] gridcell '31. Reach destination'
+				StaticText '31.'
+			[724] gridcell ''
+	[725] paragraph ''
+		StaticText 'Directions courtesy of'
+		[726] link 'OSRM (FOSSGIS)'
+	[728] image ''
+	[729] image ''
+	[730] image ''
+	[731] image ''
+	[732] image ''
+	[733] image ''
+	[734] image ''
+	[735] image ''
+	[736] image ''
+	[737] image ''
+	[738] image ''
+	[739] image ''
+	[740] image ''
+	[741] image ''
+	[742] image ''
+	[743] image ''
+	[744] image ''
+	[745] image ''
+	[746] image ''
+	[747] image ''
+	[748] image ''
+	[512] image ''
+	[749] image ''
+	[513] button 'Marker'
+	[750] button 'Marker'
+	[394] link 'Zoom In'
+	[396] link 'Zoom Out'
+	[399] button 'Show My Location'
+	[402] link 'Layers'
+	[405] link ''
+	[408] link 'Share'
+	[411] link ''
+	[414] link ''
+	StaticText '500 m'
+	StaticText '2000 ft'
+	StaticText '©'
+	[422] link 'OpenStreetMap contributors'
+	StaticText '♥'
+	[423] link 'Make a Donation'
+	StaticText '.'
+	[424] link 'Website and API terms'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+
+Looking at the current state, the search for "Five Guys Pittsburgh" didn't return any Five Guys restaurant results. Let me try using the directions feature on OpenStreetMap to find walking directions from 5700 Penn Ave to Five Guys.
+<action>
+```click('149')```
+</action>
+
+
+
+<action>
+```fill('158', '5700 Penn Ave, Pittsburgh')```
+</action>
+
+
+
+<action>
+```fill('163', 'Five Guys, Pittsburgh')```
+</action>
+
+
+
+<action>
+```select_option('166', 'Foot (OSRM)')```
+</action>
+
+
+
+<action>
+```click('171')```
+</action>
+
+# Progress Summary
+✅ Current Progress: Walking directions have been successfully calculated from 5700 Penn Ave (Whole Foods Market, East Liberty) to Five Guys on Freeport Road (Lincoln-Lemington-Belmar, Pittsburgh). The route details are fully displayed.
+
+🔍 Current State Analysis: The page is showing complete walking directions with the following key results:
+- **From**: Whole Foods Market, 5700 Penn Avenue, East Liberty, Pittsburgh, 15206
+- **To**: Five Guys, Freeport Road, Lincoln-Lemington-Belmar, Pittsburgh, 15238
+- **Distance**: 7.4 km
+- **Estimated Time**: 1 hour 39 minutes
+- Transport mode confirmed: **Foot (OSRM)**
+
+The goal has been fully achieved. The nearest Five Guys to 5700 Penn Ave (as identified by OpenStreetMap) is located on **Freeport Road in Lincoln-Lemington-Belmar, Pittsburgh**, and the walking distance is **7.4 km** (approximately 1 hour and 39 minutes on foot).
+
+✅ Task completed. The nearest Five Guys to 5700 Penn Ave is located on **Freeport Road, Lincoln-Lemington-Belmar, Pittsburgh, PA 15238**, and the walking distance is **7.4 km** (about 1 hour 39 minutes walking).

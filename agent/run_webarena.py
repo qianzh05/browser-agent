@@ -94,7 +94,7 @@ def run_single_task(task_id, task_name, base_result_dir, websites, args):
         use_full_action_history=args.use_full_action_history,
     )
 
-    max_steps = 40 if len(websites) > 1 else 20
+    max_steps = 60 if len(websites) > 1 else 30
     env_args = EnvArgs(
         task_name=task_name,
         task_seed=None,

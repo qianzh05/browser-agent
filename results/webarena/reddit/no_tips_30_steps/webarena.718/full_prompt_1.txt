@@ -1,0 +1,1068 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Thumbs down the top 5 post ever in technology.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: technology
+  URL: http://localhost:9999/f/technology
+
+# Current page Accessibility Tree
+
+RootWebArea 'technology', focused
+	[27] navigation ''
+		[28] link 'Jump to main content'
+		[29] link 'Jump to sidebar'
+	[30] navigation ''
+		[33] link 'Home'
+			StaticText 'Postmill'
+		[43] list ''
+			[44] listitem ''
+				[45] link 'Forums'
+			[46] listitem ''
+				[47] link 'Wiki'
+		[48] Section ''
+			[57] searchbox 'Search query'
+		[58] list ''
+			[59] listitem ''
+				[60] link 'Notifications (0)'
+					[63] image ''
+			[64] listitem ''
+				[65] link 'Submit'
+					[68] image ''
+					StaticText 'Submit'
+			[70] listitem ''
+				[71] button 'MarvelsGrantMan136', hasPopup='menu', expanded=False
+					[74] image ''
+					[75] strong ''
+						StaticText 'MarvelsGrantMan136'
+	[116] main ''
+		[117] heading '/f/technology'
+			StaticText '/f/'
+			[119] strong ''
+				StaticText 'technology'
+		[120] navigation ''
+			[121] list ''
+				[122] listitem ''
+					[123] link 'Submissions'
+				[124] listitem ''
+					[125] link 'Comments'
+			[126] list ''
+				[127] listitem ''
+					[128] button 'Sort by: Hot', hasPopup='menu', expanded=False
+						[130] image ''
+						StaticText 'Hot'
+		[146] article ''
+			[151] heading 'what is the SOTA web navigation agent repo'
+				[152] link 'what is the SOTA web navigation agent repo'
+			[153] paragraph ''
+				StaticText 'Submitted by'
+				[155] link 'MarvelsGrantMan136', expanded=False
+					[156] strong ''
+						StaticText 'MarvelsGrantMan136'
+				StaticText ''
+				[157] time 'February 19, 2026 at 4:21:08 AM EST'
+					StaticText '1 month ago'
+			[158] navigation ''
+				[159] list ''
+					[160] listitem ''
+						[161] link 'No comments'
+							[162] strong ''
+								StaticText 'No comments'
+					[164] listitem ''
+						[165] link 'Edit'
+					[166] listitem ''
+						[167] Section ''
+							[169] button 'Delete'
+			[171] Section ''
+				[173] button 'Retract upvote'
+				StaticText '1'
+				[183] button 'Downvote'
+		[188] article ''
+			[193] heading 'India cuts internet for 27 million people amid search for fugitive'
+				[194] link 'India cuts internet for 27 million people amid search for fugitive'
+			StaticText ''
+			[195] link 'washingtonpost.com'
+			[196] paragraph ''
+				StaticText 'Submitted by'
+				[198] link 'marketrent', expanded=False
+					[199] strong ''
+						StaticText 'marketrent'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11vzgbu'
+				StaticText ']'
+				StaticText ''
+				[201] time 'March 19, 2023 at 6:09:12 PM EDT'
+					StaticText '3 years ago'
+			[202] navigation ''
+				[203] list ''
+					[204] listitem ''
+						[205] link '105 comments'
+							[206] strong ''
+								StaticText '105 comments'
+			[209] Section ''
+				[211] button 'Upvote'
+				StaticText '−1'
+				[222] button 'Retract downvote'
+		[227] article ''
+			[232] heading "Activision's Boston studio workers announce unionization"
+				[233] link "Activision's Boston studio workers announce unionization"
+			StaticText ''
+			[234] link 'ca.finance.yahoo.com'
+			[235] paragraph ''
+				StaticText 'Submitted by'
+				[237] link 'No-Drawing-6975', expanded=False
+					[238] strong ''
+						StaticText 'No-Drawing-6975'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zx9yji'
+				StaticText ']'
+				StaticText ''
+				[240] time 'December 28, 2022 at 8:46:01 AM EST'
+					StaticText '3 years ago'
+			[241] navigation ''
+				[242] list ''
+					[243] listitem ''
+						[244] link '160 comments'
+							[245] strong ''
+								StaticText '160 comments'
+			[248] Section ''
+				[250] button 'Upvote'
+				StaticText '−1'
+				[261] button 'Retract downvote'
+		[266] article ''
+			[271] heading 'Social media influencers are charged with feeding followers ‘a steady diet of misinformation’ in a pump and dump stock scheme that netted $100 million'
+				[272] link 'Social media influencers are charged with feeding followers ‘a steady diet of misinformation’ in a pump and dump stock scheme that netted $100 million'
+			StaticText ''
+			[273] link 'fortune.com'
+			[274] paragraph ''
+				StaticText 'Submitted by'
+				[276] link 'Wagamaga', expanded=False
+					[277] strong ''
+						StaticText 'Wagamaga'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zowvi5'
+				StaticText ']'
+				StaticText ''
+				[279] time 'December 18, 2022 at 6:49:44 AM EST'
+					StaticText '3 years ago'
+			[280] navigation ''
+				[281] list ''
+					[282] listitem ''
+						[283] link '176 comments'
+							[284] strong ''
+								StaticText '176 comments'
+			[287] Section ''
+				[289] button 'Upvote'
+				StaticText '−1'
+				[300] button 'Retract downvote'
+		[305] article ''
+			[310] heading 'US judge orders Amazon to ‘cease and desist’ anti-union retaliation'
+				[311] link 'US judge orders Amazon to ‘cease and desist’ anti-union retaliation'
+			StaticText ''
+			[312] link 'theguardian.com'
+			[313] paragraph ''
+				StaticText 'Submitted by'
+				[315] link 'nacorom', expanded=False
+					[316] strong ''
+						StaticText 'nacorom'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z8ef1p'
+				StaticText ']'
+				StaticText ''
+				[318] time 'November 29, 2022 at 9:28:43 PM EST'
+					StaticText '3 years ago'
+			[319] navigation ''
+				[320] list ''
+					[321] listitem ''
+						[322] link '168 comments'
+							[323] strong ''
+								StaticText '168 comments'
+			[326] Section ''
+				[328] button 'Upvote'
+				StaticText '−1'
+				[339] button 'Retract downvote'
+		[344] article ''
+			[349] heading 'Brain cancer vaccine succeeds at prolonging survival in Phase 3 trial'
+				[350] link 'Brain cancer vaccine succeeds at prolonging survival in Phase 3 trial'
+			StaticText ''
+			[351] link 'biopharma-reporter.com'
+			[352] paragraph ''
+				StaticText 'Submitted by'
+				[354] link 'Sorin61', expanded=False
+					[355] strong ''
+						StaticText 'Sorin61'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z563cl'
+				StaticText ']'
+				StaticText ''
+				[357] time 'November 26, 2022 at 7:10:31 AM EST'
+					StaticText '3 years ago'
+			[358] navigation ''
+				[359] list ''
+					[360] listitem ''
+						[361] link '186 comments'
+							[362] strong ''
+								StaticText '186 comments'
+			[365] Section ''
+				[367] button 'Upvote'
+				StaticText '−1'
+				[378] button 'Retract downvote'
+		[383] article ''
+			[388] heading "11 states consider 'right to repair' for farming equipment"
+				[389] link "11 states consider 'right to repair' for farming equipment"
+			StaticText ''
+			[390] link 'apnews.com'
+			[391] paragraph ''
+				StaticText 'Submitted by'
+				[393] link 'Ranew', expanded=False
+					[394] strong ''
+						StaticText 'Ranew'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_112xpxw'
+				StaticText ']'
+				StaticText ''
+				[396] time 'February 15, 2023 at 8:14:26 AM EST'
+					StaticText '3 years ago'
+			[397] navigation ''
+				[398] list ''
+					[399] listitem ''
+						[400] link '112 comments'
+							[401] strong ''
+								StaticText '112 comments'
+			[404] Section ''
+				[406] button 'Upvote'
+				StaticText '5096'
+				[416] button 'Downvote'
+		[421] article ''
+			[426] heading 'The Internet Archive is defending its digital library in court today'
+				[427] link 'The Internet Archive is defending its digital library in court today'
+			StaticText ''
+			[428] link 'theverge.com'
+			[429] paragraph ''
+				StaticText 'Submitted by'
+				[431] link 'OutlandishnessOk2452', expanded=False
+					[432] strong ''
+						StaticText 'OutlandishnessOk2452'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11wnjms'
+				StaticText ']'
+				StaticText ''
+				[434] time 'March 20, 2023 at 12:30:18 PM EDT'
+					StaticText '3 years ago'
+			[435] navigation ''
+				[436] list ''
+					[437] listitem ''
+						[438] link '107 comments'
+							[439] strong ''
+								StaticText '107 comments'
+			[442] Section ''
+				[444] button 'Upvote'
+				StaticText '4542'
+				[454] button 'Downvote'
+		[459] article ''
+			[464] heading 'Apple sued for allegedly firing, threatening union organizers'
+				[465] link 'Apple sued for allegedly firing, threatening union organizers'
+			StaticText ''
+			[466] link 'theregister.com'
+			[467] paragraph ''
+				StaticText 'Submitted by'
+				[469] link 'Loki-L', expanded=False
+					[470] strong ''
+						StaticText 'Loki-L'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_125klbw'
+				StaticText ']'
+				StaticText ''
+				[472] time 'March 29, 2023 at 7:06:16 AM EDT'
+					StaticText '3 years ago'
+			[473] navigation ''
+				[474] list ''
+					[475] listitem ''
+						[476] link '120 comments'
+							[477] strong ''
+								StaticText '120 comments'
+			[480] Section ''
+				[482] button 'Upvote'
+				StaticText '4172'
+				[492] button 'Downvote'
+		[497] article ''
+			[502] heading 'Tesla Workers Announced a Union Drive. The Next Day They Were Fired.'
+				[503] link 'Tesla Workers Announced a Union Drive. The Next Day They Were Fired.'
+			StaticText ''
+			[504] link 'inthesetimes.com'
+			[505] paragraph ''
+				StaticText 'Submitted by'
+				[507] link 'psychothumbs', expanded=False
+					[508] strong ''
+						StaticText 'psychothumbs'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11406sq'
+				StaticText ']'
+				StaticText ''
+				[510] time 'February 16, 2023 at 3:27:33 PM EST'
+					StaticText '3 years ago'
+			[511] navigation ''
+				[512] list ''
+					[513] listitem ''
+						[514] link '206 comments'
+							[515] strong ''
+								StaticText '206 comments'
+			[518] Section ''
+				[520] button 'Upvote'
+				StaticText '3959'
+				[530] button 'Downvote'
+		[535] article ''
+			[540] heading 'Amazon Faces Black Friday Protests, Strikes in 40 Countries'
+				[541] link 'Amazon Faces Black Friday Protests, Strikes in 40 Countries'
+			StaticText ''
+			[542] link 'bloomberg.com'
+			[543] paragraph ''
+				StaticText 'Submitted by'
+				[545] link 'nacorom', expanded=False
+					[546] strong ''
+						StaticText 'nacorom'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z3qmp2'
+				StaticText ']'
+				StaticText ''
+				[548] time 'November 24, 2022 at 1:07:43 PM EST'
+					StaticText '3 years ago'
+			[549] navigation ''
+				[550] list ''
+					[551] listitem ''
+						[552] link '139 comments'
+							[553] strong ''
+								StaticText '139 comments'
+			[556] Section ''
+				[558] button 'Upvote'
+				StaticText '3720'
+				[568] button 'Downvote'
+		[573] article ''
+			[578] heading 'Comcast wanted $210,000 for Internet—so this man helped expand a co-op fiber ISP | Fed up with Comcast and AT&amp;T, Silicon Valley residents started their own network.'
+				[579] link 'Comcast wanted $210,000 for Internet—so this man helped expand a co-op fiber ISP | Fed up with Comcast and AT&amp;T, Silicon Valley residents started their own network.'
+			StaticText ''
+			[580] link 'arstechnica.com'
+			[581] paragraph ''
+				StaticText 'Submitted by'
+				[583] link 'chrisdh79', expanded=False
+					[584] strong ''
+						StaticText 'chrisdh79'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_y6cvt2'
+				StaticText ']'
+				StaticText ''
+				[586] time 'October 17, 2022 at 10:38:15 AM EDT'
+					StaticText '3 years ago'
+			[587] navigation ''
+				[588] list ''
+					[589] listitem ''
+						[590] link '101 comments'
+							[591] strong ''
+								StaticText '101 comments'
+			[594] Section ''
+				[596] button 'Upvote'
+				StaticText '3611'
+				[606] button 'Downvote'
+		[611] article ''
+			[616] heading 'TikTok is now banned on mobile devices issued by US House of Representatives'
+				[617] link 'TikTok is now banned on mobile devices issued by US House of Representatives'
+			StaticText ''
+			[618] link 'theverge.com'
+			[619] paragraph ''
+				StaticText 'Submitted by'
+				[621] link 'nacorom', expanded=False
+					[622] strong ''
+						StaticText 'nacorom'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zxtmkt'
+				StaticText ']'
+				StaticText ''
+				[624] time 'December 28, 2022 at 9:55:39 PM EST'
+					StaticText '3 years ago'
+			[625] navigation ''
+				[626] list ''
+					[627] listitem ''
+						[628] link '125 comments'
+							[629] strong ''
+								StaticText '125 comments'
+			[632] Section ''
+				[634] button 'Upvote'
+				StaticText '3448'
+				[644] button 'Downvote'
+		[649] article ''
+			[654] heading "iFixit put up a Right to Repair billboard on the New York Governor's drive to work"
+				[655] link "iFixit put up a Right to Repair billboard on the New York Governor's drive to work"
+			StaticText ''
+			[656] link 'pirg.org'
+			[657] paragraph ''
+				StaticText 'Submitted by'
+				[659] link 'kwiens', expanded=False
+					[660] strong ''
+						StaticText 'kwiens'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z23bft'
+				StaticText ']'
+				StaticText ''
+				[662] time 'November 22, 2022 at 3:00:36 PM EST'
+					StaticText '3 years ago'
+			[663] navigation ''
+				[664] list ''
+					[665] listitem ''
+						[666] link '55 comments'
+							[667] strong ''
+								StaticText '55 comments'
+			[670] Section ''
+				[672] button 'Upvote'
+				StaticText '3419'
+				[682] button 'Downvote'
+		[687] article ''
+			[692] heading 'Signal CEO: We “1,000% won’t participate” in UK law to weaken encryption'
+				[693] link 'Signal CEO: We “1,000% won’t participate” in UK law to weaken encryption'
+			StaticText ''
+			[694] link 'arstechnica.com'
+			[695] paragraph ''
+				StaticText 'Submitted by'
+				[697] link 'ActivePersona', expanded=False
+					[698] strong ''
+						StaticText 'ActivePersona'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11b6wx9'
+				StaticText ']'
+				StaticText ''
+				[700] time 'February 24, 2023 at 7:29:09 PM EST'
+					StaticText '3 years ago'
+			[701] navigation ''
+				[702] list ''
+					[703] listitem ''
+						[704] link '202 comments'
+							[705] strong ''
+								StaticText '202 comments'
+			[708] Section ''
+				[710] button 'Upvote'
+				StaticText '3365'
+				[720] button 'Downvote'
+		[725] article ''
+			[730] heading 'Google has to pay $9.4 million because it paid people to say they liked the Pixel 4'
+				[731] link 'Google has to pay $9.4 million because it paid people to say they liked the Pixel 4'
+			StaticText ''
+			[732] link 'xda-developers.com'
+			[733] paragraph ''
+				StaticText 'Submitted by'
+				[735] link 'RunOrDieTrying', expanded=False
+					[736] strong ''
+						StaticText 'RunOrDieTrying'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z83h53'
+				StaticText ']'
+				StaticText ''
+				[738] time 'November 29, 2022 at 2:28:39 PM EST'
+					StaticText '3 years ago'
+			[739] navigation ''
+				[740] list ''
+					[741] listitem ''
+						[742] link '196 comments'
+							[743] strong ''
+								StaticText '196 comments'
+			[746] Section ''
+				[748] button 'Upvote'
+				StaticText '3295'
+				[758] button 'Downvote'
+		[763] article ''
+			[768] heading '‘This is greenwashing’: Shell accused of overstating renewable energy spending'
+				[769] link '‘This is greenwashing’: Shell accused of overstating renewable energy spending'
+			StaticText ''
+			[770] link 'theguardian.com'
+			[771] paragraph ''
+				StaticText 'Submitted by'
+				[773] link 'pipsdontsqueak', expanded=False
+					[774] strong ''
+						StaticText 'pipsdontsqueak'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_10qyf9n'
+				StaticText ']'
+				StaticText ''
+				[776] time 'February 1, 2023 at 11:08:05 AM EST'
+					StaticText '3 years ago'
+			[777] navigation ''
+				[778] list ''
+					[779] listitem ''
+						[780] link '68 comments'
+							[781] strong ''
+								StaticText '68 comments'
+			[784] Section ''
+				[786] button 'Upvote'
+				StaticText '3276'
+				[796] button 'Downvote'
+		[801] article ''
+			[806] heading 'U.S. renewable electricity surpassed coal in 2022'
+				[807] link 'U.S. renewable electricity surpassed coal in 2022'
+			StaticText ''
+			[808] link 'techxplore.com'
+			[809] paragraph ''
+				StaticText 'Submitted by'
+				[811] link 'altmorty', expanded=False
+					[812] strong ''
+						StaticText 'altmorty'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_124zxmk'
+				StaticText ']'
+				StaticText ''
+				[814] time 'March 28, 2023 at 3:45:35 PM EDT'
+					StaticText '3 years ago'
+			[815] navigation ''
+				[816] list ''
+					[817] listitem ''
+						[818] link '142 comments'
+							[819] strong ''
+								StaticText '142 comments'
+			[822] Section ''
+				[824] button 'Upvote'
+				StaticText '3212'
+				[834] button 'Downvote'
+		[839] article ''
+			[844] heading "FCC orders ISPs to show broadband 'nutrition labels' with all fees and limits"
+				[845] link "FCC orders ISPs to show broadband 'nutrition labels' with all fees and limits"
+			StaticText ''
+			[846] link 'techcrunch.com'
+			[847] paragraph ''
+				StaticText 'Submitted by'
+				[849] link 'Sorin61', expanded=False
+					[850] strong ''
+						StaticText 'Sorin61'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yybrwu'
+				StaticText ']'
+				StaticText ''
+				[852] time 'November 18, 2022 at 12:09:49 AM EST'
+					StaticText '3 years ago'
+			[853] navigation ''
+				[854] list ''
+					[855] listitem ''
+						[856] link '129 comments'
+							[857] strong ''
+								StaticText '129 comments'
+			[860] Section ''
+				[862] button 'Upvote'
+				StaticText '3205'
+				[872] button 'Downvote'
+		[877] article ''
+			[882] heading 'California zoo clones critically endangered horse using 42-year-old DNA'
+				[883] link 'California zoo clones critically endangered horse using 42-year-old DNA'
+			StaticText ''
+			[884] link 'abc.net.au'
+			[885] paragraph ''
+				StaticText 'Submitted by'
+				[887] link 'speckz', expanded=False
+					[888] strong ''
+						StaticText 'speckz'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_10njxdi'
+				StaticText ']'
+				StaticText ''
+				[890] time 'January 28, 2023 at 12:05:54 PM EST'
+					StaticText '3 years ago'
+			[891] navigation ''
+				[892] list ''
+					[893] listitem ''
+						[894] link '99 comments'
+							[895] strong ''
+								StaticText '99 comments'
+			[898] Section ''
+				[900] button 'Upvote'
+				StaticText '3178'
+				[910] button 'Downvote'
+		[915] article ''
+			[920] heading 'NYPD is refusing to comply with NYC’s new surveillance tech laws'
+				[921] link 'NYPD is refusing to comply with NYC’s new surveillance tech laws'
+			StaticText ''
+			[922] link 'dailydot.com'
+			[923] paragraph ''
+				StaticText 'Submitted by'
+				[925] link 'homothebrave', expanded=False
+					[926] strong ''
+						StaticText 'homothebrave'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_127qnc5'
+				StaticText ']'
+				StaticText ''
+				[928] time 'March 31, 2023 at 12:21:45 PM EDT'
+					StaticText '3 years ago'
+			[929] navigation ''
+				[930] list ''
+					[931] listitem ''
+						[932] link '69 comments'
+							[933] strong ''
+								StaticText '69 comments'
+			[936] Section ''
+				[938] button 'Upvote'
+				StaticText '3056'
+				[948] button 'Downvote'
+		[953] article ''
+			[958] heading 'Facebook Parent Meta Fined $276 Million in Europe for Data-Scraping Leak'
+				[959] link 'Facebook Parent Meta Fined $276 Million in Europe for Data-Scraping Leak'
+			StaticText ''
+			[960] link 'wsj.com'
+			[961] paragraph ''
+				StaticText 'Submitted by'
+				[963] link 'bubblehack3r', expanded=False
+					[964] strong ''
+						StaticText 'bubblehack3r'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_z6wlur'
+				StaticText ']'
+				StaticText ''
+				[966] time 'November 28, 2022 at 8:29:04 AM EST'
+					StaticText '3 years ago'
+			[967] navigation ''
+				[968] list ''
+					[969] listitem ''
+						[970] link '80 comments'
+							[971] strong ''
+								StaticText '80 comments'
+			[974] Section ''
+				[976] button 'Upvote'
+				StaticText '2947'
+				[986] button 'Downvote'
+		[991] article ''
+			[996] heading 'Experts warn smart toys for children could be collecting user data that might be sold'
+				[997] link 'Experts warn smart toys for children could be collecting user data that might be sold'
+			StaticText ''
+			[998] link 'cbsnews.com'
+			[999] paragraph ''
+				StaticText 'Submitted by'
+				[1001] link 'AmethystOrator', expanded=False
+					[1002] strong ''
+						StaticText 'AmethystOrator'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_zyb401'
+				StaticText ']'
+				StaticText ''
+				[1004] time 'December 29, 2022 at 12:35:55 PM EST'
+					StaticText '3 years ago'
+			[1005] navigation ''
+				[1006] list ''
+					[1007] listitem ''
+						[1008] link '187 comments'
+							[1009] strong ''
+								StaticText '187 comments'
+			[1012] Section ''
+				[1014] button 'Upvote'
+				StaticText '2842'
+				[1024] button 'Downvote'
+		[1029] article ''
+			[1034] heading "Britain breaks 'green grid' record with latest 100 per cent clean power milestone"
+				[1035] link "Britain breaks 'green grid' record with latest 100 per cent clean power milestone"
+			StaticText ''
+			[1036] link 'businessgreen.com'
+			[1037] paragraph ''
+				StaticText 'Submitted by'
+				[1039] link 'Wagamaga', expanded=False
+					[1040] strong ''
+						StaticText 'Wagamaga'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11e576o'
+				StaticText ']'
+				StaticText ''
+				[1042] time 'February 28, 2023 at 7:46:36 AM EST'
+					StaticText '3 years ago'
+			[1043] navigation ''
+				[1044] list ''
+					[1045] listitem ''
+						[1046] link '83 comments'
+							[1047] strong ''
+								StaticText '83 comments'
+			[1050] Section ''
+				[1052] button 'Upvote'
+				StaticText '2728'
+				[1062] button 'Downvote'
+		[1067] article ''
+			[1072] heading 'Fires from exploding e-bike batteries multiply in NYC — sometimes fatally'
+				[1073] link 'Fires from exploding e-bike batteries multiply in NYC — sometimes fatally'
+			StaticText ''
+			[1074] link 'npr.org'
+			[1075] paragraph ''
+				StaticText 'Submitted by'
+				[1077] link 'zsreport', expanded=False
+					[1078] strong ''
+						StaticText 'zsreport'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_yhl24k'
+				StaticText ']'
+				StaticText ''
+				[1080] time 'October 30, 2022 at 1:54:44 PM EDT'
+					StaticText '3 years ago'
+			[1081] navigation ''
+				[1082] list ''
+					[1083] listitem ''
+						[1084] link '194 comments'
+							[1085] strong ''
+								StaticText '194 comments'
+			[1088] Section ''
+				[1090] button 'Upvote'
+				StaticText '2717'
+				[1100] button 'Downvote'
+		[1105] navigation ''
+			[1106] list ''
+				[1108] listitem ''
+					[1109] link 'More'
+	[1111] complementary ''
+		[1112] Section ''
+			[1113] heading 'technology'
+				[1114] link 'technology'
+			[1115] Section ''
+				[1118] button 'Subscribe No subscribers'
+					StaticText 'Subscribe'
+					StaticText '0'
+			[1125] paragraph ''
+				StaticText 't5_2qh16'
+			[1126] separator '', orientation='horizontal'
+			[1127] list ''
+				[1128] listitem ''
+					StaticText 'Created'
+					[1129] time 'September 30, 2022 at 9:22:49 PM EDT'
+						StaticText '4 years ago'
+				[1130] listitem ''
+					[1131] link 'Subscribe via RSS'
+						[1133] image ''
+						StaticText 'Subscribe via RSS'
+		[1135] group ''
+			[1136] DisclosureTriangle 'Hide this forum', expanded=False
+		[1142] Section ''
+			[1143] heading 'Toolbox'
+			[1144] list ''
+				[1145] listitem ''
+					[1146] link 'Bans'
+				[1147] listitem ''
+					[1148] link 'Moderation log'
+	[1149] contentinfo ''
+		[1150] paragraph ''
+			StaticText 'Running'
+			[1152] link 'Postmill'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```goto('http://localhost:9999/f/technology')```
+</action>
+
+# Progress Summary
+✅ Current Progress: Navigated to the /f/technology forum page. No thumbs down (downvotes) have been applied yet.
+
+🔍 Current State Analysis: The current page is on the /f/technology forum, but it is sorted by "Hot" (default). To find the **top 5 posts ever**, the sort order needs to be changed to "Top" with an "All Time" filter. The page currently shows posts sorted by Hot, which is not the correct view for "top 5 posts ever."
+
+Key interactive element:
+- **Sort button**: `[128] button 'Sort by: Hot'` (hasPopup='menu', expanded=False) — needs to be clicked to change sort order to "Top/All Time"
+
+➡️ Next-step Guidance: Click the sort button `[128] button 'Sort by: Hot'` to open the sort menu, then select the "Top" option to sort by top posts of all time.

@@ -1,0 +1,1076 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Tell me the count of comments that have received more downvotes than upvotes for the user who made the latest post on the space forum.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: space
+  URL: http://localhost:9999/f/space/new
+
+# Current page Accessibility Tree
+
+RootWebArea 'space', focused
+	[27] navigation ''
+		[28] link 'Jump to main content'
+		[29] link 'Jump to sidebar'
+	[30] navigation ''
+		[33] link 'Home'
+			StaticText 'Postmill'
+		[43] list ''
+			[44] listitem ''
+				[45] link 'Forums'
+			[46] listitem ''
+				[47] link 'Wiki'
+		[48] Section ''
+			[57] searchbox 'Search query'
+		[58] list ''
+			[59] listitem ''
+				[60] link 'Notifications (0)'
+					[63] image ''
+			[64] listitem ''
+				[65] link 'Submit'
+					[68] image ''
+					StaticText 'Submit'
+			[70] listitem ''
+				[71] button 'MarvelsGrantMan136', hasPopup='menu', expanded=False
+					[74] image ''
+					[75] strong ''
+						StaticText 'MarvelsGrantMan136'
+	[116] main ''
+		[117] heading '/f/space'
+			StaticText '/f/'
+			[119] strong ''
+				StaticText 'space'
+		[120] navigation ''
+			[121] list ''
+				[122] listitem ''
+					[123] link 'Submissions'
+				[124] listitem ''
+					[125] link 'Comments'
+			[126] list ''
+				[127] listitem ''
+					[128] button 'Sort by: New', hasPopup='menu', expanded=False
+						[130] image ''
+						StaticText 'New'
+		[146] article ''
+			[151] heading 'Scientists erupt at NASA gutting funding for crucial Venus mission'
+				[152] link 'Scientists erupt at NASA gutting funding for crucial Venus mission'
+			StaticText ''
+			[153] link 'theverge.com'
+			[154] paragraph ''
+				StaticText 'Submitted by'
+				[156] link 'Dhghomon', expanded=False
+					[157] strong ''
+						StaticText 'Dhghomon'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_127nta6'
+				StaticText ']'
+				StaticText ''
+				[159] time 'March 31, 2023 at 10:48:10 AM EDT'
+					StaticText '3 years ago'
+			[160] navigation ''
+				[161] list ''
+					[162] listitem ''
+						[163] link 'No comments'
+							[164] strong ''
+								StaticText 'No comments'
+			[167] Section ''
+				[169] button 'Upvote'
+				StaticText '1'
+				[179] button 'Downvote'
+		[184] article ''
+			[189] heading 'Virgin Orbit fails to secure funding, will cease operations and lay off nearly entire workforce'
+				[190] link 'Virgin Orbit fails to secure funding, will cease operations and lay off nearly entire workforce'
+			StaticText ''
+			[191] link 'cnbc.com'
+			[192] paragraph ''
+				StaticText 'Submitted by'
+				[194] link 'MaxGhost', expanded=False
+					[195] strong ''
+						StaticText 'MaxGhost'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_12703yl'
+				StaticText ']'
+				StaticText ''
+				[197] time 'March 30, 2023 at 5:38:55 PM EDT'
+					StaticText '3 years ago'
+			[198] navigation ''
+				[199] list ''
+					[200] listitem ''
+						[201] link 'No comments'
+							[202] strong ''
+								StaticText 'No comments'
+			[205] Section ''
+				[207] button 'Upvote'
+				StaticText '4'
+				[217] button 'Downvote'
+		[222] article ''
+			[227] heading 'NASA to name Artemis 2 crew next week, the first moon astronauts in 50 years.'
+				[228] link 'NASA to name Artemis 2 crew next week, the first moon astronauts in 50 years.'
+			StaticText ''
+			[229] link 'space.com'
+			[230] paragraph ''
+				StaticText 'Submitted by'
+				[232] link 'Rifletree', expanded=False
+					[233] strong ''
+						StaticText 'Rifletree'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_125n05c'
+				StaticText ']'
+				StaticText ''
+				[235] time 'March 29, 2023 at 8:42:31 AM EDT'
+					StaticText '3 years ago'
+			[236] navigation ''
+				[237] list ''
+					[238] listitem ''
+						[239] link 'No comments'
+							[240] strong ''
+								StaticText 'No comments'
+			[243] Section ''
+				[245] button 'Upvote'
+				StaticText '2'
+				[255] button 'Downvote'
+		[260] article ''
+			[265] heading 'Bent Light in Deep Space Reveals One of the Biggest Black Holes Ever Detected'
+				[266] link 'Bent Light in Deep Space Reveals One of the Biggest Black Holes Ever Detected'
+			StaticText ''
+			[267] link 'gizmodo.com'
+			[268] paragraph ''
+				StaticText 'Submitted by'
+				[270] link 'darthatheos', expanded=False
+					[271] strong ''
+						StaticText 'darthatheos'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_12593fz'
+				StaticText ']'
+				StaticText ''
+				[273] time 'March 28, 2023 at 9:29:17 PM EDT'
+					StaticText '3 years ago'
+			[274] navigation ''
+				[275] list ''
+					[276] listitem ''
+						[277] link 'No comments'
+							[278] strong ''
+								StaticText 'No comments'
+			[281] Section ''
+				[283] button 'Upvote'
+				StaticText '0'
+				[293] button 'Downvote'
+		[298] article ''
+			[303] heading 'SETI\'s new machine learning algorithm works like Google\'s "reverse image search" on a galactic scale, and has already uncovered eight currently unexplained signals. Researchers train the algorithm on simulated alien signals, then look back through old data to see if we missed anything in the noise.'
+				[304] link 'SETI\'s new machine learning algorithm works like Google\'s "reverse image search" on a galactic scale, and has already uncovered eight currently unexplained signals. Researchers train the algorithm on simulated alien signals, then look back through old data to see if we missed anything in the noise.'
+			StaticText ''
+			[305] link 'supercluster.com'
+			[306] paragraph ''
+				StaticText 'Submitted by'
+				[308] link 'EricFromOuterSpace', expanded=False
+					[309] strong ''
+						StaticText 'EricFromOuterSpace'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_123oz7i'
+				StaticText ']'
+				StaticText ''
+				[311] time 'March 27, 2023 at 10:45:08 AM EDT'
+					StaticText '3 years ago'
+			[312] navigation ''
+				[313] list ''
+					[314] listitem ''
+						[315] link 'No comments'
+							[316] strong ''
+								StaticText 'No comments'
+			[319] Section ''
+				[321] button 'Upvote'
+				StaticText '5'
+				[331] button 'Downvote'
+		[336] article ''
+			[341] heading 'Realistic size and distance between The Andromeda Galaxy and Milky Way'
+				[342] link 'Realistic size and distance between The Andromeda Galaxy and Milky Way'
+			[344] paragraph ''
+				StaticText 'Submitted by'
+				[346] link 'Vasek_CZ_', expanded=False
+					[347] strong ''
+						StaticText 'Vasek_CZ_'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_122oibd'
+				StaticText ']'
+				StaticText ''
+				[349] time 'March 26, 2023 at 10:47:12 AM EDT'
+					StaticText '3 years ago'
+			[350] navigation ''
+				[351] list ''
+					[352] listitem ''
+						[353] link 'No comments'
+							[354] strong ''
+								StaticText 'No comments'
+			[357] Section ''
+				[359] button 'Upvote'
+				StaticText '2'
+				[369] button 'Downvote'
+		[374] article ''
+			[379] heading 'I teamed up with a fellow redditor to try and capture the most ridiculously detailed image of the entire sun we could. The result was a whopping 140 megapixels, and features a solar "tornado" over 14 Earths tall. This is a crop from the full image, make sure you zoom in!'
+				[380] link 'I teamed up with a fellow redditor to try and capture the most ridiculously detailed image of the entire sun we could. The result was a whopping 140 megapixels, and features a solar "tornado" over 14 Earths tall. This is a crop from the full image, make sure you zoom in!'
+			[382] paragraph ''
+				StaticText 'Submitted by'
+				[384] link 'ajamesmccarthy', expanded=False
+					[385] strong ''
+						StaticText 'ajamesmccarthy'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_122475u'
+				StaticText ']'
+				StaticText ''
+				[387] time 'March 25, 2023 at 8:02:19 PM EDT'
+					StaticText '3 years ago'
+			[388] navigation ''
+				[389] list ''
+					[390] listitem ''
+						[391] link 'No comments'
+							[392] strong ''
+								StaticText 'No comments'
+			[395] Section ''
+				[397] button 'Upvote'
+				StaticText '2'
+				[407] button 'Downvote'
+		[412] article ''
+			[417] heading 'What is your absolute favourite fact about space? Like if someone were to ask you what the coolest fact about space is what would you tell them?'
+				[418] link 'What is your absolute favourite fact about space? Like if someone were to ask you what the coolest fact about space is what would you tell them?'
+			[419] paragraph ''
+				StaticText 'Submitted by'
+				[421] link 'Wanttamanifest', expanded=False
+					[422] strong ''
+						StaticText 'Wanttamanifest'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_121az8z'
+				StaticText ']'
+				StaticText ''
+				[424] time 'March 25, 2023 at 12:46:52 AM EDT'
+					StaticText '3 years ago'
+			[425] navigation ''
+				[426] list ''
+					[427] listitem ''
+						[428] link 'No comments'
+							[429] strong ''
+								StaticText 'No comments'
+			[432] Section ''
+				[434] button 'Upvote'
+				StaticText '4'
+				[444] button 'Downvote'
+		[449] article ''
+			[454] heading 'James Webb telescope spots dust storm raging on a giant planet nearly 20 times the size of Jupiter'
+				[455] link 'James Webb telescope spots dust storm raging on a giant planet nearly 20 times the size of Jupiter'
+			StaticText ''
+			[456] link 'livescience.com'
+			[457] paragraph ''
+				StaticText 'Submitted by'
+				[459] link 'Maxcactus', expanded=False
+					[460] strong ''
+						StaticText 'Maxcactus'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_120grof'
+				StaticText ']'
+				StaticText ''
+				[462] time 'March 24, 2023 at 6:56:28 AM EDT'
+					StaticText '3 years ago'
+			[463] navigation ''
+				[464] list ''
+					[465] listitem ''
+						[466] link 'No comments'
+							[467] strong ''
+								StaticText 'No comments'
+			[470] Section ''
+				[472] button 'Upvote'
+				StaticText '4'
+				[482] button 'Downvote'
+		[487] article ''
+			[492] heading "The Universe is a hologram: Stephen Hawking's final theory, explained by his closest collaborator"
+				[493] link "The Universe is a hologram: Stephen Hawking's final theory, explained by his closest collaborator"
+			StaticText ''
+			[494] link 'sciencefocus.com'
+			[495] paragraph ''
+				StaticText 'Submitted by'
+				[497] link 'Ok_Copy5217', expanded=False
+					[498] strong ''
+						StaticText 'Ok_Copy5217'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11zyc5i'
+				StaticText ']'
+				StaticText ''
+				[500] time 'March 23, 2023 at 5:37:45 PM EDT'
+					StaticText '3 years ago'
+			[501] navigation ''
+				[502] list ''
+					[503] listitem ''
+						[504] link 'No comments'
+							[505] strong ''
+								StaticText 'No comments'
+			[508] Section ''
+				[510] button 'Upvote'
+				StaticText '4'
+				[520] button 'Downvote'
+		[525] article ''
+			[530] heading "The rumors are true: SpaceX's Starlink V2 Minis appear to be in some kind of trouble, with Elon saying some of the 21 units in low Earth orbit may have to be deorbited and the others tested."
+				[531] link "The rumors are true: SpaceX's Starlink V2 Minis appear to be in some kind of trouble, with Elon saying some of the 21 units in low Earth orbit may have to be deorbited and the others tested."
+			[532] paragraph ''
+				StaticText 'Submitted by'
+				[534] link 'Pan0ptic0n70', expanded=False
+					[535] strong ''
+						StaticText 'Pan0ptic0n70'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11zsish'
+				StaticText ']'
+				StaticText ''
+				[537] time 'March 23, 2023 at 2:14:10 PM EDT'
+					StaticText '3 years ago'
+			[538] navigation ''
+				[539] list ''
+					[540] listitem ''
+						[541] link 'No comments'
+							[542] strong ''
+								StaticText 'No comments'
+			[545] Section ''
+				[547] button 'Upvote'
+				StaticText '0'
+				[557] button 'Downvote'
+		[562] article ''
+			[567] heading "Scientists offer 'non-alien explanation' for interstellar visitor, Oumuamua"
+				[568] link "Scientists offer 'non-alien explanation' for interstellar visitor, Oumuamua"
+			StaticText ''
+			[569] link 'france24.com'
+			[570] paragraph ''
+				StaticText 'Submitted by'
+				[572] link 'DoremusJessup', expanded=False
+					[573] strong ''
+						StaticText 'DoremusJessup'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11yowqe'
+				StaticText ']'
+				StaticText ''
+				[575] time 'March 22, 2023 at 12:50:29 PM EDT'
+					StaticText '3 years ago'
+			[576] navigation ''
+				[577] list ''
+					[578] listitem ''
+						[579] link 'No comments'
+							[580] strong ''
+								StaticText 'No comments'
+			[583] Section ''
+				[585] button 'Upvote'
+				StaticText '0'
+				[595] button 'Downvote'
+		[600] article ''
+			[605] heading "A 'hole' 30 times Earth's size has spread across the sun, blasting solar winds that'll hit our planet by end of this week"
+				[606] link "A 'hole' 30 times Earth's size has spread across the sun, blasting solar winds that'll hit our planet by end of this week"
+			StaticText ''
+			[607] link 'msn.com'
+			[608] paragraph ''
+				StaticText 'Submitted by'
+				[610] link 'DevilsRefugee', expanded=False
+					[611] strong ''
+						StaticText 'DevilsRefugee'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11ycnau'
+				StaticText ']'
+				StaticText ''
+				[613] time 'March 22, 2023 at 4:56:47 AM EDT'
+					StaticText '3 years ago'
+			[614] navigation ''
+				[615] list ''
+					[616] listitem ''
+						[617] link 'No comments'
+							[618] strong ''
+								StaticText 'No comments'
+			[621] Section ''
+				[623] button 'Upvote'
+				StaticText '5'
+				[633] button 'Downvote'
+		[638] article ''
+			[643] heading 'Scientists have discovered the chemical compound uracil, one of the building blocks of RNA, in just 10 milligrammes of material from the asteroid Ryugu'
+				[644] link 'Scientists have discovered the chemical compound uracil, one of the building blocks of RNA, in just 10 milligrammes of material from the asteroid Ryugu'
+			StaticText ''
+			[645] link 'france24.com'
+			[646] paragraph ''
+				StaticText 'Submitted by'
+				[648] link 'DoremusJessup', expanded=False
+					[649] strong ''
+						StaticText 'DoremusJessup'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11y44yl'
+				StaticText ']'
+				StaticText ''
+				[651] time 'March 21, 2023 at 10:39:22 PM EDT'
+					StaticText '3 years ago'
+			[652] navigation ''
+				[653] list ''
+					[654] listitem ''
+						[655] link 'No comments'
+							[656] strong ''
+								StaticText 'No comments'
+			[659] Section ''
+				[661] button 'Upvote'
+				StaticText '5'
+				[671] button 'Downvote'
+		[676] article ''
+			[681] heading 'Kazakhstan’s seizure of Russian space assets threatens the Soyuz-5 rocket'
+				[682] link 'Kazakhstan’s seizure of Russian space assets threatens the Soyuz-5 rocket'
+			StaticText ''
+			[683] link 'arstechnica.com'
+			[684] paragraph ''
+				StaticText 'Submitted by'
+				[686] link 'tkocur', expanded=False
+					[687] strong ''
+						StaticText 'tkocur'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11xysik'
+				StaticText ']'
+				StaticText ''
+				[689] time 'March 21, 2023 at 7:25:27 PM EDT'
+					StaticText '3 years ago'
+			[690] navigation ''
+				[691] list ''
+					[692] listitem ''
+						[693] link 'No comments'
+							[694] strong ''
+								StaticText 'No comments'
+			[697] Section ''
+				[699] button 'Upvote'
+				StaticText '5'
+				[709] button 'Downvote'
+		[714] article ''
+			[719] heading 'Calls for ban on light-polluting mass satellite groups like Elon Musk’s Starlink | Satellites'
+				[720] link 'Calls for ban on light-polluting mass satellite groups like Elon Musk’s Starlink | Satellites'
+			StaticText ''
+			[721] link 'theguardian.com'
+			[722] paragraph ''
+				StaticText 'Submitted by'
+				[724] link 'koavf', expanded=False
+					[725] strong ''
+						StaticText 'koavf'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11xbxh6'
+				StaticText ']'
+				StaticText ''
+				[727] time 'March 21, 2023 at 5:27:23 AM EDT'
+					StaticText '3 years ago'
+			[728] navigation ''
+				[729] list ''
+					[730] listitem ''
+						[731] link 'No comments'
+							[732] strong ''
+								StaticText 'No comments'
+			[735] Section ''
+				[737] button 'Upvote'
+				StaticText '2'
+				[747] button 'Downvote'
+		[752] article ''
+			[757] heading "A Hollywood sci-fi prop shop became the best kept secret in aerospace. Because everything at Norton was in fact real—decommissioned engines, solenoids, and avionics units. Entrepreneurs realized reverse engineering these artifacts from NASA's golden age could give them an edge over the competition."
+				[758] link "A Hollywood sci-fi prop shop became the best kept secret in aerospace. Because everything at Norton was in fact real—decommissioned engines, solenoids, and avionics units. Entrepreneurs realized reverse engineering these artifacts from NASA's golden age could give them an edge over the competition."
+			StaticText ''
+			[759] link 'supercluster.com'
+			[760] paragraph ''
+				StaticText 'Submitted by'
+				[762] link 'EricFromOuterSpace', expanded=False
+					[763] strong ''
+						StaticText 'EricFromOuterSpace'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11wnt7g'
+				StaticText ']'
+				StaticText ''
+				[765] time 'March 20, 2023 at 12:39:27 PM EDT'
+					StaticText '3 years ago'
+			[766] navigation ''
+				[767] list ''
+					[768] listitem ''
+						[769] link 'No comments'
+							[770] strong ''
+								StaticText 'No comments'
+			[773] Section ''
+				[775] button 'Upvote'
+				StaticText '1'
+				[785] button 'Downvote'
+		[790] article ''
+			[795] heading 'My homebuilt observatory-grade telescope that fits in the back of an SUV'
+				[796] link 'My homebuilt observatory-grade telescope that fits in the back of an SUV'
+			[798] paragraph ''
+				StaticText 'Submitted by'
+				[800] link 'Brisby2', expanded=False
+					[801] strong ''
+						StaticText 'Brisby2'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11w017u'
+				StaticText ']'
+				StaticText ''
+				[803] time 'March 19, 2023 at 6:30:29 PM EDT'
+					StaticText '3 years ago'
+			[804] navigation ''
+				[805] list ''
+					[806] listitem ''
+						[807] link 'No comments'
+							[808] strong ''
+								StaticText 'No comments'
+			[811] Section ''
+				[813] button 'Upvote'
+				StaticText '1'
+				[823] button 'Downvote'
+		[828] article ''
+			[833] heading 'Close up of Pluto from the New Horizons space probe'
+				[834] link 'Close up of Pluto from the New Horizons space probe'
+			[836] paragraph ''
+				StaticText 'Submitted by'
+				[838] link 'Greenthund3r', expanded=False
+					[839] strong ''
+						StaticText 'Greenthund3r'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11vnm1q'
+				StaticText ']'
+				StaticText ''
+				[841] time 'March 19, 2023 at 11:01:49 AM EDT'
+					StaticText '3 years ago'
+			[842] navigation ''
+				[843] list ''
+					[844] listitem ''
+						[845] link 'No comments'
+							[846] strong ''
+								StaticText 'No comments'
+			[849] Section ''
+				[851] button 'Upvote'
+				StaticText '2'
+				[861] button 'Downvote'
+		[866] article ''
+			[871] heading 'Orion above the atmosphere, captured on my first mission to the International Space Station. More details in comments!'
+				[872] link 'Orion above the atmosphere, captured on my first mission to the International Space Station. More details in comments!'
+			[874] paragraph ''
+				StaticText 'Submitted by'
+				[876] link 'astro_pettit', expanded=False
+					[877] strong ''
+						StaticText 'astro_pettit'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11v4fn9'
+				StaticText ']'
+				StaticText ''
+				[879] time 'March 18, 2023 at 7:28:28 PM EDT'
+					StaticText '3 years ago'
+			[880] navigation ''
+				[881] list ''
+					[882] listitem ''
+						[883] link 'No comments'
+							[884] strong ''
+								StaticText 'No comments'
+			[887] Section ''
+				[889] button 'Upvote'
+				StaticText '3'
+				[899] button 'Downvote'
+		[904] article ''
+			[909] heading 'Researchers develop a "space salad" perfected suited for astronauts on long-durations spaceflights. The salad has seven ingredients (soybeans, poppy seeds, barley, kale, peanuts, sunflower seeds, and sweet potatoes) that can be grown on spacecraft and fulfill all the nutritional needs of astronauts.'
+				[910] link 'Researchers develop a "space salad" perfected suited for astronauts on long-durations spaceflights. The salad has seven ingredients (soybeans, poppy seeds, barley, kale, peanuts, sunflower seeds, and sweet potatoes) that can be grown on spacecraft and fulfill all the nutritional needs of astronauts.'
+			StaticText ''
+			[911] link 'astronomy.com'
+			[912] paragraph ''
+				StaticText 'Submitted by'
+				[914] link 'clayt6', expanded=False
+					[915] strong ''
+						StaticText 'clayt6'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11ttq7j'
+				StaticText ']'
+				StaticText ''
+				[917] time 'March 17, 2023 at 11:06:25 AM EDT'
+					StaticText '3 years ago'
+			[918] navigation ''
+				[919] list ''
+					[920] listitem ''
+						[921] link 'No comments'
+							[922] strong ''
+								StaticText 'No comments'
+			[925] Section ''
+				[927] button 'Upvote'
+				StaticText '3'
+				[937] button 'Downvote'
+		[942] article ''
+			[947] heading 'Rolls-Royce secures funds to develop nuclear reactor for moon base'
+				[948] link 'Rolls-Royce secures funds to develop nuclear reactor for moon base'
+			StaticText ''
+			[949] link 'theguardian.com'
+			[950] paragraph ''
+				StaticText 'Submitted by'
+				[952] link 'Bozzooo', expanded=False
+					[953] strong ''
+						StaticText 'Bozzooo'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11tfuuf'
+				StaticText ']'
+				StaticText ''
+				[955] time 'March 16, 2023 at 11:31:04 PM EDT'
+					StaticText '3 years ago'
+			[956] navigation ''
+				[957] list ''
+					[958] listitem ''
+						[959] link 'No comments'
+							[960] strong ''
+								StaticText 'No comments'
+			[963] Section ''
+				[965] button 'Upvote'
+				StaticText '4'
+				[975] button 'Downvote'
+		[980] article ''
+			[985] heading 'NASA’s oldest Mars orbiter just got a new lease on life. Revised calculations show Mars Odyssey orbiter, which launched in 2001, actually has enough propellant to last through at least 2025.'
+				[986] link 'NASA’s oldest Mars orbiter just got a new lease on life. Revised calculations show Mars Odyssey orbiter, which launched in 2001, actually has enough propellant to last through at least 2025.'
+			StaticText ''
+			[987] link 'astronomy.com'
+			[988] paragraph ''
+				StaticText 'Submitted by'
+				[990] link 'clayt6', expanded=False
+					[991] strong ''
+						StaticText 'clayt6'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11t5pwe'
+				StaticText ']'
+				StaticText ''
+				[993] time 'March 16, 2023 at 4:44:54 PM EDT'
+					StaticText '3 years ago'
+			[994] navigation ''
+				[995] list ''
+					[996] listitem ''
+						[997] link 'No comments'
+							[998] strong ''
+								StaticText 'No comments'
+			[1001] Section ''
+				[1003] button 'Upvote'
+				StaticText '5'
+				[1013] button 'Downvote'
+		[1018] article ''
+			[1023] heading 'Asteroid feared to hit Earth in 2046 will almost certainly miss, NASA says'
+				[1024] link 'Asteroid feared to hit Earth in 2046 will almost certainly miss, NASA says'
+			StaticText ''
+			[1025] link 'livescience.com'
+			[1026] paragraph ''
+				StaticText 'Submitted by'
+				[1028] link 'Anmithge1234', expanded=False
+					[1029] strong ''
+						StaticText 'Anmithge1234'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11snhy3'
+				StaticText ']'
+				StaticText ''
+				[1031] time 'March 16, 2023 at 3:47:26 AM EDT'
+					StaticText '3 years ago'
+			[1032] navigation ''
+				[1033] list ''
+					[1034] listitem ''
+						[1035] link 'No comments'
+							[1036] strong ''
+								StaticText 'No comments'
+			[1039] Section ''
+				[1041] button 'Upvote'
+				StaticText '0'
+				[1051] button 'Downvote'
+		[1056] article ''
+			[1061] heading 'Kazakhstan Impounds Property Of Russian Cosmodrome Operator In Baikonur'
+				[1062] link 'Kazakhstan Impounds Property Of Russian Cosmodrome Operator In Baikonur'
+			StaticText ''
+			[1063] link 'rferl.org'
+			[1064] paragraph ''
+				StaticText 'Submitted by'
+				[1066] link 'Ok_Copy5217', expanded=False
+					[1067] strong ''
+						StaticText 'Ok_Copy5217'
+				StaticText ''
+				StaticText '['
+				StaticText 't3_11skrbw'
+				StaticText ']'
+				StaticText ''
+				[1069] time 'March 16, 2023 at 1:03:56 AM EDT'
+					StaticText '3 years ago'
+			[1070] navigation ''
+				[1071] list ''
+					[1072] listitem ''
+						[1073] link 'No comments'
+							[1074] strong ''
+								StaticText 'No comments'
+			[1077] Section ''
+				[1079] button 'Upvote'
+				StaticText '4'
+				[1089] button 'Downvote'
+		[1094] navigation ''
+			[1095] list ''
+				[1097] listitem ''
+					[1098] link 'More'
+	[1100] complementary ''
+		[1101] Section ''
+			[1102] heading 'space'
+				[1103] link 'space'
+			[1104] Section ''
+				[1107] button 'Subscribe No subscribers'
+					StaticText 'Subscribe'
+					StaticText '0'
+			[1114] paragraph ''
+				StaticText 't5_2qh87'
+			[1115] separator '', orientation='horizontal'
+			[1116] list ''
+				[1117] listitem ''
+					StaticText 'Created'
+					[1118] time 'September 30, 2022 at 8:11:23 PM EDT'
+						StaticText '4 years ago'
+				[1119] listitem ''
+					[1120] link 'Subscribe via RSS'
+						[1122] image ''
+						StaticText 'Subscribe via RSS'
+		[1124] group ''
+			[1125] DisclosureTriangle 'Hide this forum', expanded=False
+		[1131] Section ''
+			[1132] heading 'Toolbox'
+			[1133] list ''
+				[1134] listitem ''
+					[1135] link 'Bans'
+				[1136] listitem ''
+					[1137] link 'Moderation log'
+	[1138] contentinfo ''
+		[1139] paragraph ''
+			StaticText 'Running'
+			[1141] link 'Postmill'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```click('156')```
+</action>
+
+
+
+<action>
+```click('115')```
+</action>
+
+
+
+<action>
+```goto('http://localhost:9999/f/space')```
+</action>
+
+
+
+<action>
+```click('128')```
+</action>
+
+
+
+<action>
+```click('137')```
+</action>
+
+# Progress Summary
+✅ Current Progress: The task has been fully completed. The agent sorted `/f/space` by "New," identified **Dhghomon** as the author of the latest post ("Scientists erupt at NASA gutting funding for crucial Venus mission," posted March 31, 2023). The agent then navigated to Dhghomon's profile and checked their Comments tab, which showed "There are no entries to display."
+
+🔍 Current State Analysis: The current page shows `/f/space` with posts sorted by "New" (the Sort by menu was just interacted with). The latest post is confirmed as submitted by **Dhghomon**. The prior investigation of Dhghomon's comment history conclusively showed zero comments, meaning zero comments could have more downvotes than upvotes.
+
+**✅ Task completed.** The user who made the latest post on the space forum is **Dhghomon**. The count of Dhghomon's comments that have received more downvotes than upvotes is **0** (Dhghomon has no comments at all).

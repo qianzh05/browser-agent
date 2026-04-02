@@ -1,0 +1,479 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Show me the customers who have expressed dissatisfaction with Antonia racer tank?
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: Edit Review / Customer Reviews / User Content / Marketing / Magento Admin
+  URL: http://localhost:7780/admin/review/product/edit/id/339/
+
+# Current page Accessibility Tree
+
+RootWebArea 'Edit Review / Customer Reviews / User Content / Marketing / Magento Admin', focused
+	[144] link 'Magento Admin Panel'
+		[145] image 'Magento Admin Panel'
+	[146] navigation ''
+		[147] menubar '', orientation='horizontal'
+			[149] link '\ue604 DASHBOARD'
+				StaticText '\ue604'
+				StaticText 'DASHBOARD'
+			[152] link '\ue60b SALES'
+				StaticText '\ue60b'
+				StaticText 'SALES'
+			[185] link '\ue608 CATALOG'
+				StaticText '\ue608'
+				StaticText 'CATALOG'
+			[203] link '\ue603 CUSTOMERS'
+				StaticText '\ue603'
+				StaticText 'CUSTOMERS'
+			[222] link '\ue609 MARKETING'
+				StaticText '\ue609'
+				StaticText 'MARKETING'
+			[289] link '\ue602 CONTENT'
+				StaticText '\ue602'
+				StaticText 'CONTENT'
+			[335] link '\ue60a REPORTS'
+				StaticText '\ue60a'
+				StaticText 'REPORTS'
+			[460] link '\ue60d STORES'
+				StaticText '\ue60d'
+				StaticText 'STORES'
+			[536] link '\ue610 SYSTEM'
+				StaticText '\ue610'
+				StaticText 'SYSTEM'
+			[619] link '\ue612 FIND PARTNERS & EXTENSIONS'
+				StaticText '\ue612'
+				StaticText 'FIND PARTNERS & EXTENSIONS'
+	[641] button 'System Messages: 1'
+		StaticText 'System Messages'
+		StaticText ':'
+		StaticText '1'
+	StaticText '\ue623'
+	StaticText 'Failed to synchronize data to the Magento Business Intelligence service.'
+	[647] link 'Retry Synchronization'
+	[657] banner ''
+		[660] heading 'Edit Review'
+		[663] link '\ue600 admin'
+			StaticText '\ue600'
+			StaticText 'admin'
+		[675] link '\ue607'
+			StaticText '\ue607'
+		[677] Section ''
+			[679] LabelText ''
+				StaticText '\ue60c'
+			[683] textbox '\ue60c'
+	[689] main ''
+		[695] button '\ue626 Back'
+			StaticText '\ue626'
+			StaticText 'Back'
+		[697] button 'Reset'
+			StaticText 'Reset'
+		[699] button 'Delete Review'
+			StaticText 'Delete Review'
+		[701] button 'Save Review'
+			StaticText 'Save Review'
+		[703] button 'Previous'
+			StaticText 'Previous'
+		[705] button 'Save and Previous'
+			StaticText 'Save and Previous'
+		[712] Section ''
+			[715] group 'Review Details'
+				[716] Legend ''
+					StaticText 'Review Details'
+				[721] LabelText ''
+					StaticText 'Product'
+				[725] link 'Antonia Racer Tank'
+				[727] LabelText ''
+					StaticText 'Author'
+				StaticText 'Guest'
+				[732] LabelText ''
+					StaticText 'Summary Rating'
+				[740] LabelText ''
+					StaticText 'Detailed Rating'
+					StaticText '*'
+				[746] LabelText ''
+					StaticText 'Rating'
+				[750] LabelText ''
+					StaticText '★'
+				[752] LabelText ''
+					StaticText '★'
+				[754] LabelText ''
+					StaticText '★'
+				[756] LabelText ''
+					StaticText '★'
+				[758] LabelText ''
+					StaticText '★'
+				[762] LabelText ''
+					StaticText 'Status'
+					StaticText '*'
+				[765] combobox 'Status *' value='Approved', hasPopup='menu', expanded=False
+					[766] option 'Approved', selected=True
+					[767] option 'Pending', selected=False
+					[768] option 'Not Approved', selected=False
+				[772] LabelText ''
+					StaticText 'Nickname'
+					StaticText '*'
+				[775] textbox 'Nickname *' value='Pearl', required
+					StaticText 'Pearl'
+				[777] LabelText ''
+					StaticText 'Summary of Review'
+					StaticText '*'
+				[780] textbox 'Summary of Review *' value='A regular or me', required
+					StaticText 'A regular or me'
+				[782] LabelText ''
+					StaticText 'Review'
+					StaticText '*'
+				[786] textbox 'Review *' value='This is in regular rotation at the gym. Its colorful and looks kinda cute under my exercise tanks.', required
+					StaticText 'This is in regular rotation at the gym. Its colorful and looks kinda cute under my exercise tanks.'
+	[789] contentinfo ''
+		[792] paragraph ''
+			[793] link '\ue606'
+				StaticText '\ue606'
+			StaticText 'Copyright © 2026 Magento Commerce Inc. All rights reserved.'
+		[795] paragraph ''
+			[796] strong ''
+				StaticText 'Magento'
+			StaticText 'ver. 2.4.6'
+		[797] link 'Privacy Policy'
+		StaticText '|'
+		[798] link 'Account Activity'
+		StaticText '|'
+		[799] link 'Report an Issue'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```click('287')```
+</action>
+
+
+
+<action>
+```fill('847', 'Antonia Racer Tank')```
+</action>
+
+
+
+<action>
+```click('708')```
+</action>
+
+
+
+
+Looking at the 3 reviews for Antonia Racer Tank, I need to check the full details of each review to identify dissatisfied customers. Let me examine the reviews individually, starting with review ID 338 from Merrie (title: "Not for high impact").
+<action>
+```click('870')```
+</action>
+
+
+
+<action>
+```click('709')```
+</action>
+
+# Progress Summary
+✅ Current Progress: Successfully navigated to Marketing > User Content > Reviews, filtered by "Antonia Racer Tank," found 3 reviews, and examined at least 2 reviews so far. Currently viewing what appears to be another review of Antonia Racer Tank — this one by "Pearl" with summary "A regular or me" and review text: "This is in regular rotation at the gym. Its colorful and looks kinda cute under my exercise tanks." This is a **positive/satisfied** review. Previously viewed Merrie's review ("Not for high impact") which showed mild dissatisfaction.
+
+🔍 Current State Analysis: The current page is the Edit Review detail page for Pearl's review of Antonia Racer Tank. Key observations:
+- **Reviewer Nickname**: Pearl (Guest)
+- **Summary**: "A regular or me" (appears truncated, likely "A regular for me" or similar)
+- **Review text**: "This is in regular rotation at the gym. Its colorful and looks kinda cute under my exercise tanks." — **Positive review, no dissatisfaction**
+- **Status**: Approved
+- **Product**: Antonia Racer Tank (confirmed via link)
+
+There is still one more review to check (3 total were found). Navigation buttons are available:
+- `[703] button 'Previous'` — go to previous review
+- `[705] button 'Save and Previous'` — save and go to previous
+- `[695] button '\ue626 Back'` — go back to the reviews list
+
+The agent should check if there's a "Next" button to view the remaining review, or navigate back to the list to find the third review. From the axtree, no "Next" button is visible, suggesting Pearl's review may be the last one in the filtered set, OR the agent is navigating in reverse (Previous/Save and Previous buttons visible instead of Next).
+
+➡️ Next-step Guidance: Click `[703] button 'Previous'` to navigate to the remaining unreviewed record, OR click `[695] button '\ue626 Back'` to return to the reviews list and identify all 3 reviews for Antonia Racer Tank to ensure none were missed.

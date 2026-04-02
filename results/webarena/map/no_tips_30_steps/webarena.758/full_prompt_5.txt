@@ -1,0 +1,665 @@
+# Instructions
+
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, to which the user gives you instructions and to which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
+
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+Your response must strictly follow this output format:
+
+<think>
+Explain your reasoning step-by-step here. Describe how you analyze the current page state and your plan to accomplish the user's goal.
+</think>
+<action>
+Only a **SINGLE** action is allowed in this tag, which will be executed by the program.
+</action>
+
+Here:
+- The <think> tag should contain a clear and detailed explanation of your reasoning process, including how you interpret the task, analyze the page, and decide on your next step.
+- Inside the <action> tag, you MUST provide exactly one valid action string formatted as ``` ```. This represents the single action to be executed. The action must be one of the valid actions from the action space described below.
+- You may receive historical thoughts and executed actions as context; consider them carefully to avoid repeating ineffective steps.
+- Always take into account the current task, the latest page screenshot, and the history of your prior actions to make an informed decision.
+- Valid action names include but are not limited to: click, fill, submit. Please refer to the action space details provided below for the complete list and examples.
+- If previous actions did not elicit a response from the web page, avoid repeating the same action to prevent redundant or futile operations.
+- DO NOT visit an external search engine or website such as google to find the answer, you should use the information provided in the task and the current page.
+- If you want to perform a click action, please use the `click` function; if you want to perform an input action, please use `fill` function instead of the `type` function.
+- Please don't scroll the page, as the environment does not support it.
+
+
+GENERAL TIPS/Benchmark Quirks (VERY IMPORTANT):
+    1. It's MUCH easier to find something on a website when there's a search bar instead of having to scroll through the whole page trying to locate it.
+    2. When asked to do a search task or information retrieval, it can be very useful to use FILTERS to narrow down the search results.
+    3. There are a lot of information so it will take a very long time if you just keep scrolling trying to find it. Best way is to search or filter it!
+    4. Examine screenshots thoroughly, especially keep an eye out for signs like this "-". These could be negative signs which are important.
+    5. **When URLs/text are TRUNCATED with copy buttons**: If you see text that's cut off in the UI (e.g., "https://example.com/very-long-url..." with a copy button), click the copy button then PASTE it somewhere to see the full content:
+        - Click the URL/address bar and press Ctrl+V
+        - Or paste into a text field
+        - Take a screenshot to see the complete untruncated text
+
+
+MESSAGE/ANSWER FORMAT (VERY IMPORTANT):
+    When you send message to user, follow these principles:
+
+    1. **Match the format exactly**: If examples show "557m", use that exact format
+    2. **Provide complete answers**: Include sufficient context for the answer to stand alone
+    3. **Add reasoning when appropriate**: For questions requiring judgment (yes/no, status checks,
+        comparisons), include brief context or reasoning alongside your answer
+    4. **Be precise with terminology**: Use exact wording from the source when copying text
+    5. When asked to return answer in MM:COUNT format, return like this: "January: 1". It expect MM to be the explicit name of the month NOT a number.
+    6. When asked how much is spent return just the decimal. So if item costs $7.50 return "7.50" or if it costs $0 return "0"
+    7. When asked for configuration return as 2x2 instead of 2*2.
+    8. If multiple matching entries exist for an amount-based question, itemize each amount in your reasoning and ensure the finalAnswer string contains the combined total (e.g., sum of all matching refunds) that satisfies the query.
+
+
+
+
+
+# Action Space
+
+18 different types of actions are available.
+
+
+scroll(delta_x: float, delta_y: float)
+
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+
+    Examples:
+
+        scroll(0, 200)
+
+
+        scroll(-50.2, -100.5)
+
+
+keyboard_press(key: str)
+
+    Description: Press a combination of keys. Accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        keyboard_press('Backspace')
+
+
+        keyboard_press('ControlOrMeta+a')
+
+
+        keyboard_press('Meta+Shift+t')
+
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+
+    Description: Click an element.
+
+    Examples:
+
+        click('a51')
+
+
+        click('b22', button='right')
+
+
+        click('48', button='middle', modifiers=['Shift'])
+
+
+fill(bid: str, value: str)
+
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+
+    Examples:
+
+        fill('237', 'example value')
+
+
+hover(bid: str)
+
+    Description: Hover over an element.
+
+    Examples:
+
+        hover('b8')
+
+
+tab_focus(index: int)
+
+    Description: Bring tab to front (activate tab).
+
+    Examples:
+
+        tab_focus(2)
+
+
+new_tab()
+
+    Description: Open a new tab. It will become the active one.
+
+    Examples:
+
+        new_tab()
+
+
+go_back()
+
+    Description: Navigate to the previous page in history.
+
+    Examples:
+
+        go_back()
+
+
+go_forward()
+
+    Description: Navigate to the next page in history.
+
+    Examples:
+
+        go_forward()
+
+
+goto(url: str)
+
+    Description: Navigate to a url.
+
+    Examples:
+
+        goto('http://www.example.com')
+
+
+tab_close()
+
+    Description: Close the current tab.
+
+    Examples:
+
+        tab_close()
+
+
+select_option(bid: str, options: str | list[str])
+
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+
+    Examples:
+
+        select_option('a48', 'blue')
+
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+
+send_msg_to_user(text: str)
+
+    Description: Sends a message to the user.
+
+    Examples:
+
+        send_msg_to_user('Based on the results of my search, the city was built in 1751.')
+
+
+report_infeasible(reason: str)
+
+    Description: Notifies the user that their instructions are infeasible.
+
+    Examples:
+
+        report_infeasible('I cannot follow these instructions because there is no email field in this form.')
+
+
+take_note(note: str)
+
+    Description: Temporarily records a piece of intermediate information to support multi-step reasoning or complex task execution. This function acts as a "scratchpad" for the agent-storing key details such as computed values, user preferences, transaction summaries, or partial results that may be needed in subsequent steps. It has no external side effects; its sole purpose is to help maintain context across steps. When to use: 1. Saving intermediate calculations or aggregations 2. Remembering user-provided constraints or preferences 3. Tracking progress or state in a multi-part workflow Args: note (str): A concise, self-contained note containing relevant context. Should include enough detail to be useful later (e.g., amounts, IDs, statuses, decisions).
+
+    Examples:
+
+        take_note('Refund amounts for the last 4 cancelled orders: $100, $100, $100, $100')
+
+
+        take_note('User requested delivery only on weekdays after 6 PM.')
+
+
+calculate(expression: str) -> float
+
+    Description: Evaluates a mathematical expression and returns the result as a float. Supports basic arithmetic operations: addition (+), subtraction (-), multiplication (*), division (/), parentheses, and decimal numbers. The expression must be a valid string containing only numbers and operators. Args: expression (str): A string representing a mathematical expression, e.g., "2 + 3 * 4", "(10 - 2) / 4", "5.5 * 2". Returns: float: The numerical result of evaluating the expression.
+
+    Examples:
+
+        calculate('2 + 3 * 4')
+
+
+        calculate('(10 - 2) / 4')
+
+
+        calculate('5.5 * 2')
+
+
+press(bid: str, key_comb: str)
+
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+
+    Examples:
+
+        press('88', 'Backspace')
+
+
+        press('a26', 'ControlOrMeta+a')
+
+
+        press('a61', 'Meta+Shift+t')
+
+
+focus(bid: str)
+
+    Description: Focus the matching element.
+
+    Examples:
+
+        focus('b455')
+
+
+Only a single action can be provided at once. Example:
+click('48', button='middle', modifiers=['Shift'])
+
+
+
+# Example action
+## Example 1
+<think>
+To find reviewers who mention underwater photos, I should first navigate to the reviews section of the product page. The reviews tab with 12 reviews seems like the logical next step.
+</think>
+<action>
+```click("1910")```
+</action>
+## Example 2
+<think>
+The search field is the main tool available on this page for finding specific products since the navigation menu does not show a category for electronics or computer components. The user needs to enter a specific search term for SSD hard drives with a minimum of 1TB capacity. Since we've clicked on the search field previously to set focus, the next step would be to enter the desired search term into the search input field.
+</think>
+<action>
+```fill('610', 'SSD hard drive 1TB')```
+</action>
+
+            
+
+
+# Next action
+You will now think step by step and produce your next best action. Reflect on your past actions, any resulting error message, and the current state of the page before deciding on your next action.
+
+# Goal
+
+Show me the path and travel time from the big apple to biggest city in Maine.
+# Currently open tabs
+
+Tab 0 (active tab)
+  Title: OpenStreetMap
+  URL: http://localhost:3000/directions?engine=fossgis_osrm_car&route=40.713%2C-74.006%3B43.659%2C-70.257#map=7/42.208/-72.125
+
+# Current page Accessibility Tree
+
+RootWebArea 'OpenStreetMap', focused
+	[44] banner ''
+		[45] heading 'OpenStreetMap logo OpenStreetMap'
+			[46] link 'OpenStreetMap logo OpenStreetMap'
+				[49] image 'OpenStreetMap logo'
+				StaticText ''
+		[51] navigation ''
+			[95] link 'Edit'
+			[96] button ''
+			[102] link 'History'
+			[103] link 'Export'
+		[104] navigation ''
+			[105] list ''
+				[106] listitem ''
+					[107] link 'GPS Traces'
+				[108] listitem ''
+					[109] link 'User Diaries'
+				[110] listitem ''
+					[111] link 'Communities'
+				[112] listitem ''
+					[113] link 'Copyright'
+				[114] listitem ''
+					[115] link 'Help'
+				[116] listitem ''
+					[117] link 'About'
+			[134] link 'Log In'
+			[135] link 'Sign Up'
+	[151] Section ''
+		[153] button 'Close'
+		[156] image ''
+		[158] textbox 'From' value='City of New York, New York, United States'
+			StaticText 'City of New York, New York, United States'
+		[161] image ''
+		[163] textbox 'To' value='Portland, Cumberland County, Maine, United States'
+			StaticText 'Portland, Cumberland County, Maine, United States'
+		[166] combobox '' value='Car (OSRM)', hasPopup='menu', expanded=False
+			[167] option 'Bicycle (OSRM)', selected=False
+			[168] option 'Car (OSRM)', selected=True
+			[169] option 'Foot (OSRM)', selected=False
+		[171] button 'Go', focused
+		[174] button 'Reverse Directions'
+	[443] heading 'Directions'
+	[445] button 'Close'
+	[446] paragraph ''
+		StaticText 'Distance: 508km. Time: 6:34.'
+	[447] table ''
+		[448] row ''
+			[449] gridcell ''
+			[451] gridcell '1. Start on Park Row'
+				StaticText '1.'
+				StaticText 'Park Row'
+			[454] gridcell '30m'
+		[455] row ''
+			[456] gridcell ''
+			[458] gridcell '2. U-turn along Park Row'
+				StaticText '2.'
+				StaticText 'Park Row'
+			[461] gridcell '130m'
+		[462] row ''
+			[463] gridcell ''
+			[465] gridcell '3. Continue on Frankfort Street'
+				StaticText '3.'
+				StaticText 'Frankfort Street'
+			[468] gridcell '400m'
+		[469] row ''
+			[470] gridcell ''
+			[472] gridcell '4. Turn left onto Pearl Street'
+				StaticText '4.'
+				StaticText 'Pearl Street'
+			[475] gridcell '20m'
+		[476] row ''
+			[477] gridcell ''
+			[479] gridcell '5. Turn right onto the ramp towards FDR Drive North'
+				StaticText '5.'
+				StaticText 'FDR Drive North'
+			[482] gridcell '800m'
+		[483] row ''
+			[484] gridcell ''
+			[486] gridcell '6. Merge left onto FDR Drive (FDR)'
+				StaticText '6.'
+				StaticText 'FDR Drive (FDR)'
+			[489] gridcell '12km'
+		[490] row ''
+			[491] gridcell ''
+			[493] gridcell '7. Take exit 17 on the left towards I 278: Robert F. Kennedy Bridge, Brunckner Expressway, Gran Central Parkway'
+				StaticText '7.'
+				StaticText 'I 278: Robert F. Kennedy Bridge, Brunckner Expressway, Gran Central Parkway'
+			[496] gridcell '700m'
+		[497] row ''
+			[498] gridcell ''
+			[500] gridcell '8. Continue on Robert F. Kennedy Bridge'
+				StaticText '8.'
+				StaticText 'Robert F. Kennedy Bridge'
+			[503] gridcell '500m'
+		[504] row ''
+			[505] gridcell ''
+			[507] gridcell '9. At the fork turn right onto unnamed road'
+				StaticText '9.'
+			[509] gridcell '300m'
+		[510] row ''
+			[511] gridcell ''
+			[513] gridcell '10. Continue on unnamed road'
+				StaticText '10.'
+			[515] gridcell '400m'
+		[516] row ''
+			[517] gridcell ''
+			[519] gridcell '11. Merge left onto Robert F. Kennedy Bridge (I 278)'
+				StaticText '11.'
+				StaticText 'Robert F. Kennedy Bridge (I 278)'
+			[522] gridcell '400m'
+		[523] row ''
+			[524] gridcell ''
+			[526] gridcell '12. Continue on Bruckner Expressway (I 278)'
+				StaticText '12.'
+				StaticText 'Bruckner Expressway (I 278)'
+			[529] gridcell '11km'
+		[530] row ''
+			[531] gridcell ''
+			[533] gridcell '13. Continue on New England Thruway (I 95)'
+				StaticText '13.'
+				StaticText 'New England Thruway (I 95)'
+			[536] gridcell '400m'
+		[537] row ''
+			[538] gridcell ''
+			[540] gridcell '14. Take exit 9 on the right towards Hutchinson Parkway North'
+				StaticText '14.'
+				StaticText 'Hutchinson Parkway North'
+			[543] gridcell '130m'
+		[544] row ''
+			[545] gridcell ''
+			[547] gridcell '15. At the fork turn left onto unnamed road'
+				StaticText '15.'
+			[549] gridcell '300m'
+		[550] row ''
+			[551] gridcell ''
+			[553] gridcell '16. Merge left onto Hutchinson River Parkway (HR)'
+				StaticText '16.'
+				StaticText 'Hutchinson River Parkway (HR)'
+			[556] gridcell '2.5km'
+		[557] row ''
+			[558] gridcell ''
+			[560] gridcell '17. Take exit 4A on the right towards I 95 North: New Haven'
+				StaticText '17.'
+				StaticText 'I 95 North: New Haven'
+			[563] gridcell '500m'
+		[564] row ''
+			[565] gridcell ''
+			[567] gridcell '18. Merge left onto New England Thruway (I 95)'
+				StaticText '18.'
+				StaticText 'New England Thruway (I 95)'
+			[570] gridcell '66km'
+		[571] row ''
+			[572] gridcell ''
+			[574] gridcell '19. Take the ramp on the right towards CT 25, CT 8: Trumbull, Waterbury'
+				StaticText '19.'
+				StaticText 'CT 25, CT 8: Trumbull, Waterbury'
+			[577] gridcell '1000m'
+		[578] row ''
+			[579] gridcell ''
+			[581] gridcell '20. Continue on CT 8; CT 25'
+				StaticText '20.'
+				StaticText 'CT 8; CT 25'
+			[584] gridcell '5km'
+		[585] row ''
+			[586] gridcell ''
+			[588] gridcell '21. At the fork turn right onto CT 8'
+				StaticText '21.'
+				StaticText 'CT 8'
+			[591] gridcell '2.8km'
+		[592] row ''
+			[593] gridcell ''
+			[595] gridcell '22. Take exit 9 on the right towards CT 15 North: Merritt Parkway, New Haven'
+				StaticText '22.'
+				StaticText 'CT 15 North: Merritt Parkway, New Haven'
+			[598] gridcell '1200m'
+		[599] row ''
+			[600] gridcell ''
+			[602] gridcell '23. Merge left onto Merritt Parkway (CT 15)'
+				StaticText '23.'
+				StaticText 'Merritt Parkway (CT 15)'
+			[605] gridcell '4.8km'
+		[606] row ''
+			[607] gridcell ''
+			[609] gridcell '24. Continue on Wilbur Cross Parkway (CT 15)'
+				StaticText '24.'
+				StaticText 'Wilbur Cross Parkway (CT 15)'
+			[612] gridcell '49km'
+		[613] row ''
+			[614] gridcell ''
+			[616] gridcell '25. Continue on Berlin Turnpike (US 5; CT 15)'
+				StaticText '25.'
+				StaticText 'Berlin Turnpike (US 5; CT 15)'
+			[619] gridcell '25km'
+		[620] row ''
+			[621] gridcell ''
+			[623] gridcell '26. Merge right onto I 84; US 6'
+				StaticText '26.'
+				StaticText 'I 84; US 6'
+			[626] gridcell '65km'
+		[627] row ''
+			[628] gridcell ''
+			[630] gridcell '27. At the fork turn right onto unnamed road'
+				StaticText '27.'
+			[632] gridcell '700m'
+		[633] row ''
+			[634] gridcell ''
+			[636] gridcell '28. Merge left onto Massachusetts Turnpike (I 90)'
+				StaticText '28.'
+				StaticText 'Massachusetts Turnpike (I 90)'
+			[639] gridcell '44km'
+		[640] row ''
+			[641] gridcell ''
+			[643] gridcell '29. Take exit 106 on the right towards I 495'
+				StaticText '29.'
+				StaticText 'I 495'
+			[646] gridcell '400m'
+		[647] row ''
+			[648] gridcell ''
+			[650] gridcell '30. At the fork turn left onto unnamed road'
+				StaticText '30.'
+			[652] gridcell '300m'
+		[653] row ''
+			[654] gridcell ''
+			[656] gridcell '31. At the fork turn left onto unnamed road'
+				StaticText '31.'
+			[658] gridcell '900m'
+		[659] row ''
+			[660] gridcell ''
+			[662] gridcell '32. Merge left onto I 495'
+				StaticText '32.'
+				StaticText 'I 495'
+			[665] gridcell '101km'
+		[666] row ''
+			[667] gridcell ''
+			[669] gridcell '33. Merge left onto I 95'
+				StaticText '33.'
+				StaticText 'I 95'
+			[672] gridcell '11km'
+		[673] row ''
+			[674] gridcell ''
+			[676] gridcell '34. At the fork turn left onto Blue Star Turnpike (I 95)'
+				StaticText '34.'
+				StaticText 'Blue Star Turnpike (I 95)'
+			[679] gridcell '87km'
+		[680] row ''
+			[681] gridcell ''
+			[683] gridcell '35. At the fork turn right onto I 295'
+				StaticText '35.'
+				StaticText 'I 295'
+			[686] gridcell '9km'
+		[687] row ''
+			[688] gridcell ''
+			[690] gridcell '36. Take exit 7 on the right towards US 1A'
+				StaticText '36.'
+				StaticText 'US 1A'
+			[693] gridcell '1100m'
+		[694] row ''
+			[695] gridcell ''
+			[697] gridcell '37. Turn right onto Congress Street'
+				StaticText '37.'
+				StaticText 'Congress Street'
+			[700] gridcell '300m'
+		[701] row ''
+			[702] gridcell ''
+			[704] gridcell '38. Reach destination'
+				StaticText '38.'
+			[706] gridcell ''
+	[707] paragraph ''
+		StaticText 'Directions courtesy of'
+		[708] link 'OSRM (FOSSGIS)'
+	[360] image ''
+	[361] image ''
+	[362] image ''
+	[363] image ''
+	[364] image ''
+	[365] image ''
+	[366] image ''
+	[367] image ''
+	[368] image ''
+	[369] image ''
+	[370] image ''
+	[371] image ''
+	[372] image ''
+	[373] image ''
+	[374] image ''
+	[375] image ''
+	[376] image ''
+	[377] image ''
+	[378] image ''
+	[379] image ''
+	[380] image ''
+	[381] image ''
+	[382] image ''
+	[383] image ''
+	[709] image ''
+	[710] image ''
+	[711] image ''
+	[712] image ''
+	[713] image ''
+	[714] image ''
+	[715] image ''
+	[716] image ''
+	[717] image ''
+	[440] image ''
+	[718] image ''
+	[441] button 'Marker'
+	[719] button 'Marker'
+	[394] link 'Zoom In'
+	[396] link 'Zoom Out'
+	[399] button 'Show My Location'
+	[402] link 'Layers'
+	[405] link ''
+	[408] link 'Share'
+	[411] link ''
+	[414] link ''
+	StaticText '50 km'
+	StaticText '50 mi'
+	StaticText '©'
+	[422] link 'OpenStreetMap contributors'
+	StaticText '♥'
+	[423] link 'Make a Donation'
+	StaticText '.'
+	[424] link 'Website and API terms'
+
+# Current page Screenshot with SOM
+
+image_url: data:image/jpeg;base64,/9j/4AA... (truncated)
+# History of past actions
+
+
+
+<action>
+```click('149')```
+</action>
+
+
+
+<action>
+```fill('158', 'New York City')```
+</action>
+
+
+
+<action>
+```click('163')```
+</action>
+
+
+
+<action>
+```fill('163', 'Portland, Maine')```
+</action>
+
+
+
+<action>
+```click('171')```
+</action>
+
+# Progress Summary
+✅ Current Progress: The route from New York City (the "Big Apple") to Portland, Maine (the largest city in Maine) has been successfully calculated and displayed. The directions panel shows:
+- **Distance: 508km**
+- **Travel Time: 6 hours 34 minutes**
+- A full turn-by-turn route starting on Park Row in NYC, proceeding via FDR Drive, Robert F. Kennedy Bridge, Bruckner Expressway (I-278), and continuing on I-95 (New England Thruway) northward toward Portland, Maine.
+
+🔍 Current State Analysis: The page is displaying the complete route and travel time. The goal has been fully achieved:
+- **"From"** (id=158): "City of New York, New York, United States" ✓
+- **"To"** (id=163): "Portland, Cumberland County, Maine, United States" ✓
+- **Route calculated**: Distance 508km, Time 6:34 (6 hours and 34 minutes)
+- The directions table (id=447) contains all step-by-step navigation instructions
+
+✅ Task completed. The path from New York City (the Big Apple) to Portland, Maine (the biggest city in Maine) has been displayed. The route is **508 km** with a travel time of **6 hours and 34 minutes** by car, primarily via I-95 northbound.
